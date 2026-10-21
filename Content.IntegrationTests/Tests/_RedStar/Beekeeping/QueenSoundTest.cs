@@ -45,4 +45,28 @@ public sealed class QueenSoundTest : GameTest
             Assert.That(path, Does.Contain("bee_flying"), "the flying sound, not the one for a hand");
         });
     }
+
+    /// <summary>
+    /// A queen with no hive flies off in a flyer of her own and rides inside it: the flyer buzzes, she does not, or the
+    /// sound of a bee in a hand would be heard from the flying cloud.
+    /// </summary>
+    [Test]
+    public async Task QueenRidingInAFlyerIsQuiet()
+    {
+        var server = Server;
+        var map = await Pair.CreateTestMap();
+        EntityUid queen = default;
+
+        await server.WaitPost(() => queen = server.EntMan.SpawnEntity("BeeQueen", map.GridCoords));
+        await RunTicksSync(30);
+
+        await server.WaitAssertion(() =>
+        {
+            var inside = server.System<Robust.Shared.Containers.SharedContainerSystem>().TryGetContainingContainer(queen, out var holder);
+            Assert.That(inside, "she rides in a flyer");
+            Assert.That(server.EntMan.HasComponent<BeeSwarmComponent>(holder!.Owner));
+            Assert.That(server.EntMan.GetComponent<AmbientSoundComponent>(queen).Enabled, Is.False, "she is quiet inside");
+            Assert.That(server.EntMan.GetComponent<AmbientSoundComponent>(holder.Owner).Enabled, Is.True, "the flyer buzzes");
+        });
+    }
 }
