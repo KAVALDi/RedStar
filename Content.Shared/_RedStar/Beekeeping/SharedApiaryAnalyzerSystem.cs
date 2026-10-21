@@ -3,6 +3,7 @@ using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;
+using Robust.Shared.Timing;
 
 namespace Content.Shared._RedStar.Beekeeping;
 
@@ -16,6 +17,7 @@ public abstract partial class SharedApiaryAnalyzerSystem : EntitySystem
     [Dependency] private SharedDoAfterSystem _doAfter = default!;
     [Dependency] private SharedInteractionSystem _interaction = default!;
     [Dependency] protected SharedUserInterfaceSystem UI = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
     /// <summary>
     /// A hive, a queen, or a bee in hand or on the floor. Flying bees are not items and cannot be scanned.
@@ -81,16 +83,20 @@ public abstract partial class SharedApiaryAnalyzerSystem : EntitySystem
             Stop(ent);
     }
 
+    // Both events are also raised on the client while it applies a server state, which already carries the cleared
+    // fields and the closed window: running Stop again there would mispredict.
     [SubscribeLocalEvent]
     private void OnDropped(Entity<ApiaryAnalyzerComponent> ent, ref DroppedEvent args)
     {
-        Stop(ent);
+        if (!_timing.ApplyingState)
+            Stop(ent);
     }
 
     [SubscribeLocalEvent]
     private void OnInserted(Entity<ApiaryAnalyzerComponent> ent, ref EntGotInsertedIntoContainerMessage args)
     {
-        Stop(ent);
+        if (!_timing.ApplyingState)
+            Stop(ent);
     }
 
     private void Stop(Entity<ApiaryAnalyzerComponent> ent)

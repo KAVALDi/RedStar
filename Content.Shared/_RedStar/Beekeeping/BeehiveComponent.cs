@@ -5,7 +5,6 @@ using Content.Shared.Damage;
 using Robust.Shared.Audio;
 using Content.Shared.Guidebook;
 using Content.Shared.Whitelist;
-using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
 
@@ -13,10 +12,11 @@ namespace Content.Shared._RedStar.Beekeeping;
 
 /// <summary>
 /// A beehive: holds a queen and frames in item slots and keeps an abstract colony. The bees are a counter, not
-/// entities. Only the fields that the examine text needs are networked; the rest lives on the server.
+/// entities. Nothing here is networked: the colony runs on the server, and the examine text and the analyzer window
+/// are filled there. The client only needs the slots (for the menus) and the appearance data.
 /// All tuning lives here so it can be changed in the prototype or with View Variables.
 /// </summary>
-[RegisterComponent, NetworkedComponent, AutoGenerateComponentState, AutoGenerateComponentPause]
+[RegisterComponent, AutoGenerateComponentPause]
 public sealed partial class BeehiveComponent : Component
 {
     #region Slots
@@ -35,26 +35,26 @@ public sealed partial class BeehiveComponent : Component
 
     #endregion
 
-    #region Networked state
+    #region Colony
 
     /// <summary>
     /// Bees at home, the scout included while it is at home.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public int Bees;
 
     /// <summary>
     /// Bees of this hive that are outside, as items or angry bees. They count against <see cref="MaxBees"/> but do
     /// no work.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public int OutBees;
 
     #region Emergency queen
 
     /// <summary>
     /// The traits of the colony's last queen. A colony whose lost queen had an emergency-queen trait raises a new
-    /// one. Server only.
+    /// one.
     /// </summary>
     [ViewVariables]
     public List<ProtoId<BeeTraitPrototype>> ColonyTraits = new();
@@ -75,7 +75,7 @@ public sealed partial class BeehiveComponent : Component
     public float EmergencyQueenNectar = 20f;
 
     /// <summary>
-    /// Since when the colony has been raising a new queen. Server only.
+    /// Since when the colony has been raising a new queen.
     /// </summary>
     [ViewVariables]
     public TimeSpan? EmergencyQueenSince;
@@ -87,13 +87,13 @@ public sealed partial class BeehiveComponent : Component
     /// <summary>
     /// A second queen's egg lies in the hive. Royal jelly can be collected from it; left alone, it dies.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public bool HasEgg;
 
     /// <summary>
     /// When the egg dies if nobody collects the jelly.
     /// </summary>
-    [DataField, AutoNetworkedField, AutoPausedField]
+    [DataField, AutoPausedField]
     public TimeSpan EggDiesAt;
 
     /// <summary>
@@ -121,13 +121,13 @@ public sealed partial class BeehiveComponent : Component
     public TimeSpan EggDyingWarning = TimeSpan.FromMinutes(1);
 
     /// <summary>
-    /// Since when the colony has been full with enough nectar. Server only.
+    /// Since when the colony has been full with enough nectar.
     /// </summary>
     [ViewVariables]
     public TimeSpan? EggFullSince;
 
     /// <summary>
-    /// No egg before this time. Server only.
+    /// No egg before this time.
     /// </summary>
     [ViewVariables]
     public TimeSpan EggCooldownUntil;
@@ -164,38 +164,32 @@ public sealed partial class BeehiveComponent : Component
     /// <summary>
     /// Population limit: <see cref="BeesPerFrame"/> times the number of inserted frames.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public int MaxBees;
 
     /// <summary>
     /// Why the bees are not working right now, if they are not.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public BeehivePauseReason Pause;
 
     /// <summary>
     /// Where the hive's only scout is.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public BeeScoutState ScoutState;
 
     /// <summary>
     /// When a lost scout may be replaced by a worker. Only meaningful while <see cref="ScoutState"/> is
     /// <see cref="BeeScoutState.Lost"/>.
     /// </summary>
-    [DataField, AutoNetworkedField, AutoPausedField]
+    [DataField, AutoPausedField]
     public TimeSpan ScoutReplaceAt;
-
-    /// <summary>
-    /// Coarse nectar stock for the examine text, so the exact number does not have to be sent on every visit.
-    /// </summary>
-    [DataField, AutoNetworkedField]
-    public BeehiveNectarLevel NectarLevel;
 
     /// <summary>
     /// Whether the hive has more bees than its frames allow.
     /// </summary>
-    [DataField, AutoNetworkedField]
+    [DataField]
     public BeehiveCrowding Crowding;
 
     #endregion
@@ -240,7 +234,7 @@ public sealed partial class BeehiveComponent : Component
     public TimeSpan LayInterval = TimeSpan.FromMinutes(1);
 
     /// <summary>
-    /// When the queen may lay the next bee. Server only.
+    /// When the queen may lay the next bee.
     /// </summary>
     [ViewVariables]
     public TimeSpan NextLay;
@@ -342,16 +336,16 @@ public sealed partial class BeehiveComponent : Component
     public TimeSpan ScoutTripMax = TimeSpan.FromSeconds(120);
 
     /// <summary>
-    /// How far from the hive, in tiles, the scout picks the spot it looks around.
+    /// How far from the hive, in tiles, the scout finds trays.
     /// </summary>
     [DataField]
-    public float ScoutRange = 6f;
+    public float ScoutRange = 8f;
 
     /// <summary>
-    /// Radius in tiles the scout looks around that spot.
+    /// New trays one scouting trip brings home, before the queen's traits.
     /// </summary>
     [DataField]
-    public float ScoutScanRadius = 2f;
+    public int ScoutFinds = 1;
 
     /// <summary>
     /// Bees only fly to known places at most this many tiles from where the hive is now. Farther places stay
@@ -385,7 +379,7 @@ public sealed partial class BeehiveComponent : Component
     public EntProtoId ForagerPrototype = "BeeForager";
 
     /// <summary>
-    /// The scout on its automatic flight around the hive.
+    /// The scout flying to the trays it found and back.
     /// </summary>
     [DataField]
     public EntProtoId ScoutFlyerPrototype = "BeeScoutFlyer";
@@ -395,13 +389,6 @@ public sealed partial class BeehiveComponent : Component
     /// </summary>
     [ViewVariables]
     public EntityUid? ScoutFlyer;
-
-    /// <summary>
-    /// Tiles the scout has explored. Its flights go to unexplored tiles first; once nothing in range is left, this
-    /// starts over. Server only.
-    /// </summary>
-    [ViewVariables]
-    public HashSet<Vector2i> ScoutExplored = new();
 
     #endregion
 
@@ -433,13 +420,13 @@ public sealed partial class BeehiveComponent : Component
     public TimeSpan WorkedRest = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// When each resting worker is ready again. Server only.
+    /// When each resting worker is ready again.
     /// </summary>
     [ViewVariables]
     public List<TimeSpan> RestingWorkers = new();
 
     /// <summary>
-    /// The scout rests until then after a trip in someone's hands. Server only.
+    /// The scout rests until then after a trip in someone's hands.
     /// </summary>
     [ViewVariables]
     public TimeSpan ScoutRestsUntil;
@@ -511,13 +498,6 @@ public sealed partial class BeehiveComponent : Component
     public float CombProgress;
 
     /// <summary>
-    /// Testing only: how many times faster than normal the hive runs (visits, combs, scouting).
-    /// Set by the admin debug verb or in View Variables; 1 is normal.
-    /// </summary>
-    [ViewVariables(VVAccess.ReadWrite)]
-    public float DebugSpeed = 1f;
-
-    /// <summary>
     /// When the hive is updated next.
     /// </summary>
     [ViewVariables, AutoPausedField]
@@ -582,7 +562,7 @@ public sealed partial class BeehiveComponent : Component
     public List<EntityUid> Foragers = new();
 
     /// <summary>
-    /// Visible foragers still to fly out, with the time each one leaves. Server only.
+    /// Visible foragers still to fly out, with the time each one leaves.
     /// </summary>
     [ViewVariables]
     public List<(EntityUid Tray, TimeSpan At)> PendingForagers = new();

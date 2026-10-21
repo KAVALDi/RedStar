@@ -149,77 +149,6 @@ beekeeping-jelly-collected = Вы собрали маточное молочко
 beekeeping-queen-slot-added = У матки стало больше места для признаков: слотов { $slots }.
 beekeeping-queen-slots-max = У матки уже столько слотов, сколько возможно.
 
-## Отладочные действия админа
-
-beekeeping-debug-fill-nectar = Улей: полный запас нектара
-beekeeping-debug-frames-honey = Улей: рамки до мёда
-beekeeping-debug-frames-wax = Улей: рамки до воска
-beekeeping-debug-fill-bees = Улей: пчёл до предела
-beekeeping-debug-restore-scout = Улей: вернуть разведчицу
-beekeeping-debug-scout-now = Улей: разведать всё вокруг сейчас
-beekeeping-debug-scout-launch = Улей: отправить разведчицу в полёт
-beekeeping-debug-forager-launch = Улей: отправить собирательницу
-beekeeping-debug-egg = Улей: положить яйцо матки
-beekeeping-debug-egg-die = Улей: яйцо погибает
-beekeeping-debug-speed-fast = Улей: ускорить в 10 раз
-beekeeping-debug-speed-normal = Улей: обычная скорость
-beekeeping-debug-window = Улей: окно отладки
-
-## Окно отладки и команда beedebug
-
-beekeeping-debug-window-title = Отладка улья
-beekeeping-debug-window-gone = Улья больше нет, или сервер о нём молчит.
-beekeeping-debug-section-colony = Колония
-beekeeping-debug-section-trays = Известные лотки: { $count }
-beekeeping-debug-queen = Матка
-beekeeping-debug-outside = Пчёл вне улья
-beekeeping-debug-pause = Пауза
-beekeeping-debug-scout = Разведчица
-beekeeping-debug-scout-flying = в полёте
-beekeeping-debug-scout-found = Увидела лотков
-beekeeping-debug-next-trip = Вылет разведчицы
-beekeeping-debug-next-forager = Вылет собирательницы
-beekeeping-debug-foragers = Сборщиц в воздухе
-beekeeping-debug-bees = Пчёлы
-beekeeping-debug-health = Прочность улья
-beekeeping-debug-combs = Соты
-beekeeping-debug-row-egg = Яйцо матки
-beekeeping-debug-egg-there = есть, ещё { $s } с
-beekeeping-debug-egg-cooldown = перерыв { $s } с
-beekeeping-debug-egg-growing = будет через { $s } с
-beekeeping-debug-section-queen = Матка
-beekeeping-debug-no-queen-traits = нет признаков или матки
-beekeeping-debug-queen-line = Слотов { $slots }, груз { $payload } ед.
-beekeeping-debug-pause-none = нет
-beekeeping-debug-pause-vacuum = нет воздуха
-beekeeping-debug-pause-highpressure = высокое давление
-beekeeping-debug-pause-cold = холодно
-beekeeping-debug-pause-heat = жарко
-beekeeping-debug-pause-fire = пожар
-beekeeping-debug-scout-home = дома
-beekeeping-debug-scout-outside = вне улья
-beekeeping-debug-scout-lost = погибла
-beekeeping-debug-section-outside = Пчёлы вне улья: { $count }
-beekeeping-debug-outside-none = Все пчёлы дома.
-beekeeping-debug-outside-scout = Разведчица в руках
-beekeeping-debug-outside-pollinator = Опылительница
-beekeeping-debug-outside-lost = Заблудившаяся сборщица
-beekeeping-debug-outside-line = { $name }: исчезнет через { $s } с
-beekeeping-debug-nectar = Нектар
-beekeeping-debug-yes = есть
-beekeeping-debug-no = нет
-beekeeping-debug-seconds = через { $s } с
-beekeeping-debug-state-ripe = Спелое растение
-beekeeping-debug-state-unripe = Растёт, нектара пока нет
-beekeeping-debug-state-inactive = Нет растения, далеко или не видно
-beekeeping-debug-state-invalid = Лотка больше нет
-beekeeping-debug-tray-line = { $tray }, { $distance } клеток от улья, визит через { $visit } с
-beekeeping-debug-legend = На карте: [color=limegreen]спелое[/color], [color=yellow]растёт[/color], [color=red]пусто или не видно[/color], [color=cyan]сборщица и её цель[/color], белая линия это полёт разведчицы. Белый круг это радиус разведки.
-
-cmd-beedebug-desc = Показывает на карте, что знают все ульи: известные лотки и полёты сборщиц.
-cmd-beedebug-help = Использование: beedebug
-cmd-beedebug-status = Отладка ульев на карте: { $status }.
-
 ## Apiary analyzer
 
 apiary-analyzer-section-traits = Признаки
@@ -299,11 +228,6 @@ apiary-analyzer-nectar-noframes =
     В улье [bold]нет рамок[/bold], вставьте их.
 beekeeping-take-scout-tired = Разведчица отдыхает после вылета. Попробуйте позже.
 beekeeping-take-workers-tired = Все свободные рабочие отдыхают после работы. Попробуйте позже.
-beekeeping-debug-forager-sent = Собирательница вылетела к лотку.
-beekeeping-debug-forager-no-trays = Улей не знает ни одного лотка: сначала отправьте разведчицу.
-beekeeping-debug-forager-too-many = В воздухе уже { $max } собирательницы, больше улей не выпускает.
-beekeeping-debug-forager-no-workers = Дома нет свободных рабочих.
-beekeeping-debug-forager-failed = Собирательница не смогла вылететь.
 apiary-analyzer-brood-going = есть
 apiary-analyzer-brood-stopped = нет
 apiary-analyzer-stat-egg-wait = Ожидание яйца

@@ -8,13 +8,16 @@ using Robust.Shared.Prototypes;
 namespace Content.Shared._RedStar.Beekeeping;
 
 /// <summary>
-/// What a tool does to a frame. Shared, so the client starts the cut's progress bar at once instead of waiting for
-/// the server; the result of the cut and of the wax is the server's.
+/// What a tool or wax does to a frame. Wax is fully predicted: it only touches networked fields, the stack and the
+/// appearance. Cutting is split: the progress bar starts here at once, and the result (combs and wax with the payload
+/// from the queen, which only the server knows) is the server's, in <c>BeehiveSystem.OnFrameCut</c>.
 /// </summary>
 public abstract partial class SharedBeehiveSystem
 {
     [Dependency] private SharedDoAfterSystem _frameDoAfter = default!;
     [Dependency] private SharedToolSystem _frameTool = default!;
+    [Dependency] private SharedStackSystem _frameStack = default!;
+    [Dependency] protected SharedAppearanceSystem Appearance = default!;
 
     /// <summary>
     /// Tool quality that cuts the combs off a frame.
@@ -80,9 +83,60 @@ public abstract partial class SharedBeehiveSystem
     }
 
     /// <summary>
-    /// One piece of wax adds room for one more comb. Only the server changes the frame.
+    /// One piece of wax adds room for one more comb. A full frame then has room again and goes back to filling.
     /// </summary>
-    protected virtual void UpgradeFrame(Entity<BeeFrameComponent> frame, Entity<StackComponent> wax, EntityUid user)
+    private void UpgradeFrame(Entity<BeeFrameComponent> frame, Entity<StackComponent> wax, EntityUid user)
     {
+        if (frame.Comp.MaxCombs >= frame.Comp.MaxCombsLimit)
+        {
+            _popupShared.PopupEntity(Loc.GetString("beekeeping-frame-upgrade-max", ("max", frame.Comp.MaxCombs)), frame, user);
+            return;
+        }
+
+        if (!_frameStack.TryUse(wax.AsNullable(), 1))
+            return;
+
+        frame.Comp.MaxCombs++;
+        Dirty(frame);
+        UpdateFrameFill(frame);
+        _popupShared.PopupEntity(Loc.GetString("beekeeping-frame-upgraded", ("max", frame.Comp.MaxCombs)), frame, user);
+        UpdateFrameHive(frame);
+    }
+
+    /// <summary>
+    /// The frame's sprite follows how full it is. The honey's color is set by the server, which knows the payload.
+    /// </summary>
+    protected void UpdateFrameFill(Entity<BeeFrameComponent> frame)
+    {
+        Appearance.SetData(frame, BeeFrameVisuals.Fill, GetFill(frame.Comp));
+    }
+
+    /// <summary>
+    /// A frame that is in a hive changed how full it is: the hive's picture follows.
+    /// </summary>
+    protected void UpdateFrameHive(Entity<BeeFrameComponent> frame)
+    {
+        if (_containers.TryGetContainingContainer((frame.Owner, null, null), out var container) &&
+            TryComp<BeehiveComponent>(container.Owner, out var hive))
+        {
+            UpdateHiveAppearance((container.Owner, hive));
+        }
+    }
+
+    public void UpdateHiveAppearance(Entity<BeehiveComponent> hive)
+    {
+        GetFrames(hive, _appearanceFrames);
+        Appearance.SetData(hive, BeehiveVisuals.Frames, _appearanceFrames.Count);
+        Appearance.SetData(hive, BeehiveVisuals.Frame1, FillAt(0));
+        Appearance.SetData(hive, BeehiveVisuals.Frame2, FillAt(1));
+        Appearance.SetData(hive, BeehiveVisuals.Frame3, FillAt(2));
+        Appearance.SetData(hive, BeehiveVisuals.Frame4, FillAt(3));
+    }
+
+    private readonly List<Entity<BeeFrameComponent>> _appearanceFrames = new();
+
+    private BeeFrameFill FillAt(int index)
+    {
+        return index < _appearanceFrames.Count ? GetFill(_appearanceFrames[index].Comp) : BeeFrameFill.None;
     }
 }

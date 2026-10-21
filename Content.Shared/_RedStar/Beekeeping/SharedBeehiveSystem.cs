@@ -6,9 +6,8 @@ using Robust.Shared.Timing;
 namespace Content.Shared._RedStar.Beekeeping;
 
 /// <summary>
-/// Shared part of beekeeping: reading the hive slots and the examine text. The examine text uses only
-/// networked fields and the slot contents, so the client shows the same as the server.
-/// All state changes happen on the server.
+/// Shared part of beekeeping: reading the hive slots, the frames and their pictures, and the examine text of frames and
+/// bees, whose fields are networked. The colony itself and its examine text are the server's.
 /// </summary>
 public abstract partial class SharedBeehiveSystem : EntitySystem
 {
@@ -74,91 +73,6 @@ public abstract partial class SharedBeehiveSystem : EntitySystem
     #endregion
 
     #region Examine
-
-    [SubscribeLocalEvent]
-    private void OnHiveExamined(Entity<BeehiveComponent> ent, ref ExaminedEvent args)
-    {
-        var comp = ent.Comp;
-        var frames = 0;
-        foreach (var slot in comp.FrameSlots)
-        {
-            if (ItemSlots.GetItemOrNull(ent.Owner, slot) != null)
-                frames++;
-        }
-
-        var hasQueen = GetQueen(ent) != null;
-
-        using (args.PushGroup(nameof(BeehiveComponent)))
-        {
-            args.PushMarkup(Loc.GetString(hasQueen
-                ? "beekeeping-hive-examine-queen"
-                : "beekeeping-hive-examine-no-queen"));
-            args.PushMarkup(Loc.GetString("beekeeping-hive-examine-frames",
-                ("count", frames), ("max", comp.FrameSlots.Count)));
-
-            if (comp.Bees > 0 || comp.OutBees > 0)
-            {
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-bees",
-                    ("bees", comp.Bees), ("max", comp.MaxBees), ("outside", comp.OutBees)));
-            }
-
-            args.PushMarkup(Loc.GetString("beekeeping-hive-examine-nectar",
-                ("level", comp.NectarLevel.ToString())));
-
-            switch (comp.Crowding)
-            {
-                case BeehiveCrowding.Cramped:
-                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-cramped"));
-                    break;
-                case BeehiveCrowding.Leaving:
-                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-leaving"));
-                    break;
-            }
-
-            if (!hasQueen && comp.Bees > 0)
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-dying"));
-
-            if (comp.HasEgg)
-            {
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-egg"));
-                if (comp.EggDiesAt - Timing.CurTime <= comp.EggDyingWarning)
-                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-egg-dying"));
-            }
-
-            if (comp.Bees > 0 || comp.OutBees > 0)
-                PushScoutLine(comp, ref args);
-
-            if (comp.Pause != BeehivePauseReason.None)
-            {
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-paused",
-                    ("reason", comp.Pause.ToString())));
-            }
-        }
-    }
-
-    private void PushScoutLine(BeehiveComponent comp, ref ExaminedEvent args)
-    {
-        switch (comp.ScoutState)
-        {
-            case BeeScoutState.Outside:
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-outside"));
-                break;
-            case BeeScoutState.Lost:
-                if (comp.Bees < comp.ScoutReplaceMinBees)
-                {
-                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-lost-grow"));
-                    break;
-                }
-
-                var left = comp.ScoutReplaceAt - Timing.CurTime;
-                if (left < TimeSpan.Zero)
-                    left = TimeSpan.Zero;
-
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-lost",
-                    ("minutes", (int) left.TotalMinutes), ("seconds", left.Seconds)));
-                break;
-        }
-    }
 
     [SubscribeLocalEvent]
     private void OnFrameExamined(Entity<BeeFrameComponent> ent, ref ExaminedEvent args)

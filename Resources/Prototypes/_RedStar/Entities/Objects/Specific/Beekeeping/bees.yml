@@ -176,6 +176,7 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: BeeForager
+  - type: BeeFlight
   # A lost forager can be caught by hand.
   - type: Clickable
   - type: InteractionOutline
@@ -205,7 +206,8 @@
         enum.BeeForagerVisualLayers.Wings:
           True: { scale: "-1,1" }
           False: { scale: "1,1" }
-  # Moved by the server every tick, no physics: it touches nothing. Dives into the flower and the hive by shrinking.
+  # No physics: it touches nothing. The client draws it along its flight; it dives into the flower and the hive by
+  # shrinking.
   - type: BeeShrinkVisuals
     shrinkTime: 0.6
   # A little wandering on the way, like a real bee; small enough that it still dives into the flower.
@@ -221,15 +223,18 @@
   - type: TimedDespawn
     lifetime: 120
 
-# The hive's scout on its automatic flight: tile by tile through the free tiles around the hive, into the flower
-# of a tray it finds, and back home. Like a forager it cannot be picked up or hit.
+# The hive's scout on its trip: it flies like a forager to the first tray it found, into the flower and back home,
+# and the hive learns the trays when it lands. Like a forager it cannot be picked up or hit.
 - type: entity
   id: BeeScoutFlyer
   name: scout bee
   description: The hive's scout, looking for flowers.
   categories: [ HideSpawnMenu ]
   components:
-  - type: BeeScoutFlight
+  - type: BeeForager
+    speed: 2.5
+    hoverTimeMax: 1.5
+  - type: BeeFlight
   # Top-down sprite, kept upright: turning it at every corner looked jerky.
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi

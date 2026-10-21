@@ -3,12 +3,13 @@ using System.Numerics;
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// A visible forager bee. It flies in a straight line from its hive to a tray, circles over the plant, dives
-/// into the flower (shrinks), comes back out, flies home and dives into the hive. The visit itself is abstract;
-/// the bee only shows it. If the tray or the hive was moved, it looks for it nearby. A bee that cannot find its tray
-/// flies home; one that cannot find its hive is lost: it circles where it is, can be caught by hand like a bee
-/// taken from the hive, and dies after a while.
-/// The server moves it every tick; the client only animates the dive.
+/// A visible bee out of its hive: a forager showing one visit, or the scout bringing home what it found. It flies in a
+/// straight line from its hive to a tray, circles over the plant, dives into the flower (shrinks), comes back out,
+/// flies home and dives into the hive. The visit itself is abstract; the bee only shows it. If the tray or the hive was
+/// moved, it looks for it nearby. A bee that cannot find its tray flies home; one that cannot find its hive is lost: it
+/// circles where it is, can be caught by hand like a bee taken from the hive, and dies after a while.
+/// Each leg of the way is a <see cref="Content.Shared._RedStar.Beekeeping.BeeFlightComponent"/> leg: the server only
+/// decides what comes next, the client draws the movement.
 /// </summary>
 [RegisterComponent]
 public sealed partial class BeeForagerComponent : Component
@@ -71,7 +72,7 @@ public sealed partial class BeeForagerComponent : Component
     public EntityUid Hive;
 
     /// <summary>
-    /// The tray it flies to. Null for a swarm.
+    /// The tray it flies to.
     /// </summary>
     [ViewVariables]
     public EntityUid? Tray;
@@ -88,44 +89,20 @@ public sealed partial class BeeForagerComponent : Component
     [ViewVariables]
     public Vector2 Target;
 
-    /// <summary>
-    /// Start of the current straight flight, in the coordinates of the parent grid.
-    /// </summary>
-    [ViewVariables]
-    public Vector2 From;
-
     [ViewVariables]
     public BeeForagerPhase Phase;
-
-    /// <summary>
-    /// When the current phase started and ends.
-    /// </summary>
-    [ViewVariables]
-    public TimeSpan PhaseStart;
-
-    [ViewVariables]
-    public TimeSpan PhaseEnd;
-
-    /// <summary>
-    /// This visit's circle: centre, radius, turns per second (negative: clockwise) and starting angle.
-    /// </summary>
-    [ViewVariables]
-    public Vector2 CircleCenter;
-
-    [ViewVariables]
-    public float CircleRadius;
-
-    [ViewVariables]
-    public float CircleTurns;
-
-    [ViewVariables]
-    public float CircleStart;
 
     /// <summary>
     /// Times the bee already went looking for a moved tray or hive on this trip.
     /// </summary>
     [ViewVariables]
     public int Searches;
+
+    /// <summary>
+    /// The scout's trays: the hive learns them when it lands. Null for a forager.
+    /// </summary>
+    [ViewVariables]
+    public List<EntityUid>? Found;
 }
 
 public enum BeeForagerPhase : byte
