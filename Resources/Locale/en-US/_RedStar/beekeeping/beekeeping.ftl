@@ -156,82 +156,6 @@ beekeeping-queen-slots-max = The queen already has as many slots as she can.
 
 beekeeping-hive-crowd-swarm = The bees are too crowded: part of the colony flies off in a swarm!
 beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young queen stays behind.
-
-## Admin debug verbs
-
-beekeeping-debug-fill-nectar = Hive: full nectar
-beekeeping-debug-frames-honey = Hive: frames to honey
-beekeeping-debug-frames-wax = Hive: frames to wax
-beekeeping-debug-fill-bees = Hive: bees up to the limit
-beekeeping-debug-restore-scout = Hive: bring the scout back
-beekeeping-debug-scout-now = Hive: scout the whole area now
-beekeeping-debug-scout-launch = Hive: send the scout out now
-beekeeping-debug-forager-launch = Hive: send a forager
-beekeeping-debug-swarm = Hive: bring about a swarm
-beekeeping-debug-egg = Hive: lay a queen egg
-beekeeping-debug-egg-die = Hive: the egg dies (swarm)
-beekeeping-debug-speed-fast = Hive: run 10 times faster
-beekeeping-debug-speed-normal = Hive: normal speed
-beekeeping-debug-window = Hive: debug window
-
-## Debug window and the beedebug command
-
-beekeeping-debug-window-title = Hive debug
-beekeeping-debug-window-gone = The hive is gone, or the server says nothing about it.
-beekeeping-debug-section-colony = Colony
-beekeeping-debug-section-trays = Known sources: { $count }
-beekeeping-debug-queen = Queen
-beekeeping-debug-outside = Bees outside
-beekeeping-debug-pause = Pause
-beekeeping-debug-scout = Scout
-beekeeping-debug-scout-flying = flying
-beekeeping-debug-scout-found = Sources seen
-beekeeping-debug-next-trip = Scout trip
-beekeeping-debug-next-forager = Forager trip
-beekeeping-debug-foragers = Foragers in the air
-beekeeping-debug-bees = Bees
-beekeeping-debug-health = Hive health
-beekeeping-debug-combs = Combs
-beekeeping-debug-angry = Angry bees
-beekeeping-debug-row-egg = Queen egg
-beekeeping-debug-egg-there = yes, { $s } s left
-beekeeping-debug-egg-cooldown = cooldown { $s } s
-beekeeping-debug-egg-growing = coming in { $s } s
-beekeeping-debug-section-queen = Queen
-beekeeping-debug-no-queen-traits = no traits or no queen
-beekeeping-debug-queen-line = { $slots } slots, payload { $payload }u
-beekeeping-debug-pause-none = none
-beekeeping-debug-pause-vacuum = no air
-beekeeping-debug-pause-highpressure = high pressure
-beekeeping-debug-pause-cold = too cold
-beekeeping-debug-pause-heat = too hot
-beekeeping-debug-pause-fire = fire
-beekeeping-debug-scout-home = home
-beekeeping-debug-scout-outside = outside
-beekeeping-debug-scout-lost = dead
-beekeeping-debug-section-outside = Bees outside: { $count }
-beekeeping-debug-outside-none = All bees are home.
-beekeeping-debug-outside-scout = Scout in hand
-beekeeping-debug-outside-pollinator = Pollinator
-beekeeping-debug-outside-angry = Angry bee
-beekeeping-debug-outside-angry-scout = Angry scout
-beekeeping-debug-outside-lost = Lost forager
-beekeeping-debug-outside-line = { $name }: gone in { $s } s
-beekeeping-debug-nectar = Nectar
-beekeeping-debug-yes = yes
-beekeeping-debug-no = no
-beekeeping-debug-seconds = in { $s } s
-beekeeping-debug-state-ripe = Ripe plant
-beekeeping-debug-state-unripe = Growing, no nectar yet
-beekeeping-debug-state-inactive = No plant, too far or out of sight
-beekeeping-debug-state-invalid = The source is gone
-beekeeping-debug-tray-line = { $tray }, { $distance } tiles from the hive, visit in { $visit } s
-beekeeping-debug-legend = On the map: [color=limegreen]ripe[/color], [color=yellow]growing[/color], [color=red]empty or out of sight[/color], [color=cyan]a forager and its target[/color], the white line is the scout's flight. The white circle is the scout range.
-
-cmd-beedebug-desc = Shows on the map what every hive knows: its known sources and forager flights.
-cmd-beedebug-help = Usage: beedebug
-cmd-beedebug-status = Hive debug on the map: { $status }.
-
 ## Apiary analyzer
 
 apiary-analyzer-section-traits = Traits
@@ -311,13 +235,6 @@ apiary-analyzer-nectar-noframes =
     The hive has [bold]no frames[/bold], put some in.
 beekeeping-take-scout-tired = The scout is resting after her trip. Try again later.
 beekeeping-take-workers-tired = Every free worker is resting after work. Try again later.
-beekeeping-debug-forager-sent = A forager flew off to a tray.
-beekeeping-debug-forager-no-trays = The hive knows no trays: send the scout first.
-beekeeping-debug-forager-too-many = { $max } foragers are already out, the hive lets out no more.
-beekeeping-debug-forager-no-workers = No free workers are home.
-beekeeping-debug-forager-failed = The forager could not fly off.
-beekeeping-debug-swarm-no-queen = No swarm without a queen.
-beekeeping-debug-swarm-failed = The swarm did not leave: too many wild hives on the map, or the hive is not on a grid.
 apiary-analyzer-brood-going = yes
 apiary-analyzer-brood-stopped = no
 apiary-analyzer-stat-egg-wait = Egg wait
@@ -356,21 +273,10 @@ bee-trait-hotheaded-desc = Each hit on the hive lets out two bees instead of one
 bee-trait-guarded-scout = Guarded scout
 bee-trait-guarded-scout-desc = The scout comes out angry last, only when no workers are left at home.
 beekeeping-hive-examine-meat = These bees do not live on plants but on blood: the swarm settled where there were creatures and no plants.
-beekeeping-debug-wild-half = Hive: fill with honey halfway
-beekeeping-debug-wild-full = Hive: fill with honey completely
-beekeeping-debug-diet-plants = Diet: plants
-beekeeping-debug-diet-meat = Diet: blood (meat hive)
 apiary-analyzer-row-diet = Diet
 apiary-analyzer-diet-meat = blood
 apiary-analyzer-creature-ripe = The workers can bite it.
 apiary-analyzer-creature-blind = The creature is far, hidden or out of blood: the workers cannot reach it now.
-beekeeping-debug-diet-to-meat = Hive: make it a meat hive
-beekeeping-debug-diet-to-plants = Hive: make it a plant hive
-beekeeping-debug-creature-ripe = A creature with blood, can be bitten
-beekeeping-debug-creature-unripe = A creature with blood, can be bitten
-beekeeping-debug-creature-inactive = Far, out of sight, hidden or out of blood
-beekeeping-debug-creature-invalid = The source is gone
-beekeeping-debug-meat-line = Meat: { $meat }, bloods: { $kinds }, blood stock { $stock }u
 apiary-analyzer-meat = Meat
 apiary-analyzer-meat-help = This much meat falls out if the hive is broken now: { $base } always and one more for every { $per } bites on the dead, no more than { $max }. What can fall, by chance for each piece:
 apiary-analyzer-meat-chance = { $name }: { $percent }%
@@ -378,6 +284,5 @@ apiary-analyzer-section-chemicals = Chemical makeup of the hive
 apiary-analyzer-chemicals-none = The hive holds no chemicals yet.
 apiary-analyzer-section-targets = Recent targets ({ $count })
 apiary-analyzer-targets-none = The bees have not bitten anyone yet.
-beekeeping-debug-section-targets = Recent targets: { $count }
 beekeeping-bite-blocked = The sealed suit stops the bee from biting.
 beekeeping-bee-swing-miss = Missed: the bee is too small for a swing, hit it straight on.

@@ -11,9 +11,9 @@ using Robust.Shared.Containers;
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// The server side of cutting a frame (the tool check and the progress bar are shared), in two steps on a capped frame: the first cut takes the wax caps off, the
-/// second the combs. A frame that is not capped yet gives its combs in one cut and no wax. The frame stays and goes
-/// back into the hive empty. Wax used on a frame makes room for one more comb.
+/// The server side of cutting a frame (the tool check and the progress bar are shared), in two steps on a capped frame:
+/// the first cut takes the wax caps off, the second the combs. A frame that is not capped yet gives its combs in one cut
+/// and no wax. The frame stays and goes back into the hive empty.
 /// </summary>
 public sealed partial class BeehiveSystem
 {
@@ -23,27 +23,6 @@ public sealed partial class BeehiveSystem
     [Dependency] private SharedContainerSystem _container = default!;
 
     protected override Type[] FrameInteractBefore => new[] { typeof(ConstructionSystem) };
-
-    /// <summary>
-    /// One piece of wax adds room for one more comb. A full frame then has room again and goes back to filling.
-    /// </summary>
-    protected override void UpgradeFrame(Entity<BeeFrameComponent> frame, Entity<StackComponent> wax, EntityUid user)
-    {
-        if (frame.Comp.MaxCombs >= frame.Comp.MaxCombsLimit)
-        {
-            _popup.PopupEntity(Loc.GetString("beekeeping-frame-upgrade-max", ("max", frame.Comp.MaxCombs)), frame, user);
-            return;
-        }
-
-        if (!_stack.TryUse(wax.AsNullable(), 1))
-            return;
-
-        frame.Comp.MaxCombs++;
-        Dirty(frame);
-        UpdateFrameAppearance(frame);
-        _popup.PopupEntity(Loc.GetString("beekeeping-frame-upgraded", ("max", frame.Comp.MaxCombs)), frame, user);
-        UpdateFrameHive(frame);
-    }
 
     [SubscribeLocalEvent]
     private void OnFrameCut(Entity<BeeFrameComponent> ent, ref BeeFrameCutDoAfterEvent args)
@@ -111,17 +90,5 @@ public sealed partial class BeehiveSystem
 
         ent.Comp.Combs = 0;
         DropCombs(ent, combs, ent);
-    }
-
-    /// <summary>
-    /// A frame that is in a hive changed how full it is: the hive's picture follows.
-    /// </summary>
-    private void UpdateFrameHive(Entity<BeeFrameComponent> frame)
-    {
-        if (_container.TryGetContainingContainer((frame.Owner, null, null), out var container) &&
-            TryComp<BeehiveComponent>(container.Owner, out var hive))
-        {
-            UpdateHiveAppearance((container.Owner, hive));
-        }
     }
 }

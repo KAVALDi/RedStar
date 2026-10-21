@@ -160,3 +160,24 @@
   - type: GuideHelp
     guides:
     - Beekeeping
+
+# For testing: the same hive with every timer of the colony cut short, so a colony grows, scouts and fills its frames
+# in a few minutes. Put a queen and frames in as usual.
+- type: entity
+  parent: Beehive
+  id: BeehiveFast
+  suffix: Debug, fast
+  categories: [ Debug ]
+  components:
+  - type: Beehive
+    layInterval: 5
+    visitInterval: 5
+    combsPerWorkerPerMinute: 2
+    scoutTripMin: 10
+    scoutTripMax: 15
+    firstScoutDelay: 2
+    eggFullTime: 20
+    eggLifetime: 60
+    eggCooldown: 30
+    workedRest: 20
+    scoutReplaceDelay: 20

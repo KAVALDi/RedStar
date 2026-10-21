@@ -1,5 +1,4 @@
 using Content.Shared.Botany.Components;
-using Content.Shared.Examine;
 using Content.Shared.Whitelist;
 using Content.Shared._RedStar.Beekeeping;
 using Robust.Shared.Map;
@@ -8,15 +7,14 @@ using Robust.Shared.Random;
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// Nectar: the automatic scout finds trays near the hive, the hive remembers the trays, and workers make
-/// abstract visits to them. A tray does not have to be bolted down: a moved tray is still the same tray. A visit and a find both need a clear straight line from the hive to the tray.
-/// Visible forager bees (the Foragers part) only show a visit; they compute nothing.
+/// Nectar: the hive remembers the trays its scout found, and workers make abstract visits to them. A tray does not have
+/// to be bolted down: a moved tray is still the same tray. A visit and a find both need a clear straight line from the
+/// hive to the tray. Visible foragers (<see cref="BeeForagerSystem"/>) only show a visit; they compute nothing.
 /// </summary>
 public sealed partial class BeeScoutSystem
 {
     [Dependency] private EntityLookupSystem _lookup = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
-    [Dependency] private ExamineSystemShared _examine = default!;
     [Dependency] private EntityWhitelistSystem _whitelist = default!;
     [Dependency] private IRobustRandom _random = default!;
 
@@ -26,106 +24,6 @@ public sealed partial class BeeScoutSystem
 
     private readonly HashSet<Entity<PlantTrayComponent>> _foundTrays = new();
 
-
-    #region Scouting
-
-    /// <summary>
-    /// While the scout is home it flies out every so often (see the ScoutFlight part); the pause between flights
-    /// starts when it is back. A scout that is taken out, lost or kept home by bad air is called back at once.
-    /// </summary>
-    public void UpdateScouting(Entity<BeehiveComponent> hive)
-    {
-        var comp = hive.Comp;
-        var now = _timing.CurTime;
-
-        // A meat colony has no scout: its workers find their own targets.
-        if (comp.Diet == BeehiveDiet.Meat)
-        {
-            RecallScout(comp);
-            comp.NextScoutTrip = TimeSpan.Zero;
-            return;
-        }
-
-        if (SharedBeehiveSystem.ScoutsAtHome(comp) <= 0)
-        {
-            comp.NextScoutTrip = TimeSpan.Zero;
-            RecallScout(comp);
-            return;
-        }
-
-        if (ScoutFlying(comp))
-            return;
-
-        if (comp.NextScoutTrip == TimeSpan.Zero)
-        {
-            if (comp.ScoutFirstTripNow)
-            {
-                // The first flight of a new colony goes out within seconds; the normal pauses follow it.
-                comp.ScoutFirstTripNow = false;
-                comp.NextScoutTrip = now + comp.FirstScoutDelay;
-                return;
-            }
-            else
-            {
-                comp.NextScoutTrip = now + RandomTrip(comp, _hive.GetHiveTotals(hive).ScoutPause);
-                return;
-            }
-        }
-
-        if (now < comp.NextScoutTrip)
-            return;
-
-        // The pause starts over once this flight is done. No spot in sight: try again after a pause.
-        comp.NextScoutTrip = LaunchScout(hive) ? TimeSpan.Zero : now + RandomTrip(comp);
-    }
-
-    private TimeSpan RandomTrip(BeehiveComponent comp, float pause = 1f)
-    {
-        var min = comp.ScoutTripMin.TotalSeconds;
-        var max = Math.Max(min, comp.ScoutTripMax.TotalSeconds);
-        var speed = Math.Max(comp.DebugSpeed, 0.01f);
-        return TimeSpan.FromSeconds((min + _random.NextDouble() * (max - min)) / speed * pause);
-    }
-
-    /// <summary>
-    /// Adds every tray with a living plant around <paramref name="spot"/> that the hive can see, bolted or not.
-    /// </summary>
-    public void ScoutAround(Entity<BeehiveComponent> hive,
-        EntityUid grid,
-        MapCoordinates hiveMap,
-        MapCoordinates spot,
-        float radius)
-    {
-        var comp = hive.Comp;
-        _foundTrays.Clear();
-        _lookup.GetEntitiesInRange(spot, radius, _foundTrays);
-
-        var now = _timing.CurTime;
-        var sightRange = comp.ScoutRange + comp.ScoutScanRadius + 1f;
-        foreach (var tray in _foundTrays)
-        {
-            var trayXform = Transform(tray);
-            if (trayXform.GridUid != grid || _container.IsEntityInContainer(tray))
-                continue;
-
-            if (GetLivingPlant(tray.Comp) == null)
-                continue;
-
-            if (comp.SourceWhitelist != null && !_whitelist.IsValid(comp.SourceWhitelist, tray))
-                continue;
-
-            var trayMap = _transform.GetMapCoordinates(tray, trayXform);
-            if ((trayMap.Position - hiveMap.Position).Length() > sightRange ||
-                !ClearFlightPath(hiveMap, trayMap, hive, tray))
-            {
-                continue;
-            }
-
-            AddSource(hive, tray, now);
-        }
-    }
-
-    #endregion
 
     #region Known places
 

@@ -365,16 +365,14 @@ public sealed class MeatHuntTest : GameTest
     }
 
     /// <summary>
-    /// With nobody near, a flying bee is not moved every tick; it is put where its flight ends, so the hunt still
-    /// works.
+    /// A meat forager can be hit, so the server keeps it where the client draws it: on its current leg.
     /// </summary>
     [Test]
-    public async Task BeesAwayFromPlayersAreNotMovedEveryTick()
+    public async Task HittableBeeFollowsItsLeg()
     {
         var map = await Pair.CreateTestMap();
         await Build(map);
         var server = Server;
-        var hives = server.System<BeehiveSystem>();
         EntityUid bee = default;
 
         await server.WaitPost(() =>
@@ -386,14 +384,17 @@ public sealed class MeatHuntTest : GameTest
             bee = comp.Foragers[0];
         });
 
-        // A second in: out of the hive and on its way to the vent, but still at the start of the flight.
+        // A second in: out of the hive and on its way to the vent, part of the way along.
         await RunTicksSync(30);
         await server.WaitAssertion(() =>
         {
-            var flight = server.EntMan.GetComponent<BeeForagerComponent>(bee);
+            var forager = server.EntMan.GetComponent<BeeForagerComponent>(bee);
+            var flight = server.EntMan.GetComponent<BeeFlightComponent>(bee);
             var position = server.EntMan.GetComponent<TransformComponent>(bee).LocalPosition;
-            Assert.That(flight.Phase, Is.EqualTo(BeeForagerPhase.Outbound));
-            Assert.That((position - flight.From).Length(), Is.LessThan(0.01f), "not moved while nobody sees it");
+            var drawn = server.System<BeeFlightSystem>().GetLocalPosition((bee, flight), server.Timing.CurTime);
+            Assert.That(forager.Phase, Is.EqualTo(BeeForagerPhase.Outbound));
+            Assert.That(flight.Tracked);
+            Assert.That((position - drawn).Length(), Is.LessThan(0.15f), "the server keeps it on its leg, a tick behind at most");
         });
     }
 

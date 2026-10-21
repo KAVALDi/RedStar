@@ -157,82 +157,6 @@ beekeeping-queen-slots-max = У матки уже столько слотов, �
 
 beekeeping-hive-crowd-swarm = Пчёлам тесно: часть колонии улетает роем!
 beekeeping-hive-swarm = Старая матка улетает из улья с роем! В улье осталась молодая матка.
-
-## Отладочные действия админа
-
-beekeeping-debug-fill-nectar = Улей: полный запас нектара
-beekeeping-debug-frames-honey = Улей: рамки до мёда
-beekeeping-debug-frames-wax = Улей: рамки до воска
-beekeeping-debug-fill-bees = Улей: пчёл до предела
-beekeeping-debug-restore-scout = Улей: вернуть разведчицу
-beekeeping-debug-scout-now = Улей: разведать всё вокруг сейчас
-beekeeping-debug-scout-launch = Улей: отправить разведчицу в полёт
-beekeeping-debug-forager-launch = Улей: отправить собирательницу
-beekeeping-debug-swarm = Улей: довести до роения
-beekeeping-debug-egg = Улей: положить яйцо матки
-beekeeping-debug-egg-die = Улей: яйцо погибает (роение)
-beekeeping-debug-speed-fast = Улей: ускорить в 10 раз
-beekeeping-debug-speed-normal = Улей: обычная скорость
-beekeeping-debug-window = Улей: окно отладки
-
-## Окно отладки и команда beedebug
-
-beekeeping-debug-window-title = Отладка улья
-beekeeping-debug-window-gone = Улья больше нет, или сервер о нём молчит.
-beekeeping-debug-section-colony = Колония
-beekeeping-debug-section-trays = Известные источники: { $count }
-beekeeping-debug-queen = Матка
-beekeeping-debug-outside = Пчёл вне улья
-beekeeping-debug-pause = Пауза
-beekeeping-debug-scout = Разведчица
-beekeeping-debug-scout-flying = в полёте
-beekeeping-debug-scout-found = Увидела источников
-beekeeping-debug-next-trip = Вылет разведчицы
-beekeeping-debug-next-forager = Вылет собирательницы
-beekeeping-debug-foragers = Сборщиц в воздухе
-beekeeping-debug-bees = Пчёлы
-beekeeping-debug-health = Прочность улья
-beekeeping-debug-combs = Соты
-beekeeping-debug-angry = Злых пчёл
-beekeeping-debug-row-egg = Яйцо матки
-beekeeping-debug-egg-there = есть, ещё { $s } с
-beekeeping-debug-egg-cooldown = перерыв { $s } с
-beekeeping-debug-egg-growing = будет через { $s } с
-beekeeping-debug-section-queen = Матка
-beekeeping-debug-no-queen-traits = нет признаков или матки
-beekeeping-debug-queen-line = Слотов { $slots }, груз { $payload } ед.
-beekeeping-debug-pause-none = нет
-beekeeping-debug-pause-vacuum = нет воздуха
-beekeeping-debug-pause-highpressure = высокое давление
-beekeeping-debug-pause-cold = холодно
-beekeeping-debug-pause-heat = жарко
-beekeeping-debug-pause-fire = пожар
-beekeeping-debug-scout-home = дома
-beekeeping-debug-scout-outside = вне улья
-beekeeping-debug-scout-lost = погибла
-beekeeping-debug-section-outside = Пчёлы вне улья: { $count }
-beekeeping-debug-outside-none = Все пчёлы дома.
-beekeeping-debug-outside-scout = Разведчица в руках
-beekeeping-debug-outside-pollinator = Опылительница
-beekeeping-debug-outside-angry = Злая пчела
-beekeeping-debug-outside-angry-scout = Злая разведчица
-beekeeping-debug-outside-lost = Заблудившаяся сборщица
-beekeeping-debug-outside-line = { $name }: исчезнет через { $s } с
-beekeeping-debug-nectar = Нектар
-beekeeping-debug-yes = есть
-beekeeping-debug-no = нет
-beekeeping-debug-seconds = через { $s } с
-beekeeping-debug-state-ripe = Спелое растение
-beekeeping-debug-state-unripe = Растёт, нектара пока нет
-beekeeping-debug-state-inactive = Нет растения, далеко или не видно
-beekeeping-debug-state-invalid = Источника больше нет
-beekeeping-debug-tray-line = { $tray }, { $distance } клеток от улья, визит через { $visit } с
-beekeeping-debug-legend = На карте: [color=limegreen]спелое[/color], [color=yellow]растёт[/color], [color=red]пусто или не видно[/color], [color=cyan]сборщица и её цель[/color], белая линия это полёт разведчицы. Белый круг это радиус разведки.
-
-cmd-beedebug-desc = Показывает на карте, что знают все ульи: известные источники и полёты сборщиц.
-cmd-beedebug-help = Использование: beedebug
-cmd-beedebug-status = Отладка ульев на карте: { $status }.
-
 ## Apiary analyzer
 
 apiary-analyzer-section-traits = Признаки
@@ -312,13 +236,6 @@ apiary-analyzer-nectar-noframes =
     В улье [bold]нет рамок[/bold], вставьте их.
 beekeeping-take-scout-tired = Разведчица отдыхает после вылета. Попробуйте позже.
 beekeeping-take-workers-tired = Все свободные рабочие отдыхают после работы. Попробуйте позже.
-beekeeping-debug-forager-sent = Собирательница вылетела к лотку.
-beekeeping-debug-forager-no-trays = Улей не знает ни одного лотка: сначала отправьте разведчицу.
-beekeeping-debug-forager-too-many = В воздухе уже { $max } собирательницы, больше улей не выпускает.
-beekeeping-debug-forager-no-workers = Дома нет свободных рабочих.
-beekeeping-debug-forager-failed = Собирательница не смогла вылететь.
-beekeeping-debug-swarm-no-queen = Без матки роя не будет.
-beekeeping-debug-swarm-failed = Рой не вылетел: на карте уже слишком много диких ульев или улей не на сетке.
 apiary-analyzer-brood-going = есть
 apiary-analyzer-brood-stopped = нет
 apiary-analyzer-stat-egg-wait = Ожидание яйца
@@ -357,21 +274,10 @@ bee-trait-hotheaded-desc = Каждый удар по улью выпускае�
 bee-trait-guarded-scout = Охраняемая разведчица
 bee-trait-guarded-scout-desc = Разведчица вылетает злой последней и только когда рабочих дома не осталось.
 beekeeping-hive-examine-meat = Эти пчёлы кормятся не растениями, а кровью: рой вылетел туда, где были живые существа и не было растений.
-beekeeping-debug-wild-half = Улей: заполнить мёдом наполовину
-beekeeping-debug-wild-full = Улей: заполнить мёдом полностью
-beekeeping-debug-diet-plants = Питание: растения
-beekeeping-debug-diet-meat = Питание: кровь (мясной улей)
 apiary-analyzer-row-diet = Питание
 apiary-analyzer-diet-meat = кровь
 apiary-analyzer-creature-ripe = Рабочие могут его кусать.
 apiary-analyzer-creature-blind = Существо далеко, в укрытии или без крови: рабочие его сейчас не достанут.
-beekeeping-debug-diet-to-meat = Улей: сделать мясным
-beekeeping-debug-diet-to-plants = Улей: сделать растительным
-beekeeping-debug-creature-ripe = Существо с кровью, можно кусать
-beekeeping-debug-creature-unripe = Существо с кровью, можно кусать
-beekeeping-debug-creature-inactive = Далеко, не видно, в укрытии или без крови
-beekeeping-debug-creature-invalid = Источника больше нет
-beekeeping-debug-meat-line = Мясо: { $meat }, кровей: { $kinds }, запас крови { $stock } ед.
 apiary-analyzer-meat = Мясо
 apiary-analyzer-meat-help = Столько кусков мяса выпадет, если разбить улей сейчас: { $base } всегда и ещё по одному за каждые { $per } укуса по мёртвым, не больше { $max }. Что может выпасть, по шансу на каждый кусок:
 apiary-analyzer-meat-chance = { $name }: { $percent }%
@@ -379,6 +285,5 @@ apiary-analyzer-section-chemicals = Химический состав улья
 apiary-analyzer-chemicals-none = В улье пока нет химических веществ.
 apiary-analyzer-section-targets = Недавние цели ({ $count })
 apiary-analyzer-targets-none = Пчёлы ещё никого не кусали.
-beekeeping-debug-section-targets = Недавние цели: { $count }
 beekeeping-bite-blocked = Герметичный костюм не даёт пчеле укусить.
 beekeeping-bee-swing-miss = Промах: пчела слишком мала для замаха, бейте точно по ней.

@@ -303,7 +303,6 @@ public sealed partial class BeeQueenSystem : EntitySystem
         comp.Nectar -= comp.EmergencyQueenNectar;
         comp.Bees--;
         comp.ColonyTraits.Clear();
-        Dirty(hive);
         _popup.PopupEntity(Loc.GetString("beekeeping-hive-emergency-queen"), hive);
     }
 

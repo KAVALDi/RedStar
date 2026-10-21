@@ -135,7 +135,6 @@ public sealed partial class BeehiveSystem
             comp.ScoutState = BeeScoutState.Outside;
             _scout.RecallScout(comp);
         }
-        Dirty(ent);
 
         item.SourceHive = ent;
         _queen.GiveTraits(ent, (bee, item));
@@ -203,7 +202,6 @@ public sealed partial class BeehiveSystem
             comp.RestingWorkers.Add(Timing.CurTime + comp.WorkedRest);
         }
 
-        Dirty(hive);
         UpdateAmbience(hive);
         if (user != null)
             _popup.PopupEntity(Loc.GetString("beekeeping-return-done"), hive, user.Value);
@@ -309,7 +307,6 @@ public sealed partial class BeehiveSystem
                 comp.ScoutState = BeeScoutState.Home;
         }
 
-        Dirty(hive);
     }
 
     public void ReleaseOutBee(Entity<BeehiveComponent> hive)

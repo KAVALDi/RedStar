@@ -242,7 +242,7 @@ public sealed partial class MeatBeehiveSystem : EntitySystem
             return;
 
         var rage = RageLevel(hive);
-        if (!_foragers.TrySpawnForager(hive, xform, hiveMap, target, MaxMeatForagersNow(hive), route))
+        if (!_foragers.TrySpawnForager(hive, xform, target, MaxMeatForagersNow(hive), route))
             return;
 
         if (rage > 0f)

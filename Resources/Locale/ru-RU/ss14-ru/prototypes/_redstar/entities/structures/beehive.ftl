@@ -9,3 +9,6 @@ ent-BeeSwarmLeaving = пчелиный рой
     .desc = Гудящее облако пчёл, которым не хватило места в улье.
 ent-BeeQueenNesting = пчелиная матка
     .desc = Пчелиная матка ищет себе новый дом.
+ent-BeehiveFast = { ent-Beehive }
+    .desc = { ent-Beehive.desc }
+    .suffix = Отладка, быстрый

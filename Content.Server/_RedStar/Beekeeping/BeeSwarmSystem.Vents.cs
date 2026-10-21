@@ -237,8 +237,7 @@ public sealed partial class BeeSwarmSystem
         }
 
         _transform.SetCoordinates(bee, Transform(exit).Coordinates);
-        _foragers.SetSize(bee, BeeFlightSize.Growing);
-        _foragers.SetPhase(bee, BeeForagerPhase.VentOut, _foragers.ShrinkTime(bee));
+        _foragers.Shrink(bee, BeeForagerPhase.VentOut, BeeFlightSize.Growing, Transform(bee).LocalPosition);
     }
 
     /// <summary>
@@ -264,8 +263,7 @@ public sealed partial class BeeSwarmSystem
             swarm.Storage = storage;
             swarm.Searching = false;
             var site = _transform.WithEntityId(Transform(storage).Coordinates, grid).Position;
-            _foragers.SetFacing(bee, site - home);
-            _foragers.StartFlight(bee, BeeForagerPhase.Outbound, home, site);
+            _foragers.Fly(bee, BeeForagerPhase.Outbound, home, site);
             return;
         }
 

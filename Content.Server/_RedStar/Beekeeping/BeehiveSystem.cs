@@ -4,6 +4,7 @@ using Content.Shared.Audio;
 using Content.Shared.Chemistry.Reagent;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Destructible;
+using Content.Shared.Examine;
 using Content.Shared._RedStar.Beekeeping;
 using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
@@ -26,7 +27,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private BeeScoutSystem _scout = default!;
-    [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private SharedAmbientSoundSystem _ambient = default!;
     [Dependency] private AtmosphereSystem _atmos = default!;
     [Dependency] private SharedMapSystem _map = default!;
@@ -175,7 +175,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         comp.ScoutReplaceAt = Timing.CurTime;
         // The hive shows it is alive: the first scout flight starts a few seconds after the queen goes in.
         comp.ScoutFirstTripNow = comp.Bees > 0;
-        Dirty(ent);
         UpdateAmbience(ent);
     }
 
@@ -195,9 +194,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             var passed = Math.Clamp((float) (now - comp.LastUpdate).TotalSeconds, 0f, MaxUpdateSeconds);
             comp.LastUpdate += TimeSpan.FromSeconds(passed);
             comp.NextUpdate = now + UpdateInterval;
-            var seconds = passed * Math.Max(comp.DebugSpeed, 0f);
-
-            UpdateHive((uid, comp), seconds);
+            UpdateHive((uid, comp), passed);
         }
     }
 
@@ -225,7 +222,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
         _queen.UpdateEgg(hive, hasQueen);
         _foragers.UpdatePendingForagers(hive);
-        UpdateNectarLevel(hive);
         UpdateAmbience(hive);
     }
 
@@ -251,7 +247,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         if (comp.Bees + comp.OutBees <= comp.MaxBees)
         {
             comp.CrowdedSince = null;
-            SetCrowding(hive, BeehiveCrowding.None);
+            comp.Crowding = BeehiveCrowding.None;
         }
         else
         {
@@ -263,7 +259,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
             if (now - comp.CrowdedSince.Value < comp.CrowdingGrace)
             {
-                SetCrowding(hive, BeehiveCrowding.Cramped);
+                comp.Crowding = BeehiveCrowding.Cramped;
             }
             else
             {
@@ -277,7 +273,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
                         _swarm.LeaveInSwarm(hive, comp.Bees + comp.OutBees - comp.MaxBees);
                 }
 
-                SetCrowding(hive, BeehiveCrowding.Leaving);
+                comp.Crowding = BeehiveCrowding.Leaving;
                 if (now >= comp.NextCrowdingLeave)
                 {
                     comp.NextCrowdingLeave = now + comp.CrowdingLeaveInterval;
@@ -292,17 +288,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             comp.Bees >= comp.ScoutReplaceMinBees)
         {
             comp.ScoutState = BeeScoutState.Home;
-            Dirty(hive);
         }
-    }
-
-    private void SetCrowding(Entity<BeehiveComponent> hive, BeehiveCrowding crowding)
-    {
-        if (hive.Comp.Crowding == crowding)
-            return;
-
-        hive.Comp.Crowding = crowding;
-        Dirty(hive);
     }
 
     /// <summary>
@@ -322,7 +308,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             comp.ScoutReplaceAt = Timing.CurTime;
         }
 
-        Dirty(hive);
         return true;
     }
 
@@ -334,7 +319,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             return;
 
         hive.Comp.MaxBees = max;
-        Dirty(hive);
     }
 
     #endregion
@@ -373,9 +357,8 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
                 // The colony has no scout: the new bee is born one.
                 if (comp.ScoutState == BeeScoutState.Lost)
                     comp.ScoutState = BeeScoutState.Home;
-                var rate = Math.Max(traits.LayRate * Math.Max(comp.DebugSpeed, 0.01f), 0.01f);
+                var rate = Math.Max(traits.LayRate, 0.01f);
                 comp.NextLay = Timing.CurTime + comp.LayInterval / rate;
-                Dirty(hive);
             }
         }
 
@@ -484,20 +467,119 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         return false;
     }
 
-    public void UpdateNectarLevel(Entity<BeehiveComponent> hive)
+    /// <summary>
+    /// Coarse nectar stock, for the examine text.
+    /// </summary>
+    public static BeehiveNectarLevel GetNectarLevel(BeehiveComponent comp)
     {
-        var comp = hive.Comp;
         var fraction = comp.MaxNectar > 0f ? comp.Nectar / comp.MaxNectar : 0f;
-        var level = fraction >= comp.NectarHighFraction ? BeehiveNectarLevel.High
+        return fraction >= comp.NectarHighFraction ? BeehiveNectarLevel.High
             : fraction >= comp.NectarMediumFraction ? BeehiveNectarLevel.Medium
             : fraction >= comp.NectarLowFraction ? BeehiveNectarLevel.Low
             : BeehiveNectarLevel.Empty;
+    }
 
-        if (comp.NectarLevel == level)
-            return;
+    #endregion
 
-        comp.NectarLevel = level;
-        Dirty(hive);
+    #region Examine
+
+    [SubscribeLocalEvent]
+    private void OnHiveExamined(Entity<BeehiveComponent> ent, ref ExaminedEvent args)
+    {
+        var comp = ent.Comp;
+        var frames = 0;
+        foreach (var slot in comp.FrameSlots)
+        {
+            if (ItemSlots.GetItemOrNull(ent.Owner, slot) != null)
+                frames++;
+        }
+
+        var hasQueen = GetQueen(ent) != null;
+
+        using (args.PushGroup(nameof(BeehiveComponent)))
+        {
+            args.PushMarkup(Loc.GetString(hasQueen
+                ? "beekeeping-hive-examine-queen"
+                : "beekeeping-hive-examine-no-queen"));
+            if (!comp.Wild)
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-frames",
+                    ("count", frames), ("max", comp.FrameSlots.Count)));
+            }
+
+            if (comp.Bees > 0 || comp.OutBees > 0)
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-bees",
+                    ("bees", comp.Bees), ("max", comp.MaxBees), ("outside", comp.OutBees)));
+            }
+
+            args.PushMarkup(Loc.GetString("beekeeping-hive-examine-nectar",
+                ("level", GetNectarLevel(comp).ToString())));
+
+            if (comp.Wild && comp.Diet == BeehiveDiet.Meat)
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-meat"));
+
+            if (comp.Wild && comp.SwarmModifier is { } modifierId && Proto.TryIndex(modifierId, out var modifier))
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-modifier",
+                    ("color", modifier.Color.ToHex()),
+                    ("name", Loc.GetString(modifier.Name)),
+                    ("desc", Loc.GetString(modifier.Description))));
+            }
+
+            switch (comp.Crowding)
+            {
+                case BeehiveCrowding.Cramped:
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-cramped"));
+                    break;
+                case BeehiveCrowding.Leaving:
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-leaving"));
+                    break;
+            }
+
+            if (!hasQueen && comp.Bees > 0)
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-dying"));
+
+            if (comp.HasEgg)
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-egg"));
+                if (comp.EggDiesAt - Timing.CurTime <= comp.EggDyingWarning)
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-egg-dying"));
+            }
+
+            if (comp.Bees > 0 || comp.OutBees > 0)
+                PushScoutLine(comp, ref args);
+
+            if (comp.Pause != BeehivePauseReason.None)
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-paused",
+                    ("reason", comp.Pause.ToString())));
+            }
+        }
+    }
+
+    private void PushScoutLine(BeehiveComponent comp, ref ExaminedEvent args)
+    {
+        switch (comp.ScoutState)
+        {
+            case BeeScoutState.Outside:
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-outside"));
+                break;
+            case BeeScoutState.Lost:
+                if (comp.Bees < comp.ScoutReplaceMinBees)
+                {
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-lost-grow"));
+                    break;
+                }
+
+                var left = comp.ScoutReplaceAt - Timing.CurTime;
+                if (left < TimeSpan.Zero)
+                    left = TimeSpan.Zero;
+
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-scout-lost",
+                    ("minutes", (int) left.TotalMinutes), ("seconds", left.Seconds)));
+                break;
+        }
     }
 
     #endregion
@@ -537,7 +619,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             return;
 
         comp.Pause = reason;
-        Dirty(hive);
     }
 
     /// <summary>
@@ -568,34 +649,27 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         return true;
     }
 
-    public void UpdateHiveAppearance(Entity<BeehiveComponent> hive)
+    /// <summary>
+    /// A wild hive has no frames: it shows its honey once it is full enough.
+    /// </summary>
+    public override void UpdateHiveAppearance(Entity<BeehiveComponent> hive)
     {
-        if (hive.Comp.Wild)
+        if (!hive.Comp.Wild)
         {
-            var shown = hive.Comp.MaxWildCombs > 0 &&
-                        hive.Comp.WildCombs >= hive.Comp.MaxWildCombs * hive.Comp.WildHoneyShown;
-            _appearance.SetData(hive, WildBeehiveVisuals.Honey, shown);
-            _appearance.SetData(hive, WildBeehiveVisuals.Meat, hive.Comp.Diet == BeehiveDiet.Meat);
+            base.UpdateHiveAppearance(hive);
             return;
         }
 
-        GetFrames(hive, _frames);
-        _appearance.SetData(hive, BeehiveVisuals.Frames, _frames.Count);
-        _appearance.SetData(hive, BeehiveVisuals.Frame1, FillAt(0));
-        _appearance.SetData(hive, BeehiveVisuals.Frame2, FillAt(1));
-        _appearance.SetData(hive, BeehiveVisuals.Frame3, FillAt(2));
-        _appearance.SetData(hive, BeehiveVisuals.Frame4, FillAt(3));
-    }
-
-    private BeeFrameFill FillAt(int index)
-    {
-        return index < _frames.Count ? GetFill(_frames[index].Comp) : BeeFrameFill.None;
+        var shown = hive.Comp.MaxWildCombs > 0 &&
+                    hive.Comp.WildCombs >= hive.Comp.MaxWildCombs * hive.Comp.WildHoneyShown;
+        Appearance.SetData(hive, WildBeehiveVisuals.Honey, shown);
+        Appearance.SetData(hive, WildBeehiveVisuals.Meat, hive.Comp.Diet == BeehiveDiet.Meat);
     }
 
     public void UpdateFrameAppearance(Entity<BeeFrameComponent> frame)
     {
-        _appearance.SetData(frame, BeeFrameVisuals.Fill, GetFill(frame.Comp));
-        _appearance.SetData(frame, BeeFrameVisuals.Color, GetCombColor(frame.Comp));
+        UpdateFrameFill(frame);
+        Appearance.SetData(frame, BeeFrameVisuals.Color, GetCombColor(frame.Comp));
     }
 
     /// <summary>

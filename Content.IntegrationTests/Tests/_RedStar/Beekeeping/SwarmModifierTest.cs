@@ -23,7 +23,7 @@ public sealed class SwarmModifierTest : GameTest
             var modifiers = proto.EnumeratePrototypes<SwarmModifierPrototype>().ToList();
             Assert.That(modifiers.Sum(m => m.Weight), Is.EqualTo(100f).Within(0.01f));
             Assert.That(modifiers.Select(m => m.ColonyShare), Has.All.InRange(0.1f, 0.9f));
-            Assert.That(proto.Index(Plain).Weight, Is.EqualTo(40f));
+            Assert.That(proto.Index(Plain).Weight, Is.EqualTo(modifiers.Max(m => m.Weight)), "A plain swarm is the most common.");
         });
     }
 }

@@ -178,7 +178,6 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
 
         if (released > 0)
         {
-            Dirty(hive);
             _hive.UpdateAmbience(hive);
         }
 
@@ -290,7 +289,6 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
             }
         }
 
-        Dirty(hive);
         _hive.UpdateAmbience(hive);
     }
 
