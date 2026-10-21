@@ -8,6 +8,11 @@
   copyright: "Made by KAVALDi (github): the bee flight loop, mono OGG."
   source: "https://github.com/KAVALDi/RedStar"
 
+- files: ["bee_vent.ogg"]
+  license: "CC-BY-SA-3.0"
+  copyright: "Made by KAVALDi (github): the bee flight loop heard through a vent, mono OGG."
+  source: "https://github.com/KAVALDi/RedStar"
+
 - files: ["bee_in_hand.ogg"]
   license: "CC0-1.0"
   copyright: "\"Bee flying loop\" by fury12 (freesound.org), based on \"Bee-Buzzing-Against-Window\" by Sonicquinn (CC0, https://freesound.org/people/Sonicquinn/sounds/435820/). Converted to mono OGG."

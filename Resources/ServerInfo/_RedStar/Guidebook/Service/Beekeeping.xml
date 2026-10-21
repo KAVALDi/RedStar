@@ -155,5 +155,5 @@
 <ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Растение уже опылено, уже созрело, собирает себя само или погибло.</Box></ColorBox>
 </Table>
 
-Дальше: [textlink="анализатор пасеки" link="BeekeepingAnalyzer"], [textlink="матка и признаки" link="BeekeepingQueen"], [textlink="рои и дикие ульи" link="BeekeepingWild"].
+Дальше: [textlink="анализатор пасеки" link="BeekeepingAnalyzer"], [textlink="матка и признаки" link="BeekeepingQueen"], [textlink="рои, дикие и злые пчёлы" link="BeekeepingWild"].
 </Document>

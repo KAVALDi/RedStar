@@ -192,6 +192,8 @@
     - state: worker-wings
       map: [ "enum.BeeForagerVisualLayers.Wings" ]
   - type: Appearance
+  # The grey mask turns the color of the blood in a meat colony.
+  - type: BeeTraitVisuals
   # The sprite is a side view facing left; it is mirrored while the bee flies to the right.
   - type: GenericVisualizer
     visuals:
@@ -221,6 +223,57 @@
   - type: TimedDespawn
     lifetime: 120
 
+# The forager of a meat colony: unlike the usual one a player can hit it, and one hit kills it. The colony does not
+# forget: the fewer bees are left, the angrier it gets.
+- type: entity
+  parent: BeeForager
+  id: BeeForagerMeat
+  name: bee
+  description: A worker bee. It looks hungry.
+  components:
+  # The same bee with angry eyes for a furious colony.
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    drawdepth: Mobs
+    noRot: true
+    layers:
+    - state: worker-base
+      map: [ "enum.BeeForagerVisualLayers.Body" ]
+    - state: worker-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: worker-wings
+      map: [ "enum.BeeForagerVisualLayers.Wings" ]
+    - state: worker-base-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: GenericVisualizer
+    visuals:
+      enum.BeeForagerVisuals.FacingRight:
+        enum.BeeForagerVisualLayers.Body:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Grey:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Wings:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Angry:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+  - type: Damageable
+  - type: Injurable
+    damageContainer: Inorganic
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 1
+      behaviors:
+      - !type:DoActsBehavior
+        acts: [ "Destruction" ]
+
 # The hive's scout on its automatic flight: tile by tile through the free tiles around the hive, into the flower
 # of a tray it finds, and back home. Like a forager it cannot be picked up or hit.
 - type: entity
@@ -239,7 +292,9 @@
     - state: scout
     - state: scout-grey
       color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
   - type: Appearance
+  - type: BeeTraitVisuals
   - type: BeeShrinkVisuals
     shrinkTime: 0.6
   # A little wandering on the way, like a real bee.
