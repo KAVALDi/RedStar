@@ -95,6 +95,7 @@
   components:
   - type: BeeForager
     speed: 1
+  - type: BeeFlight
   - type: BeeSwarm
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
@@ -154,7 +155,9 @@
   description: A queen bee looking for a new home.
   categories: [ HideSpawnMenu ]
   components:
-  # Unlike a swarm she is alone: a quick hand can catch her.
+  # Unlike a swarm she is alone: a quick hand can catch her, so the server keeps her where she is drawn.
+  - type: BeeFlight
+    tracked: true
   - type: Clickable
   - type: InteractionOutline
   - type: BeeCatchableQueen

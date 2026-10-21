@@ -158,14 +158,8 @@ public sealed partial class BeeSwarmSystem : EntitySystem
             _transform.DropNextTo(daughter, hive.Owner);
         }
 
-        forager.Hive = hive;
-        forager.Home = home;
-        forager.Target = site;
-        _foragers.SetFacing(swarm, site - home);
-        _foragers.SetSize(swarm, BeeFlightSize.Growing);
-        _foragers.SetPhase((swarm, forager), BeeForagerPhase.Emerge, _foragers.ShrinkTime(swarm));
+        _foragers.Launch((swarm, forager), hive, home, site);
 
-        Dirty(hive);
         _hive.UpdateAmbience(hive);
         _popup.PopupEntity(Loc.GetString("beekeeping-hive-swarm"), hive);
         _adminLog.Add(LogType.Action, LogImpact.Low,
@@ -225,12 +219,7 @@ public sealed partial class BeeSwarmSystem : EntitySystem
 
         swarmComp.Scatter = true;
         swarmComp.Bees = count;
-        forager.Hive = hive;
-        forager.Home = home;
-        forager.Target = target;
-        _foragers.SetFacing(swarm, target - home);
-        _foragers.SetSize(swarm, BeeFlightSize.Growing);
-        _foragers.SetPhase((swarm, forager), BeeForagerPhase.Emerge, _foragers.ShrinkTime(swarm));
+        _foragers.Launch((swarm, forager), hive, home, target);
         _popup.PopupEntity(Loc.GetString("beekeeping-hive-crowd-swarm"), hive);
     }
 
@@ -334,6 +323,54 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     public const float SearchHopLength = 5f;
 
     /// <summary>
+    /// What a swarm or a lone queen does when a leg of its flight ends. The rest of the way (growing out of the hive,
+    /// the flight to the site) is the forager's.
+    /// </summary>
+    [SubscribeLocalEvent]
+    private void OnLegEnded(Entity<BeeSwarmComponent> ent, ref BeeLegEndedEvent args)
+    {
+        if (!TryComp<BeeForagerComponent>(ent, out var forager))
+            return;
+
+        var bee = new Entity<BeeForagerComponent>(ent, forager);
+        var here = Transform(ent).LocalPosition;
+        args.Handled = true;
+        switch (args.Phase)
+        {
+            case BeeForagerPhase.Outbound when ent.Comp.VentExit != null:
+                // At the vent: the swarm dives in.
+                _foragers.Shrink(bee, BeeForagerPhase.VentIn, BeeFlightSize.Shrinking, here);
+                break;
+            case BeeForagerPhase.Outbound when ent.Comp.Scatter:
+                // Bees with no queen scatter and are gone.
+                _foragers.Shrink(bee, BeeForagerPhase.Land, BeeFlightSize.Shrinking, here);
+                break;
+            case BeeForagerPhase.Outbound when ent.Comp.Searching:
+                // A lone queen looking for a home: look around, then fly on.
+                ContinueSearch(bee, ent.Comp);
+                break;
+            case BeeForagerPhase.Outbound:
+                // The swarm is at its site: the wild hive grows there.
+                LandSwarm(ent);
+                QueueDel(ent);
+                break;
+            case BeeForagerPhase.VentIn:
+                _foragers.SetSize(ent, BeeFlightSize.Hidden);
+                _foragers.Hold(bee, BeeForagerPhase.VentHidden, here, TimeSpan.FromSeconds(2));
+                break;
+            case BeeForagerPhase.VentHidden:
+                SwarmComeOut(bee, ent.Comp);
+                break;
+            case BeeForagerPhase.VentOut:
+                SwarmLeftVent(bee, ent.Comp);
+                break;
+            default:
+                args.Handled = false;
+                break;
+        }
+    }
+
+    /// <summary>
     /// The swarm with no quirk, for a server with no other quirks in its data.
     /// </summary>
     private static readonly ProtoId<SwarmModifierPrototype> PlainSwarm = "Plain";
@@ -387,7 +424,7 @@ public sealed partial class BeeSwarmSystem : EntitySystem
             to = SearchHop(bee, origin, (grid, gridComp), swarm.SearchHop);
         }
 
-        _foragers.StartFlight(bee, BeeForagerPhase.Outbound, from, to);
+        _foragers.Fly(bee, BeeForagerPhase.Outbound, from, to);
     }
 
     public int CountWildHives(EntityUid? map)
@@ -443,7 +480,6 @@ public sealed partial class BeeSwarmSystem : EntitySystem
         _hive.UpdateMaxBees((wild, wildComp));
         _hive.UpdateAmbience((wild, wildComp));
         _hive.UpdateHiveAppearance((wild, wildComp));
-        Dirty(wild, wildComp);
         swarm.Comp.Bees = 0;
 
         _adminLog.Add(LogType.EntitySpawn, LogImpact.Low,

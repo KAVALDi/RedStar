@@ -1,63 +1,39 @@
 using System.Numerics;
-using Content.Shared.Botany.Components;
-using Content.Shared.Botany.Events;
-using Content.Shared.Botany.Systems;
-using Content.Shared.Chemistry.Components;
-using Content.Shared.Chemistry.EntitySystems;
-using Content.Shared.Chemistry.Reagent;
-using Content.Shared.CombatMode.Pacification;
-using Content.Shared.Containers.ItemSlots;
-using Content.Shared.Damage;
-using Content.Shared.Damage.Components;
-using Content.Shared.Damage.Systems;
-using Content.Shared.Database;
-using Content.Shared.Destructible;
-using Content.Shared.DoAfter;
-using Content.Shared.Examine;
-using Content.Shared.FixedPoint;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;
-using Content.Shared.Tools.Systems;
 using Content.Shared._RedStar.Beekeeping;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
-using Robust.Shared.Player;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// Visible forager bees: a short picture of one visit. The bee flies to the tray, circles over the plant, dives into the
-/// flower, comes back out, flies home and dives into the hive. A tray or hive that was moved is looked for nearby; a bee
-/// that cannot find it is lost, circles, can be caught by hand and dies after a while. A swarm uses the same
-/// flight. Positions are set in the coordinates of the grid, every tick only while a player is near; the
-/// client smooths them and animates the dives.
+/// Visible bees out of the hive: a forager showing one visit, the scout coming back with what it found. The bee flies to
+/// the tray, circles over the plant, dives into the flower, comes back out, flies home and dives into the hive. A tray or
+/// hive that was moved is looked for nearby; a bee that cannot find it is lost, circles, can be caught by hand and dies
+/// after a while. This system only decides what the bee does when a leg of its way ends; the legs themselves are
+/// <see cref="BeeFlightComponent"/> legs that the client draws.
 /// </summary>
 public sealed partial class BeeForagerSystem : EntitySystem
 {
     [Dependency] private SharedAppearanceSystem _appearance = default!;
+    [Dependency] private BeeFlightSystem _flight = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private SharedHandsSystem _hands = default!;
     [Dependency] private BeehiveSystem _hive = default!;
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private IRobustRandom _random = default!;
-    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private SharedMapSystem _map = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private IGameTiming _timing = default!;
+
     private const float DefaultShrinkTime = 0.6f;
-
-    public override void Update(float frameTime)
-    {
-        base.Update(frameTime);
-
-        UpdateForagers();
-    }
 
     /// <summary>
     /// How far from where it should be a tray or hive still counts as in place, in tiles.
@@ -68,6 +44,30 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// Radius in tiles of a lost bee's circling.
     /// </summary>
     private const float LostRadius = 0.6f;
+
+    public override void Update(float frameTime)
+    {
+        base.Update(frameTime);
+
+        var now = _timing.CurTime;
+        var query = EntityQueryEnumerator<BeeForagerComponent, BeeFlightComponent>();
+        while (query.MoveNext(out var uid, out var forager, out var flight))
+        {
+            if (now < flight.End)
+            {
+                if (flight.Tracked)
+                    _transform.SetLocalPosition(uid, _flight.GetLocalPosition((uid, flight), now));
+                continue;
+            }
+
+            // The leg is over: the bee is put where it ends, and what comes next is decided from there.
+            _flight.Settle((uid, flight));
+            var ev = new BeeLegEndedEvent(forager.Phase);
+            RaiseLocalEvent(uid, ref ev);
+            if (!ev.Handled)
+                NextLeg((uid, forager), (uid, flight));
+        }
+    }
 
     /// <summary>
     /// Lets out the visible foragers whose time has come.
@@ -80,7 +80,6 @@ public sealed partial class BeeForagerSystem : EntitySystem
 
         var now = _timing.CurTime;
         var xform = Transform(hive);
-        var hiveMap = _transform.GetMapCoordinates(hive, xform);
         for (var i = comp.PendingForagers.Count - 1; i >= 0; i--)
         {
             var (tray, at) = comp.PendingForagers[i];
@@ -89,228 +88,127 @@ public sealed partial class BeeForagerSystem : EntitySystem
 
             comp.PendingForagers.RemoveAt(i);
             if (!TerminatingOrDeleted(tray))
-                TrySpawnForager(hive, xform, hiveMap, tray);
+                TrySpawnForager(hive, xform, tray);
         }
     }
 
-    public bool TrySpawnForager(Entity<BeehiveComponent> hive,
-        TransformComponent hiveXform,
-        MapCoordinates hiveMap,
-        EntityUid tray)
+    /// <summary>
+    /// A forager flies out to <paramref name="tray"/>, if the hive has room for one more in the air.
+    /// </summary>
+    public bool TrySpawnForager(Entity<BeehiveComponent> hive, TransformComponent hiveXform, EntityUid tray)
     {
         var comp = hive.Comp;
         comp.Foragers.RemoveAll(f => TerminatingOrDeleted(f));
         if (comp.Foragers.Count >= comp.MaxForagers)
             return false;
 
-        if (hiveXform.GridUid is not { } grid || !TryComp<MapGridComponent>(grid, out var gridComp))
+        if (SpawnBee(hive, hiveXform, comp.ForagerPrototype, tray) is not { } bee)
             return false;
-
-        var home = _map.WorldToLocal(grid, gridComp, hiveMap.Position);
-        // Wherever the tray stands now, bolted to a tile or not.
-        var target = _transform.WithEntityId(Transform(tray).Coordinates, grid).Position;
-
-        var bee = Spawn(comp.ForagerPrototype, new EntityCoordinates(grid, home));
-        if (!TryComp<BeeForagerComponent>(bee, out var forager))
-        {
-            Del(bee);
-            return false;
-        }
-
-        forager.Hive = hive;
-        forager.Tray = tray;
-        forager.Home = home;
-        forager.Target = target;
 
         comp.Foragers.Add(bee);
-
-        // It grows out of the hive first, the same way it later dives into the flower.
-        SetFacing(bee, target - home);
-        SetSize(bee, BeeFlightSize.Growing);
-        SetPhase((bee, forager), BeeForagerPhase.Emerge, ShrinkTime(bee));
         return true;
     }
 
     /// <summary>
-    /// Bees farther than this from every player are not moved every tick, in tiles: nobody sees them, so their position
-    /// is only set where it matters, when a phase ends.
+    /// The scout flies to the first of the trays it found and back; the hive learns all of them when it lands.
     /// </summary>
-    private const float ObservedRange = 35f;
+    public bool TrySpawnScout(Entity<BeehiveComponent> hive, TransformComponent hiveXform, List<EntityUid> found)
+    {
+        if (found.Count == 0 || SpawnBee(hive, hiveXform, hive.Comp.ScoutFlyerPrototype, found[0]) is not { } bee)
+            return false;
 
-    private readonly List<MapCoordinates> _viewers = new();
+        Comp<BeeForagerComponent>(bee).Found = new List<EntityUid>(found);
+        hive.Comp.ScoutFlyer = bee;
+        return true;
+    }
+
+    private EntityUid? SpawnBee(Entity<BeehiveComponent> hive, TransformComponent hiveXform, string prototype, EntityUid tray)
+    {
+        if (hiveXform.GridUid is not { } grid || !TryComp<MapGridComponent>(grid, out var gridComp))
+            return null;
+
+        var home = _map.WorldToLocal(grid, gridComp, _transform.GetWorldPosition(hiveXform));
+        // Wherever the tray stands now, bolted to a tile or not.
+        var target = _transform.WithEntityId(Transform(tray).Coordinates, grid).Position;
+
+        var bee = Spawn(prototype, new EntityCoordinates(grid, home));
+        if (!TryComp<BeeForagerComponent>(bee, out var forager) || !TryComp<BeeFlightComponent>(bee, out var flight))
+        {
+            Del(bee);
+            return null;
+        }
+
+        forager.Tray = tray;
+        Launch((bee, forager), hive, home, target);
+        return bee;
+    }
 
     /// <summary>
-    /// Where the players are, once per tick: observers and ghosts count too, as an admin may be watching.
+    /// The bee grows out of its hive at <paramref name="home"/> and then flies to <paramref name="target"/>, both in the
+    /// coordinates of its grid.
     /// </summary>
-    private void CollectViewers()
+    public void Launch(Entity<BeeForagerComponent> bee, EntityUid hive, Vector2 home, Vector2 target)
     {
-        _viewers.Clear();
-        var actors = EntityQueryEnumerator<ActorComponent, TransformComponent>();
-        while (actors.MoveNext(out var viewer, out _, out var xform))
-        {
-            _viewers.Add(_transform.GetMapCoordinates(viewer, xform));
-        }
+        bee.Comp.Hive = hive;
+        bee.Comp.Home = home;
+        bee.Comp.Target = target;
+        SetFacing(bee, target - home);
+        Shrink(bee, BeeForagerPhase.Emerge, BeeFlightSize.Growing, home);
     }
 
-    private bool IsObserved(TransformComponent bee)
+    /// <summary>
+    /// What the bee does once a leg of its way is over.
+    /// </summary>
+    private void NextLeg(Entity<BeeForagerComponent> bee, Entity<BeeFlightComponent> flight)
     {
-        var map = bee.MapID;
-        var position = _transform.GetWorldPosition(bee);
-        foreach (var viewer in _viewers)
+        var comp = bee.Comp;
+        var here = Transform(bee).LocalPosition;
+        switch (comp.Phase)
         {
-            if (viewer.MapId == map && (viewer.Position - position).LengthSquared() <= ObservedRange * ObservedRange)
-                return true;
-        }
+            case BeeForagerPhase.Emerge:
+                SetSize(bee, BeeFlightSize.Full);
+                Fly(bee, BeeForagerPhase.Outbound, comp.Home, comp.Target);
+                break;
 
-        return false;
-    }
+            case BeeForagerPhase.Outbound:
+                ArriveAtTray(bee, flight);
+                break;
 
-    private void UpdateForagers()
-    {
-        var now = _timing.CurTime;
-        var collected = false;
-        var query = EntityQueryEnumerator<BeeForagerComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var forager, out var beeXform))
-        {
-            var bee = new Entity<BeeForagerComponent>(uid, forager);
-            TryComp<BeeSwarmComponent>(uid, out var swarm);
+            case BeeForagerPhase.Hover:
+                // From where the circle ended down into the plant, shrinking on the way.
+                SetSize(bee, BeeFlightSize.Shrinking);
+                comp.Phase = BeeForagerPhase.DiveIn;
+                _flight.StartLine(flight, here, comp.Target, Distance(here, comp.Target) / (float) ShrinkTime(bee).TotalSeconds);
+                break;
 
-            if (!collected)
-            {
-                CollectViewers();
-                collected = true;
-            }
+            case BeeForagerPhase.DiveIn:
+                SetSize(bee, BeeFlightSize.Hidden);
+                Hold(bee, BeeForagerPhase.Hidden, here, comp.HiddenTime);
+                break;
 
-            // Out of everyone's sight a flying or circling bee is only placed where the phase ends: whatever
-            // reads its position (the end of a flight, a search for the tray) gets the right one.
-            var watched = IsObserved(beeXform) || now >= forager.PhaseEnd;
+            case BeeForagerPhase.Hidden:
+                Shrink(bee, BeeForagerPhase.DiveOut, BeeFlightSize.Growing, here);
+                break;
 
-            switch (forager.Phase)
-            {
-                case BeeForagerPhase.Emerge:
-                    if (now >= forager.PhaseEnd)
-                    {
-                        SetSize(uid, BeeFlightSize.Full);
-                        StartFlight(bee, BeeForagerPhase.Outbound, forager.Home, forager.Target);
-                    }
-                    break;
+            case BeeForagerPhase.DiveOut:
+                SetSize(bee, BeeFlightSize.Full);
+                comp.Searches = 0;
+                Fly(bee, BeeForagerPhase.Return, here, comp.Home);
+                break;
 
-                case BeeForagerPhase.Outbound:
-                    if (watched)
-                        MoveAlong(bee, now);
-                    if (now < forager.PhaseEnd)
-                        break;
+            case BeeForagerPhase.Return:
+                ArriveHome(bee, flight);
+                break;
 
-                    if (swarm is { VentExit: not null })
-                    {
-                        // At the vent: the swarm dives in.
-                        SetSize(uid, BeeFlightSize.Shrinking);
-                        SetPhase(bee, BeeForagerPhase.VentIn, ShrinkTime(uid));
-                    }
-                    else if (swarm is { Scatter: true })
-                    {
-                        // Bees with no queen scatter and are gone.
-                        SetSize(uid, BeeFlightSize.Shrinking);
-                        SetPhase(bee, BeeForagerPhase.Land, ShrinkTime(uid));
-                    }
-                    else if (swarm is { Searching: true })
-                    {
-                        // A lone queen looking for a home: look around, then fly on.
-                        _swarm.ContinueSearch(bee, swarm);
-                    }
-                    else if (swarm != null)
-                    {
-                        // The swarm is at its site: the wild hive grows there.
-                        _swarm.LandSwarm((uid, swarm));
-                        QueueDel(uid);
-                    }
-                    else
-                    {
-                        ArriveAtTray(bee);
-                    }
-                    break;
+            case BeeForagerPhase.Land:
+                if (comp.Found != null)
+                    _scout.LandScout(bee);
+                QueueDel(bee);
+                break;
 
-                case BeeForagerPhase.Hover:
-                    if (watched)
-                        Circle(bee, now);
-                    if (now >= forager.PhaseEnd)
-                    {
-                        // From where the circle ended down into the plant, shrinking on the way.
-                        forager.From = Transform(uid).LocalPosition;
-                        SetSize(uid, BeeFlightSize.Shrinking);
-                        SetPhase(bee, BeeForagerPhase.DiveIn, ShrinkTime(uid));
-                    }
-                    break;
-
-                case BeeForagerPhase.DiveIn:
-                    if (watched)
-                        MoveAlong(bee, now);
-                    if (now >= forager.PhaseEnd)
-                    {
-                        SetSize(uid, BeeFlightSize.Hidden);
-                        SetPhase(bee, BeeForagerPhase.Hidden, forager.HiddenTime);
-                    }
-                    break;
-
-                case BeeForagerPhase.Hidden:
-                    if (now >= forager.PhaseEnd)
-                    {
-                        SetSize(uid, BeeFlightSize.Growing);
-                        SetPhase(bee, BeeForagerPhase.DiveOut, ShrinkTime(uid));
-                    }
-                    break;
-
-                case BeeForagerPhase.DiveOut:
-                    if (now >= forager.PhaseEnd)
-                    {
-                        SetSize(uid, BeeFlightSize.Full);
-                        forager.Searches = 0;
-                        StartReturn(bee, forager.Target);
-                    }
-                    break;
-
-                case BeeForagerPhase.Return:
-                    if (watched)
-                        MoveAlong(bee, now);
-                    if (now >= forager.PhaseEnd)
-                        ArriveHome(bee);
-                    break;
-
-                case BeeForagerPhase.Land:
-                    if (now >= forager.PhaseEnd)
-                        QueueDel(uid);
-                    break;
-
-                case BeeForagerPhase.VentIn:
-                    if (now >= forager.PhaseEnd)
-                    {
-                        SetSize(uid, BeeFlightSize.Hidden);
-                        SetPhase(bee, BeeForagerPhase.VentHidden, TimeSpan.FromSeconds(2));
-                    }
-                    break;
-
-                case BeeForagerPhase.VentHidden:
-                    if (now >= forager.PhaseEnd)
-                    {
-                        if (swarm == null)
-                            QueueDel(uid);
-                        else
-                            _swarm.SwarmComeOut(bee, swarm);
-                    }
-                    break;
-
-                case BeeForagerPhase.VentOut:
-                    if (now >= forager.PhaseEnd && swarm != null)
-                        _swarm.SwarmLeftVent(bee, swarm);
-                    break;
-
-                case BeeForagerPhase.Lost:
-                    if (watched)
-                        Circle(bee, now);
-                    if (now >= forager.PhaseEnd)
-                        LoseForager(bee);
-                    break;
-            }
+            case BeeForagerPhase.Lost:
+                LoseForager(bee);
+                break;
         }
     }
 
@@ -318,26 +216,26 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// At the tray's spot: the tray is there, or it was moved a little and the bee flies on to it. If the bee cannot
     /// find it, it flies home empty.
     /// </summary>
-    private void ArriveAtTray(Entity<BeeForagerComponent> bee)
+    private void ArriveAtTray(Entity<BeeForagerComponent> bee, Entity<BeeFlightComponent> flight)
     {
         var comp = bee.Comp;
+        var here = Transform(bee).LocalPosition;
         if (FindNearby(bee, comp.Tray) is not { } trayPos)
         {
             comp.Searches = 0;
-            StartReturn(bee, Transform(bee).LocalPosition);
+            Fly(bee, BeeForagerPhase.Return, here, comp.Home);
             return;
         }
 
-        var off = (trayPos - comp.Target).Length() > InPlace;
-        if (off)
+        if ((trayPos - comp.Target).Length() > InPlace)
         {
             comp.Searches++;
             comp.Target = trayPos;
-            StartFlight(bee, BeeForagerPhase.Outbound, Transform(bee).LocalPosition, trayPos);
+            Fly(bee, BeeForagerPhase.Outbound, here, trayPos);
             return;
         }
 
-        StartCircle(bee, BeeForagerPhase.Hover,
+        StartCircle(bee, flight, BeeForagerPhase.Hover,
             TimeSpan.FromSeconds(_random.NextDouble(comp.HoverTimeMin.TotalSeconds, comp.HoverTimeMax.TotalSeconds)),
             _random.NextFloat(comp.HoverRadiusMin, comp.HoverRadiusMax));
     }
@@ -345,12 +243,13 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// <summary>
     /// At the hive's spot: the hive is there, or it was moved a little and the bee flies on to it, or it is lost.
     /// </summary>
-    private void ArriveHome(Entity<BeeForagerComponent> bee)
+    private void ArriveHome(Entity<BeeForagerComponent> bee, Entity<BeeFlightComponent> flight)
     {
         var comp = bee.Comp;
+        var here = Transform(bee).LocalPosition;
         if (FindNearby(bee, comp.Hive) is not { } hivePos)
         {
-            StartLost(bee);
+            StartCircle(bee, flight, BeeForagerPhase.Lost, comp.LostTime, LostRadius);
             return;
         }
 
@@ -358,12 +257,11 @@ public sealed partial class BeeForagerSystem : EntitySystem
         {
             comp.Searches++;
             comp.Home = hivePos;
-            StartFlight(bee, BeeForagerPhase.Return, Transform(bee).LocalPosition, hivePos);
+            Fly(bee, BeeForagerPhase.Return, here, hivePos);
             return;
         }
 
-        SetSize(bee, BeeFlightSize.Shrinking);
-        SetPhase(bee, BeeForagerPhase.Land, ShrinkTime(bee));
+        Shrink(bee, BeeForagerPhase.Land, BeeFlightSize.Shrinking, here);
     }
 
     /// <summary>
@@ -395,32 +293,28 @@ public sealed partial class BeeForagerSystem : EntitySystem
     }
 
     /// <summary>
-    /// The bee lost its way: it circles where it is until someone catches it or it dies.
-    /// </summary>
-    private void StartLost(Entity<BeeForagerComponent> bee)
-    {
-        StartCircle(bee, BeeForagerPhase.Lost, bee.Comp.LostTime, LostRadius);
-    }
-
-    /// <summary>
-    /// Nobody caught the lost bee: it dies, and the colony has one bee less.
+    /// Nobody caught the lost bee: it dies, and the colony has one bee less. A lost scout only forgets what it found.
     /// </summary>
     private void LoseForager(Entity<BeeForagerComponent> bee)
     {
-        if (TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) && !TerminatingOrDeleted(bee.Comp.Hive))
+        if (bee.Comp.Found == null &&
+            TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) &&
+            !TerminatingOrDeleted(bee.Comp.Hive))
+        {
             _hive.RemoveHomeBee((bee.Comp.Hive, hive));
+        }
 
         QueueDel(bee);
     }
 
     /// <summary>
-    /// A lost bee caught by hand becomes a bee in hand, like one taken from the hive, and can be brought back.
+    /// A lost forager caught by hand becomes a bee in hand, like one taken from the hive, and can be brought back.
     /// </summary>
     [SubscribeLocalEvent]
     private void OnForagerInteractHand(Entity<BeeForagerComponent> ent, ref InteractHandEvent args)
     {
         // A lone queen's flight is caught in the shared system; a swarm cannot be caught.
-        if (args.Handled || HasComp<BeeSwarmComponent>(ent) || ent.Comp.Phase != BeeForagerPhase.Lost)
+        if (args.Handled || HasComp<BeeSwarmComponent>(ent) || ent.Comp.Phase != BeeForagerPhase.Lost || ent.Comp.Found != null)
             return;
 
         args.Handled = true;
@@ -446,7 +340,6 @@ public sealed partial class BeeForagerSystem : EntitySystem
             comp.OutBees++;
             bee.SourceHive = hive;
             bee.CountedOutside = true;
-            Dirty(hive);
         }
 
         _queen.GiveTraits(hive, (item, bee));
@@ -455,67 +348,52 @@ public sealed partial class BeeForagerSystem : EntitySystem
         QueueDel(ent);
     }
 
-    public void StartFlight(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, Vector2 from, Vector2 to)
+    /// <summary>
+    /// A straight flight at the bee's speed; the phase says what the bee does when it gets there.
+    /// </summary>
+    public void Fly(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, Vector2 from, Vector2 to)
     {
-        var speed = Math.Max(0.1f, bee.Comp.Speed);
-        bee.Comp.From = from;
-        if (phase == BeeForagerPhase.Return)
-            bee.Comp.Home = to;
-        else
-            bee.Comp.Target = to;
-        SetPhase(bee, phase, TimeSpan.FromSeconds((to - from).Length() / speed));
-        _transform.SetLocalPosition(bee, from);
-        SetFacing(bee, to - from);
-    }
-
-    public void SetPhase(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, TimeSpan length)
-    {
-        var now = _timing.CurTime;
         bee.Comp.Phase = phase;
-        bee.Comp.PhaseStart = now;
-        bee.Comp.PhaseEnd = now + length;
+        SetFacing(bee, to - from);
+        if (TryComp<BeeFlightComponent>(bee, out var flight))
+            _flight.StartLine((bee, flight), from, to, bee.Comp.Speed);
     }
 
     /// <summary>
-    /// Straight from <see cref="BeeForagerComponent.From"/> to the hive when returning, to the target otherwise.
+    /// The bee grows or shrinks where it is: out of the hive or the flower, or into them.
     /// </summary>
-    private void MoveAlong(Entity<BeeForagerComponent> bee, TimeSpan now)
+    public void Shrink(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, BeeFlightSize size, Vector2 at)
     {
-        var to = bee.Comp.Phase == BeeForagerPhase.Return ? bee.Comp.Home : bee.Comp.Target;
-        var total = (bee.Comp.PhaseEnd - bee.Comp.PhaseStart).TotalSeconds;
-        var progress = total > 0 ? (float) Math.Clamp((now - bee.Comp.PhaseStart).TotalSeconds / total, 0, 1) : 1f;
-        _transform.SetLocalPosition(bee, Vector2.Lerp(bee.Comp.From, to, progress));
+        Hold(bee, phase, at, ShrinkTime(bee));
+        SetSize(bee, size);
     }
 
     /// <summary>
-    /// Starts a circle that begins where the bee is, with a random direction, speed and starting side, so no
-    /// two visits look the same.
+    /// The bee stays at <paramref name="at"/> for a while: hidden in a flower, in the pipes and the like.
     /// </summary>
-    private void StartCircle(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, TimeSpan length, float radius)
+    public void Hold(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, Vector2 at, TimeSpan length)
+    {
+        bee.Comp.Phase = phase;
+        if (TryComp<BeeFlightComponent>(bee, out var flight))
+            _flight.Hold((bee, flight), at, length);
+    }
+
+    /// <summary>
+    /// Starts a circle that begins where the bee is, with a random direction, speed and starting side, so no two visits
+    /// look the same.
+    /// </summary>
+    private void StartCircle(Entity<BeeForagerComponent> bee,
+        Entity<BeeFlightComponent> flight,
+        BeeForagerPhase phase,
+        TimeSpan length,
+        float radius)
     {
         var comp = bee.Comp;
         var start = _random.NextFloat() * MathF.Tau;
         var turns = _random.NextFloat(comp.HoverTurnsMin, comp.HoverTurnsMax);
-        comp.CircleTurns = _random.Prob(0.5f) ? turns : -turns;
-        comp.CircleRadius = radius;
-        comp.CircleStart = start;
-        comp.CircleCenter = Transform(bee).LocalPosition - new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
-        SetPhase(bee, phase, length);
-    }
-
-    /// <summary>
-    /// Circling around the current circle's centre, with a slight wobble of the radius.
-    /// </summary>
-    private void Circle(Entity<BeeForagerComponent> bee, TimeSpan now)
-    {
-        var comp = bee.Comp;
-        var time = (float) (now - comp.PhaseStart).TotalSeconds;
-        var angle = comp.CircleStart + time * comp.CircleTurns * MathF.Tau;
-        var radius = comp.CircleRadius * (1f + 0.2f * MathF.Sin(angle * 2.5f));
-        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
-        _transform.SetLocalPosition(bee, comp.CircleCenter + direction * radius);
-        var tangent = new Vector2(-direction.Y, direction.X) * MathF.Sign(comp.CircleTurns);
-        SetFacing(bee, tangent);
+        var center = Transform(bee).LocalPosition - new Vector2(MathF.Cos(start), MathF.Sin(start)) * radius;
+        comp.Phase = phase;
+        _flight.StartCircle(flight, center, radius, _random.Prob(0.5f) ? turns : -turns, start, length);
     }
 
     /// <summary>
@@ -544,11 +422,8 @@ public sealed partial class BeeForagerSystem : EntitySystem
         return TimeSpan.FromSeconds(seconds);
     }
 
-    /// <summary>
-    /// The way back home.
-    /// </summary>
-    private void StartReturn(Entity<BeeForagerComponent> bee, Vector2 from)
+    private static float Distance(Vector2 a, Vector2 b)
     {
-        StartFlight(bee, BeeForagerPhase.Return, from, bee.Comp.Home);
+        return Math.Max((a - b).Length(), 0.01f);
     }
 }

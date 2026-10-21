@@ -6,3 +6,10 @@ namespace Content.Server._RedStar.Beekeeping;
 /// </summary>
 [ByRefEvent]
 public readonly record struct BeehiveBrokenEvent(EntityUid Hive);
+
+/// <summary>
+/// Raised on a visible bee (<see cref="BeeForagerComponent"/>) when a leg of its way ends, before the forager's own
+/// plan runs. A swarm or another kind of flyer sets <see cref="Handled"/> and starts its own next leg.
+/// </summary>
+[ByRefEvent]
+public record struct BeeLegEndedEvent(BeeForagerPhase Phase, bool Handled = false);

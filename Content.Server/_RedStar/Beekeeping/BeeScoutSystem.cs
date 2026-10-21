@@ -1,498 +1,147 @@
-using Content.Server.NPC.Pathfinding;
 using System.Numerics;
 using Content.Shared.Botany.Components;
-using Content.Shared.Humanoid;
-using Content.Shared.Interaction;
-using Content.Shared.Inventory;
-using Content.Shared.Maps;
 using Content.Shared.Physics;
-using Content.Shared.Random.Helpers;
 using Content.Shared.Storage.Components;
 using Content.Shared._RedStar.Beekeeping;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Systems;
-using Robust.Shared.Random;
 using Robust.Shared.Timing;
 
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// The scout and the hive's known sources. When a trip is due the scout grows out of the hive and explores tile by
-/// tile over free tiles, so it never passes walls, windows or closed doors; it prefers tiles the hive has not explored
-/// yet. On every tile it looks around: a tray with a living plant the hive could visit in a straight line is noted, the
-/// scout flies to it and back, and the hive learns the trays when it lands. The paths come from the engine's tile
-/// pathfinder. The sources part keeps the known trays checked and sends the foragers out.
+/// The scout and the hive's known sources. When a trip is due the hive looks for trays with a living plant around it
+/// (<see cref="EntityLookupSystem"/>, a clear straight line from the hive), and the scout flies to the first one it
+/// found and back like a forager does; the hive learns the trays when it lands. The sources part keeps the known
+/// trays checked and sends the foragers out. Finding trays is all here; the flight is <see cref="BeeForagerSystem"/>'s.
 /// </summary>
 public sealed partial class BeeScoutSystem : EntitySystem
 {
-    [Dependency] private PathfindingSystem _pathfinding = default!;
     [Dependency] private SharedPhysicsSystem _physics = default!;
-    [Dependency] private TurfSystem _turf = default!;
     [Dependency] private BeeForagerSystem _foragers = default!;
-    [Dependency] private BeeQueenSystem _queen = default!;
-    [Dependency] private SharedMapSystem _map = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private BeehiveSystem _hive = default!;
     [Dependency] private IGameTiming _timing = default!;
-    private static readonly Vector2i[] Steps4 = { new(1, 0), new(0, 1), new(-1, 0), new(0, -1) };
 
-    private readonly Dictionary<Vector2i, bool> _freeTiles = new();
-    private readonly List<Vector2i> _unexplored = new();
-    private readonly List<Vector2i> _candidates = new();
-
-    public override void Update(float frameTime)
-    {
-        base.Update(frameTime);
-
-        UpdateScoutFlights();
-    }
+    private readonly List<EntityUid> _found = new();
+    private readonly List<(EntityUid Tray, float Distance)> _candidates = new();
 
     /// <summary>
-    /// Sends the scout out on a flight. Returns false if the hive is not on a grid.
+    /// While the scout is home it flies out every so often; the pause between trips starts when it is back. A scout
+    /// that is taken out, lost or kept home by bad air is called back at once.
     /// </summary>
-    public bool LaunchScout(Entity<BeehiveComponent> hive)
+    public void UpdateScouting(Entity<BeehiveComponent> hive)
     {
-        var xform = Transform(hive);
-        if (xform.GridUid is not { } grid || !TryComp<MapGridComponent>(grid, out var gridComp))
-            return false;
-
-        var tile = _map.TileIndicesFor(grid, gridComp, xform.Coordinates);
-        var start = _map.TileCenterToVector((grid, gridComp), tile);
-        var bee = Spawn(hive.Comp.ScoutFlyerPrototype, new EntityCoordinates(grid, start));
-        if (!TryComp<BeeScoutFlightComponent>(bee, out var flight))
-        {
-            Del(bee);
-            return false;
-        }
-
-        flight.Hive = hive;
-        flight.Phase = BeeScoutPhase.Emerge;
-        flight.MaxFind = Math.Clamp(flight.MaxFind + _hive.GetHiveTotals(hive).ScoutFinds, 1, 5);
-        flight.StepFrom = flight.StepTo = start;
-        flight.PhaseEnd = _timing.CurTime + _foragers.ShrinkTime(bee);
-        hive.Comp.ScoutFlyer = bee;
-        _foragers.SetSize(bee, BeeFlightSize.Growing);
-        return true;
-    }
-
-    private void UpdateScoutFlights()
-    {
+        var comp = hive.Comp;
         var now = _timing.CurTime;
-        var query = EntityQueryEnumerator<BeeScoutFlightComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var flight, out var xform))
+
+        if (SharedBeehiveSystem.ScoutsAtHome(comp) <= 0)
         {
-            if (TerminatingOrDeleted(flight.Hive) ||
-                !TryComp<BeehiveComponent>(flight.Hive, out var hive) ||
-                xform.GridUid is not { } grid ||
-                !TryComp<MapGridComponent>(grid, out var gridComp))
-            {
-                QueueDel(uid);
-                continue;
-            }
-
-            // Tile checks are cached per scout and tick; scouts on other grids must not share them.
-            _freeTiles.Clear();
-            var scout = new Entity<BeeScoutFlightComponent>(uid, flight);
-            var hiveEnt = new Entity<BeehiveComponent>(flight.Hive, hive);
-            var gridEnt = new Entity<MapGridComponent>(grid, gridComp);
-
-            switch (flight.Phase)
-            {
-                case BeeScoutPhase.Emerge:
-                    if (now < flight.PhaseEnd)
-                        break;
-
-                    _foragers.SetSize(uid, BeeFlightSize.Full);
-                    flight.Phase = BeeScoutPhase.Explore;
-                    ScoutArrived(scout, hiveEnt, gridEnt, now);
-                    break;
-
-                case BeeScoutPhase.Explore:
-                case BeeScoutPhase.ToPlant:
-                case BeeScoutPhase.Home:
-                    if (!StepAlong(scout, now))
-                        ScoutArrived(scout, hiveEnt, gridEnt, now);
-                    break;
-
-                case BeeScoutPhase.DiveIn:
-                    if (now < flight.PhaseEnd)
-                        break;
-
-                    _foragers.SetSize(uid, BeeFlightSize.Hidden);
-                    flight.Phase = BeeScoutPhase.Feeding;
-                    flight.PhaseEnd = now + flight.FeedTime;
-                    break;
-
-                case BeeScoutPhase.Feeding:
-                    if (now < flight.PhaseEnd)
-                        break;
-
-                    _foragers.SetSize(uid, BeeFlightSize.Growing);
-                    flight.Phase = BeeScoutPhase.DiveOut;
-                    flight.PhaseEnd = now + _foragers.ShrinkTime(uid);
-                    break;
-
-                case BeeScoutPhase.DiveOut:
-                    if (now < flight.PhaseEnd)
-                        break;
-
-                    _foragers.SetSize(uid, BeeFlightSize.Full);
-                    NoticeNearby(scout, hiveEnt, gridEnt);
-                    GoHome(scout, hiveEnt, gridEnt, now);
-                    break;
-
-                case BeeScoutPhase.Land:
-                    if (now < flight.PhaseEnd)
-                        break;
-
-                    LandScout(scout, flight.Hive);
-                    QueueDel(uid);
-                    break;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Moves the scout along its current step. Returns false once the step and the path are done.
-    /// </summary>
-    private bool StepAlong(Entity<BeeScoutFlightComponent> scout, TimeSpan now)
-    {
-        var flight = scout.Comp;
-        var total = (flight.StepEnd - flight.StepStart).TotalSeconds;
-        var progress = total > 0 ? (float) Math.Clamp((now - flight.StepStart).TotalSeconds / total, 0, 1) : 1f;
-        _transform.SetLocalPosition(scout, Vector2.Lerp(flight.StepFrom, flight.StepTo, progress));
-
-        if (progress < 1f)
-            return true;
-
-        if (flight.Path.Count == 0)
-            return false;
-
-        var xform = Transform(scout);
-        var grid = xform.GridUid!.Value;
-        var gridEnt = new Entity<MapGridComponent>(grid, Comp<MapGridComponent>(grid));
-
-        // Cut corners: fly straight to the farthest tile of the path that is in clear sight, not tile by tile.
-        var from = _transform.GetMapCoordinates(scout, xform);
-        while (flight.Path.Count > 1 &&
-               ClearFlightPath(from, _transform.ToMapCoordinates(
-                   new EntityCoordinates(grid, _map.TileCenterToVector(gridEnt, flight.Path[1]))), scout))
-        {
-            flight.Path.RemoveAt(0);
-        }
-
-        var next = flight.Path[0];
-        flight.Path.RemoveAt(0);
-        StartStep(scout, _map.TileCenterToVector(gridEnt, next), now);
-        return true;
-    }
-
-    private void StartStep(Entity<BeeScoutFlightComponent> scout, Vector2 to, TimeSpan now)
-    {
-        var flight = scout.Comp;
-        var xform = Transform(scout);
-        flight.StepFrom = xform.LocalPosition;
-        flight.StepTo = to;
-
-        flight.StepStart = now;
-        flight.StepEnd = now + TimeSpan.FromSeconds((to - flight.StepFrom).Length() / Math.Max(0.1f, flight.Speed));
-    }
-
-    /// <summary>
-    /// The scout reached the end of its path: decide what it does next.
-    /// </summary>
-    private void ScoutArrived(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        Entity<MapGridComponent> grid,
-        TimeSpan now)
-    {
-        var flight = scout.Comp;
-        switch (flight.Phase)
-        {
-            case BeeScoutPhase.ToPlant:
-                _foragers.SetSize(scout, BeeFlightSize.Shrinking);
-                flight.Phase = BeeScoutPhase.DiveIn;
-                flight.PhaseEnd = now + _foragers.ShrinkTime(scout);
-                return;
-
-            case BeeScoutPhase.Home:
-                // The last bit to the hive itself, which need not stand in the middle of its tile.
-                var hiveXform = Transform(hive);
-                if (hiveXform.GridUid == grid.Owner)
-                {
-                    var hivePos = _transform.WithEntityId(hiveXform.Coordinates, grid).Position;
-                    if ((hivePos - Transform(scout).LocalPosition).Length() > 0.05f)
-                    {
-                        StartStep(scout, hivePos, now);
-                        return;
-                    }
-                }
-
-                _foragers.SetSize(scout, BeeFlightSize.Shrinking);
-                flight.Phase = BeeScoutPhase.Land;
-                flight.PhaseEnd = now + _foragers.ShrinkTime(scout);
-                return;
-        }
-
-        // Exploring: this tile is explored now; look around it.
-        var tile = _map.TileIndicesFor(grid, grid.Comp, Transform(scout).Coordinates);
-        hive.Comp.ScoutExplored.Add(tile);
-        flight.Steps++;
-
-        if (ScoutLookAround(scout, hive, grid, tile) is { } plant)
-        {
-            flight.Plant = plant;
-            var plantTile = _map.TileIndicesFor(grid, grid.Comp, Transform(plant).Coordinates);
-            if (FindPath(grid, hive, tile, plantTile, flight.Path))
-            {
-                flight.Phase = BeeScoutPhase.ToPlant;
-                StepAlong(scout, now);
-                return;
-            }
-        }
-
-        if (flight.Steps >= flight.MaxSteps || !PickNextTile(scout, hive, grid, tile))
-        {
-            GoHome(scout, hive, grid, now);
+            comp.NextScoutTrip = TimeSpan.Zero;
+            RecallScout(comp);
             return;
         }
 
-        StepAlong(scout, now);
+        if (ScoutFlying(comp))
+            return;
+
+        if (comp.NextScoutTrip == TimeSpan.Zero)
+        {
+            // The first trip of a new colony goes out within seconds; the normal pauses follow it.
+            comp.NextScoutTrip = comp.ScoutFirstTripNow
+                ? now + comp.FirstScoutDelay
+                : now + RandomTrip(comp, _hive.GetHiveTotals(hive).ScoutPause);
+            comp.ScoutFirstTripNow = false;
+            return;
+        }
+
+        if (now < comp.NextScoutTrip)
+            return;
+
+        // The pause starts over once this trip is done. Nothing new in sight: try again after a pause.
+        comp.NextScoutTrip = ScoutTrip(hive) ? TimeSpan.Zero : now + RandomTrip(comp);
+    }
+
+    private TimeSpan RandomTrip(BeehiveComponent comp, float pause = 1f)
+    {
+        var min = comp.ScoutTripMin.TotalSeconds;
+        var max = Math.Max(min, comp.ScoutTripMax.TotalSeconds);
+        return TimeSpan.FromSeconds((min + _random.NextDouble() * (max - min)) * pause);
     }
 
     /// <summary>
-    /// The next tile to explore: a free unexplored neighbour if there is one, otherwise the path to the nearest
-    /// unexplored free tile in range. With nothing left to explore, the hive's memory of explored tiles starts
-    /// over and the scout goes home. Returns false if it should go home.
+    /// The scout looks for trays it does not know yet and flies to the first of them. Returns false if it found none.
     /// </summary>
-    private bool PickNextTile(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        Entity<MapGridComponent> grid,
-        Vector2i tile)
+    public bool ScoutTrip(Entity<BeehiveComponent> hive)
     {
-        var explored = hive.Comp.ScoutExplored;
+        var finds = Math.Clamp(hive.Comp.ScoutFinds + _hive.GetHiveTotals(hive).ScoutFinds, 1, 5);
+        FindNewTrays(hive, finds, _found);
+        return _foragers.TrySpawnScout(hive, Transform(hive), _found);
+    }
+
+    /// <summary>
+    /// Up to <paramref name="max"/> trays with a living plant within <see cref="BeehiveComponent.ScoutRange"/> that the
+    /// hive does not know yet and could visit: on its grid, not inside anything and in a clear straight line. The nearest
+    /// come first, so the scout's trip is short.
+    /// </summary>
+    public void FindNewTrays(Entity<BeehiveComponent> hive, int max, List<EntityUid> found)
+    {
+        found.Clear();
+        var comp = hive.Comp;
+        var xform = Transform(hive);
+        if (xform.GridUid is not { } grid)
+            return;
+
+        var hiveMap = _transform.GetMapCoordinates(hive, xform);
+        _foundTrays.Clear();
+        _lookup.GetEntitiesInRange(hiveMap, comp.ScoutRange, _foundTrays);
+
         _candidates.Clear();
-        foreach (var step in Steps4)
+        foreach (var tray in _foundTrays)
         {
-            var next = tile + step;
-            if (!explored.Contains(next) && InScoutRange(hive, grid, next) && IsFreeTile(grid, next))
-                _candidates.Add(next);
-        }
-
-        scout.Comp.Path.Clear();
-        if (_candidates.Count > 0)
-        {
-            scout.Comp.Path.Add(_random.Pick(_candidates));
-            return true;
-        }
-
-        if (FindPath(grid, hive, tile, null, scout.Comp.Path))
-            return true;
-
-        explored.Clear();
-        return false;
-    }
-
-    /// <summary>
-    /// The tiles to fly, without the start, from <paramref name="start"/> to <paramref name="goal"/>, or to the nearest
-    /// unexplored tile if the goal is null, over free tiles in scouting range. The engine's tile pathfinder does the
-    /// search; this only says which tiles a bee can fly through. Written into <paramref name="path"/>.
-    /// </summary>
-    private bool FindPath(Entity<MapGridComponent> grid,
-        Entity<BeehiveComponent> hive,
-        Vector2i start,
-        Vector2i? goal,
-        List<Vector2i> path)
-    {
-        path.Clear();
-
-        // The goal tile itself may hold the tray or the hive; it only has to be reachable.
-        float Cost(Vector2i tile) =>
-            InScoutRange(hive, grid, tile, 1) && (tile == goal || IsFreeTile(grid, tile)) ? 1f : 0f;
-
-        PathfindingSystem.SimplePathResult result;
-        if (goal is { } target)
-        {
-            result = _pathfinding.GetPath(new PathfindingSystem.SimplePathArgs
+            var trayXform = Transform(tray);
+            if (trayXform.GridUid != grid ||
+                _container.IsEntityInContainer(tray) ||
+                GetLivingPlant(tray.Comp) == null ||
+                IsKnownActive(comp, tray) ||
+                comp.SourceWhitelist != null && !_whitelist.IsValid(comp.SourceWhitelist, tray))
             {
-                Start = start,
-                End = target,
-                TileCost = Cost,
-            });
-        }
-        else
-        {
-            _unexplored.Clear();
-            var hiveTile = _map.TileIndicesFor(grid, grid.Comp, Transform(hive).Coordinates);
-            var reach = (int) MathF.Ceiling(hive.Comp.ScoutRange);
-            for (var x = -reach; x <= reach; x++)
-            {
-                for (var y = -reach; y <= reach; y++)
-                {
-                    var tile = hiveTile + new Vector2i(x, y);
-                    if (tile != start &&
-                        !hive.Comp.ScoutExplored.Contains(tile) &&
-                        InScoutRange(hive, grid, tile) &&
-                        IsFreeTile(grid, tile))
-                    {
-                        _unexplored.Add(tile);
-                    }
-                }
+                continue;
             }
 
-            if (_unexplored.Count == 0)
-                return false;
-
-            result = _pathfinding.GetBreadthPath(new PathfindingSystem.BreadthPathArgs
-            {
-                Start = start,
-                Ends = _unexplored,
-                TileCost = Cost,
-            });
+            var trayMap = _transform.GetMapCoordinates(tray, trayXform);
+            var distance = (trayMap.Position - hiveMap.Position).Length();
+            if (distance <= comp.VisitRange && ClearFlightPath(hiveMap, trayMap, hive, tray))
+                _candidates.Add((tray, distance));
         }
 
-        // The pathfinder's path starts with the start tile.
-        if (result.Path is not { Count: > 1 } found)
-            return false;
-
-        for (var i = 1; i < found.Count; i++)
+        _candidates.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+        for (var i = 0; i < _candidates.Count && found.Count < max; i++)
         {
-            path.Add(found[i]);
+            found.Add(_candidates[i].Tray);
         }
-
-        return true;
     }
 
-    private bool InScoutRange(Entity<BeehiveComponent> hive, Entity<MapGridComponent> grid, Vector2i tile, float extra = 0f)
+    private static bool IsKnownActive(BeehiveComponent comp, EntityUid tray)
     {
-        var hiveTile = _map.TileIndicesFor(grid, grid.Comp, Transform(hive).Coordinates);
-        return (tile - hiveTile).Length <= hive.Comp.ScoutRange + extra;
-    }
-
-    /// <summary>
-    /// A tile a bee can fly through: floor, and nothing a flying bee bumps into. Cached for the current scout.
-    /// </summary>
-    private bool IsFreeTile(Entity<MapGridComponent> grid, Vector2i tile)
-    {
-        if (_freeTiles.TryGetValue(tile, out var free))
-            return free;
-
-        free = !_turf.IsSpace(_map.GetTileRef(grid, tile)) &&
-               !_turf.IsTileBlocked(grid, tile, CollisionGroup.FlyingMobMask, grid.Comp);
-        _freeTiles[tile] = free;
-        return free;
-    }
-
-    /// <summary>
-    /// Looks around the tile for a tray with a living plant the hive could visit. Returns it, if the scout still
-    /// has room to remember one.
-    /// </summary>
-    private EntityUid? ScoutLookAround(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        Entity<MapGridComponent> grid,
-        Vector2i tile)
-    {
-        if (scout.Comp.Found.Count >= scout.Comp.MaxFind)
-            return null;
-
-        var center = _transform.ToMapCoordinates(new EntityCoordinates(grid, _map.TileCenterToVector(grid, tile)));
-        _foundTrays.Clear();
-        _lookup.GetEntitiesInRange(center, scout.Comp.SightRadius, _foundTrays);
-        foreach (var tray in _foundTrays)
+        foreach (var known in comp.KnownSources)
         {
-            if (scout.Comp.Found.Contains(tray) || !ScoutCanUse(scout, hive, grid, tray, center))
-                continue;
-
-            scout.Comp.Found.Add(tray);
-            return tray;
+            if (known.Tray == tray && known.Active)
+                return true;
         }
 
-        return null;
-    }
-
-    /// <summary>
-    /// A tray the scout may note: a living plant, on the hive's grid, not inside anything, not known to the hive
-    /// yet, seen from where the scout is, and in a clear straight line from the hive so foragers can fly there.
-    /// </summary>
-    private bool ScoutCanUse(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        EntityUid grid,
-        Entity<PlantTrayComponent> tray,
-        MapCoordinates from)
-    {
-        var trayXform = Transform(tray);
-        if (trayXform.GridUid != grid || _container.IsEntityInContainer(tray) || GetLivingPlant(tray.Comp) == null)
-            return false;
-
-        if (hive.Comp.SourceWhitelist != null && !_whitelist.IsValid(hive.Comp.SourceWhitelist, tray))
-            return false;
-
-        foreach (var known in hive.Comp.KnownSources)
-        {
-            if (known.Tray == tray.Owner && known.Active)
-                return false;
-        }
-
-        var trayMap = _transform.GetMapCoordinates(tray, trayXform);
-        var hiveMap = _transform.GetMapCoordinates(hive);
-        return (trayMap.Position - hiveMap.Position).Length() <= hive.Comp.VisitRange &&
-               ClearFlightPath(from, trayMap, scout, tray) &&
-               ClearFlightPath(hiveMap, trayMap, hive, tray);
-    }
-
-    /// <summary>
-    /// Sitting in the flower, the scout notices other trays right next to it, up to how many it can remember.
-    /// </summary>
-    private void NoticeNearby(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        Entity<MapGridComponent> grid)
-    {
-        if (scout.Comp.Plant is not { } plant || TerminatingOrDeleted(plant))
-            return;
-
-        var center = _transform.GetMapCoordinates(plant);
-        _foundTrays.Clear();
-        _lookup.GetEntitiesInRange(center, scout.Comp.NearbyRadius, _foundTrays);
-        foreach (var tray in _foundTrays)
-        {
-            if (scout.Comp.Found.Count >= scout.Comp.MaxFind)
-                return;
-
-            if (!scout.Comp.Found.Contains(tray) && ScoutCanUse(scout, hive, grid, tray, center))
-                scout.Comp.Found.Add(tray);
-        }
-    }
-
-    /// <summary>
-    /// Walks home tile by tile; if the hive was moved where no free path leads, it flies straight.
-    /// </summary>
-    private void GoHome(Entity<BeeScoutFlightComponent> scout,
-        Entity<BeehiveComponent> hive,
-        Entity<MapGridComponent> grid,
-        TimeSpan now)
-    {
-        var flight = scout.Comp;
-        flight.Phase = BeeScoutPhase.Home;
-        var here = _map.TileIndicesFor(grid, grid.Comp, Transform(scout).Coordinates);
-        var hiveTile = _map.TileIndicesFor(grid, grid.Comp, Transform(hive).Coordinates);
-        if (!FindPath(grid, hive, here, hiveTile, flight.Path))
-        {
-            flight.Path.Clear();
-            flight.Path.Add(hiveTile);
-        }
-
-        StepAlong(scout, now);
+        return false;
     }
 
     /// <summary>
     /// The scout is back: the hive learns every tray it saw that still checks out.
     /// </summary>
-    private void LandScout(Entity<BeeScoutFlightComponent> scout, EntityUid hiveUid)
+    public void LandScout(Entity<BeeForagerComponent> scout)
     {
-        if (TerminatingOrDeleted(hiveUid) || !TryComp<BeehiveComponent>(hiveUid, out var comp))
+        var hiveUid = scout.Comp.Hive;
+        if (TerminatingOrDeleted(hiveUid) || !TryComp<BeehiveComponent>(hiveUid, out var comp) || scout.Comp.Found is not { } found)
             return;
 
         var hive = new Entity<BeehiveComponent>(hiveUid, comp);
@@ -500,7 +149,7 @@ public sealed partial class BeeScoutSystem : EntitySystem
         var xform = Transform(hiveUid);
         var hiveMap = _transform.GetMapCoordinates(hiveUid, xform);
 
-        foreach (var tray in scout.Comp.Found)
+        foreach (var tray in found)
         {
             if (TerminatingOrDeleted(tray) || AddSource(hive, tray, now) is not { } source)
                 continue;
@@ -512,13 +161,12 @@ public sealed partial class BeeScoutSystem : EntitySystem
             }
         }
 
-        scout.Comp.Found.Clear();
         if (comp.ScoutFlyer == scout.Owner)
             comp.ScoutFlyer = null;
     }
 
     /// <summary>
-    /// The scout in the air is gone at once: it was caught, lost or the hive stopped. Its findings are lost too.
+    /// The scout in the air is gone at once: it was taken out, lost or the hive stopped. Its findings are lost too.
     /// </summary>
     public void RecallScout(BeehiveComponent comp)
     {
@@ -544,12 +192,8 @@ public sealed partial class BeeScoutSystem : EntitySystem
     }
 
     /// <summary>
-    /// Whether a bee can fly straight from one point to the other: no wall, window or closed door between them.
-    /// Open doors let it through. The two ends themselves (the hive, the tray, the bee) never block.
-    /// </summary>
-    /// <summary>
-    /// The locker, closet or crate the entity sits in, if any. Bees fly in and out of a wild hive there even with
-    /// the door shut.
+    /// The locker, closet or crate the entity sits in, if any. Bees fly in and out of a hive there even with the door
+    /// shut.
     /// </summary>
     public EntityUid? StorageOf(EntityUid? uid)
     {
@@ -563,6 +207,10 @@ public sealed partial class BeeScoutSystem : EntitySystem
         return container.Owner;
     }
 
+    /// <summary>
+    /// Whether a bee can fly straight from one point to the other: no wall, window or closed door between them.
+    /// Open doors let it through. The two ends themselves (the hive, the tray, the bee) never block.
+    /// </summary>
     public bool ClearFlightPath(MapCoordinates from, MapCoordinates to, EntityUid? ignoreA = null, EntityUid? ignoreB = null)
     {
         if (from.MapId != to.MapId)

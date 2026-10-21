@@ -19,8 +19,6 @@ public sealed partial class BeeQueenSystem
     {
         var comp = hive.Comp;
         var now = _timing.CurTime;
-        // The admin speed-up runs the egg's timers faster too.
-        var speed = Math.Max(comp.DebugSpeed, 0.01f);
 
         if (comp.HasEgg)
         {
@@ -47,13 +45,12 @@ public sealed partial class BeeQueenSystem
 
         var traits = _hive.GetHiveTotals(hive);
         comp.EggFullSince ??= now;
-        if (now - comp.EggFullSince < comp.EggFullTime * traits.EggWait / speed)
+        if (now - comp.EggFullSince < comp.EggFullTime * traits.EggWait)
             return;
 
         comp.EggFullSince = null;
         comp.HasEgg = true;
-        comp.EggDiesAt = now + comp.EggLifetime * traits.EggLife / speed;
-        Dirty(hive);
+        comp.EggDiesAt = now + comp.EggLifetime * traits.EggLife;
     }
 
     /// <summary>
@@ -63,9 +60,7 @@ public sealed partial class BeeQueenSystem
     {
         hive.Comp.HasEgg = false;
         hive.Comp.EggCooldownUntil = _timing.CurTime +
-                                     hive.Comp.EggCooldown * _hive.GetHiveTotals(hive).EggCooldown /
-                                     Math.Max(hive.Comp.DebugSpeed, 0.01f);
-        Dirty(hive);
+                                     hive.Comp.EggCooldown * _hive.GetHiveTotals(hive).EggCooldown;
     }
 
     /// <summary>

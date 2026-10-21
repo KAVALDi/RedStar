@@ -256,7 +256,7 @@ public sealed partial class BeeQueenSystem
         swarm.Searching = storage == null;
         forager.Home = home;
         _foragers.SetSize(flyer, BeeFlightSize.Full);
-        _foragers.StartFlight((flyer, forager), BeeForagerPhase.Outbound, home, site);
+        _foragers.Fly((flyer, forager), BeeForagerPhase.Outbound, home, site);
 
         _adminLog.Add(LogType.Action, LogImpact.Low,
             $"{ToPrettyString(homing):queen} was let go and flew off to found a wild hive");

@@ -51,7 +51,7 @@ public enum ApiaryScanKind : byte
 
 /// <summary>
 /// What the apiary analyzer shows. A hive fills the colony part, a queen or a bee only the traits and its own lines.
-/// No timers and no map: those stay in the admin debug window.
+/// No timers: admins read those in View Variables.
 /// </summary>
 [Serializable, NetSerializable]
 public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
