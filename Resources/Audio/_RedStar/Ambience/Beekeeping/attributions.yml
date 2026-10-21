@@ -4,9 +4,9 @@
   source: "https://freesound.org/people/tom_woysky/sounds/243011/"
 
 - files: ["bee_flying.ogg"]
-  license: "CC-BY-SA-3.0"
-  copyright: "Made by KAVALDi (github): the bee flight loop, mono OGG."
-  source: "https://github.com/KAVALDi/RedStar"
+  license: "CC-BY-4.0"
+  copyright: "\"R4_00334-1_FR_FlyInRoom.wav\" by kevp888 (Kevin Luce, freesound.org). Heavily trimmed and looped by KAVALDi (github), converted to mono OGG."
+  source: "https://freesound.org/people/kevp888/sounds/635188/"
 
 - files: ["bee_in_hand.ogg"]
   license: "CC0-1.0"
