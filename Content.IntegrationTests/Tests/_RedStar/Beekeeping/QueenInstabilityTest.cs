@@ -42,4 +42,28 @@ public sealed class QueenInstabilityTest : GameTest
             });
         });
     }
+
+    /// <summary>
+    /// The two new traits add to what the hive does when it is hit.
+    /// </summary>
+    [Test]
+    public async Task AngryTraits()
+    {
+        var hive = Server.System<Content.Server._RedStar.Beekeeping.BeehiveSystem>();
+        await Server.WaitAssertion(() =>
+        {
+            var hot = hive.GetTotals(new ProtoId<BeeTraitPrototype>[] { "Hotheaded" });
+            var guarded = hive.GetTotals(new ProtoId<BeeTraitPrototype>[] { "GuardedScout" });
+            var plain = hive.GetTotals(System.Array.Empty<ProtoId<BeeTraitPrototype>>());
+            Assert.Multiple(() =>
+            {
+                Assert.That(hot.AngryPerHit, Is.EqualTo(1));
+                Assert.That(hot.AngryDamageStep, Is.EqualTo(0.5f));
+                Assert.That(hot.GuardedScout, Is.False);
+                Assert.That(guarded.GuardedScout);
+                Assert.That(plain.AngryPerHit, Is.Zero);
+                Assert.That(plain.AngryDamageStep, Is.EqualTo(1f));
+            });
+        });
+    }
 }
