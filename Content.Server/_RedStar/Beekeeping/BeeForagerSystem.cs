@@ -32,8 +32,9 @@ namespace Content.Server._RedStar.Beekeeping;
 /// <summary>
 /// Visible forager bees: a short picture of one visit. The bee flies to the tray, circles over the plant, dives into the
 /// flower, comes back out, flies home and dives into the hive. A tray or hive that was moved is looked for nearby; a bee
-/// that cannot find it is lost, circles, can be caught by hand and dies after a while. Positions are set in the
-/// coordinates of the grid, every tick only while a player is near; the client smooths them and animates the dives.
+/// that cannot find it is lost, circles, can be caught by hand and dies after a while. A swarm uses the same
+/// flight. Positions are set in the coordinates of the grid, every tick only while a player is near; the
+/// client smooths them and animates the dives.
 /// </summary>
 public sealed partial class BeeForagerSystem : EntitySystem
 {
@@ -44,6 +45,7 @@ public sealed partial class BeeForagerSystem : EntitySystem
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private SharedMapSystem _map = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
@@ -171,6 +173,7 @@ public sealed partial class BeeForagerSystem : EntitySystem
         while (query.MoveNext(out var uid, out var forager, out var beeXform))
         {
             var bee = new Entity<BeeForagerComponent>(uid, forager);
+            TryComp<BeeSwarmComponent>(uid, out var swarm);
 
             if (!collected)
             {
@@ -198,7 +201,33 @@ public sealed partial class BeeForagerSystem : EntitySystem
                     if (now < forager.PhaseEnd)
                         break;
 
-                    ArriveAtTray(bee);
+                    if (swarm is { VentExit: not null })
+                    {
+                        // At the vent: the swarm dives in.
+                        SetSize(uid, BeeFlightSize.Shrinking);
+                        SetPhase(bee, BeeForagerPhase.VentIn, ShrinkTime(uid));
+                    }
+                    else if (swarm is { Scatter: true })
+                    {
+                        // Bees with no queen scatter and are gone.
+                        SetSize(uid, BeeFlightSize.Shrinking);
+                        SetPhase(bee, BeeForagerPhase.Land, ShrinkTime(uid));
+                    }
+                    else if (swarm is { Searching: true })
+                    {
+                        // A lone queen looking for a home: look around, then fly on.
+                        _swarm.ContinueSearch(bee, swarm);
+                    }
+                    else if (swarm != null)
+                    {
+                        // The swarm is at its site: the wild hive grows there.
+                        _swarm.LandSwarm((uid, swarm));
+                        QueueDel(uid);
+                    }
+                    else
+                    {
+                        ArriveAtTray(bee);
+                    }
                     break;
 
                 case BeeForagerPhase.Hover:
@@ -250,6 +279,29 @@ public sealed partial class BeeForagerSystem : EntitySystem
                 case BeeForagerPhase.Land:
                     if (now >= forager.PhaseEnd)
                         QueueDel(uid);
+                    break;
+
+                case BeeForagerPhase.VentIn:
+                    if (now >= forager.PhaseEnd)
+                    {
+                        SetSize(uid, BeeFlightSize.Hidden);
+                        SetPhase(bee, BeeForagerPhase.VentHidden, TimeSpan.FromSeconds(2));
+                    }
+                    break;
+
+                case BeeForagerPhase.VentHidden:
+                    if (now >= forager.PhaseEnd)
+                    {
+                        if (swarm == null)
+                            QueueDel(uid);
+                        else
+                            _swarm.SwarmComeOut(bee, swarm);
+                    }
+                    break;
+
+                case BeeForagerPhase.VentOut:
+                    if (now >= forager.PhaseEnd && swarm != null)
+                        _swarm.SwarmLeftVent(bee, swarm);
                     break;
 
                 case BeeForagerPhase.Lost:
@@ -367,8 +419,8 @@ public sealed partial class BeeForagerSystem : EntitySystem
     [SubscribeLocalEvent]
     private void OnForagerInteractHand(Entity<BeeForagerComponent> ent, ref InteractHandEvent args)
     {
-        // A lone queen's flight is caught in the shared system.
-        if (args.Handled || ent.Comp.Phase != BeeForagerPhase.Lost)
+        // A lone queen's flight is caught in the shared system; a swarm cannot be caught.
+        if (args.Handled || HasComp<BeeSwarmComponent>(ent) || ent.Comp.Phase != BeeForagerPhase.Lost)
             return;
 
         args.Handled = true;

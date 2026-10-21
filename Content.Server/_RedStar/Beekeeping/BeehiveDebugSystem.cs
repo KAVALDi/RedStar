@@ -23,6 +23,7 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private BeeForagerSystem _foragers = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private DamageableSystem _damageable = default!;
     [Dependency] private SharedSolutionContainerSystem _solutions = default!;
@@ -60,8 +61,17 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
             _hive.UpdateNectarLevel(ent);
         });
 
-        AddDebugVerb(ref args, "beekeeping-debug-frames-honey", () => FillFrames(ent, false));
-        AddDebugVerb(ref args, "beekeeping-debug-frames-wax", () => FillFrames(ent, true));
+        if (ent.Comp.Wild)
+        {
+            // A wild hive keeps its combs inside, with no frames: it is filled to half or to the brim.
+            AddDebugVerb(ref args, "beekeeping-debug-wild-half", () => FillWildCombs(ent, ent.Comp.MaxWildCombs / 2));
+            AddDebugVerb(ref args, "beekeeping-debug-wild-full", () => FillWildCombs(ent, ent.Comp.MaxWildCombs));
+        }
+        else
+        {
+            AddDebugVerb(ref args, "beekeeping-debug-frames-honey", () => FillFrames(ent, false));
+            AddDebugVerb(ref args, "beekeeping-debug-frames-wax", () => FillFrames(ent, true));
+        }
 
         AddDebugVerb(ref args, "beekeeping-debug-fill-bees", () =>
         {
@@ -86,6 +96,38 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
         });
 
         AddDebugVerb(ref args, "beekeeping-debug-scout-now", () => ScoutWholeRange(ent));
+
+        // Lets the swarm out right now: a full colony, then the swarm itself, with no waiting for the egg or its
+        // cooldown. If it cannot leave, the admin is told why.
+        var swarmUser = args.User;
+        AddDebugVerb(ref args, "beekeeping-debug-swarm", () =>
+        {
+            var comp = ent.Comp;
+            if (_hive.GetQueen(ent) == null)
+            {
+                _popup.PopupEntity(Loc.GetString("beekeeping-debug-swarm-no-queen"), ent, swarmUser);
+                return;
+            }
+
+            comp.Bees = Math.Max(Math.Max(comp.Bees, comp.SwarmMinBees), comp.MaxBees - comp.OutBees);
+            if (comp.ScoutState == BeeScoutState.Lost)
+                comp.ScoutState = BeeScoutState.Home;
+            comp.Nectar = comp.MaxNectar;
+            _hive.UpdateNectarLevel(ent);
+            _hive.UpdateAmbience(ent);
+
+            if (_swarm.TrySwarm(ent))
+            {
+                _queen.EndEgg(ent);
+                comp.EggCooldownUntil = _timing.CurTime;
+            }
+            else
+            {
+                _popup.PopupEntity(Loc.GetString("beekeeping-debug-swarm-failed"), ent, swarmUser);
+            }
+
+            Dirty(ent);
+        });
 
         // A forager flies to a random known tray right away; if it cannot, the admin is told why.
         var debugUser = args.User;
@@ -134,7 +176,7 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
         }
         else
         {
-            // The egg dies right now, as if nobody collected it.
+            // The egg dies right now, as if nobody collected it: the swarm leaves if it can.
             AddDebugVerb(ref args, "beekeeping-debug-egg-die", () => ent.Comp.EggDiesAt = _timing.CurTime);
         }
 
@@ -153,6 +195,16 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
             Dirty(ent);
             ent.Comp.NextScoutTrip = TimeSpan.Zero;
         });
+    }
+
+    /// <summary>
+    /// A wild hive's combs up to <paramref name="combs"/>; one that has more already keeps them.
+    /// </summary>
+    private void FillWildCombs(Entity<BeehiveComponent> hive, int combs)
+    {
+        hive.Comp.WildCombs = Math.Max(hive.Comp.WildCombs, Math.Min(combs, hive.Comp.MaxWildCombs));
+        Dirty(hive);
+        _hive.UpdateHiveAppearance(hive);
     }
 
     /// <summary>

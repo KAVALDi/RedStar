@@ -79,6 +79,7 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
 
     #region Hive
 
+    public bool Wild;
     public int Bees;
     public int OutBees;
     public int MaxBees;

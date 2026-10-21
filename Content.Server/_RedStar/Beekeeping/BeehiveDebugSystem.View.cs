@@ -229,11 +229,19 @@ public sealed partial class BeehiveDebugSystem
             ? Math.Max(0f, (float) (comp.EggFullTime * _hive.GetHiveTotals(hive).EggWait / Math.Max(comp.DebugSpeed, 0.01f) - (now - full)).TotalSeconds)
             : 0f;
 
-        _hive.GetFrames(hive, _frames);
-        foreach (var frame in _frames)
+        if (comp.Wild)
         {
-            data.Combs += frame.Comp.Combs;
-            data.MaxCombs += frame.Comp.MaxCombs;
+            data.Combs = comp.WildCombs;
+            data.MaxCombs = comp.MaxWildCombs;
+        }
+        else
+        {
+            _hive.GetFrames(hive, _frames);
+            foreach (var frame in _frames)
+            {
+                data.Combs += frame.Comp.Combs;
+                data.MaxCombs += frame.Comp.MaxCombs;
+            }
         }
 
         if (_hive.GetQueen(hive) is { } queenUid && TryComp<BeeQueenComponent>(queenUid, out var queen))

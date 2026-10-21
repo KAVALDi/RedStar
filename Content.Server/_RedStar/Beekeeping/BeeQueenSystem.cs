@@ -40,6 +40,7 @@ public sealed partial class BeeQueenSystem : EntitySystem
     [Dependency] private SharedSolutionContainerSystem _solutions = default!;
     [Dependency] private BeehiveSystem _hive = default!;
     [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private ISharedAdminLogManager _adminLog = default!;
 
     public override void Update(float frameTime)
@@ -102,7 +103,9 @@ public sealed partial class BeeQueenSystem : EntitySystem
         while (query.MoveNext(out var uid, out var queen))
         {
             var inContainer = _container.TryGetContainingContainer(uid, out var container);
-            var home = inContainer && HasComp<BeehiveComponent>(container!.Owner);
+            var home = inContainer &&
+                       (HasComp<BeehiveComponent>(container!.Owner) ||
+                        TryComp<BeeSwarmComponent>(container.Owner, out var carrier) && !carrier.Searching);
 
             if (home)
             {
@@ -127,6 +130,8 @@ public sealed partial class BeeQueenSystem : EntitySystem
 
             _popup.PopupCoordinates(Loc.GetString("beekeeping-queen-died"), Transform(uid).Coordinates, PopupType.SmallCaution);
             _adminLog.Add(LogType.Action, LogImpact.Low, $"{ToPrettyString(uid):queen} died outside a hive");
+            if (inContainer && HasComp<BeeSwarmComponent>(container!.Owner))
+                QueueDel(container.Owner);
             QueueDel(uid);
         }
     }

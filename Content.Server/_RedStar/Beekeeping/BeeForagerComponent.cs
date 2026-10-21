@@ -171,6 +171,21 @@ public enum BeeForagerPhase : byte
     Land,
 
     /// <summary>
+    /// A swarm shrinking into an air vent.
+    /// </summary>
+    VentIn,
+
+    /// <summary>
+    /// A swarm inside the pipes, on its way to the exit vent.
+    /// </summary>
+    VentHidden,
+
+    /// <summary>
+    /// A swarm growing out of the exit vent.
+    /// </summary>
+    VentOut,
+
+    /// <summary>
     /// Could not find the tray or the hive: circling until caught or dead.
     /// </summary>
     Lost,

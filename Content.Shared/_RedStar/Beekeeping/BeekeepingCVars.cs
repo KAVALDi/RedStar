@@ -14,4 +14,10 @@ public sealed class BeekeepingCVars
     public static readonly CVarDef<int> ActiveHiveLimit =
         CVarDef.Create("beekeeping.active_hive_limit", 8, CVar.SERVERONLY);
 
+    /// <summary>
+    /// Wild hives on one map. Past it an egg that dies uncollected just dies, and no swarm leaves.
+    /// </summary>
+    public static readonly CVarDef<int> WildHiveLimit =
+        CVarDef.Create("beekeeping.wild_hive_limit", 3, CVar.SERVERONLY);
+
 }

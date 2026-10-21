@@ -93,8 +93,11 @@ public abstract partial class SharedBeehiveSystem : EntitySystem
             args.PushMarkup(Loc.GetString(hasQueen
                 ? "beekeeping-hive-examine-queen"
                 : "beekeeping-hive-examine-no-queen"));
-            args.PushMarkup(Loc.GetString("beekeeping-hive-examine-frames",
-                ("count", frames), ("max", comp.FrameSlots.Count)));
+            if (!comp.Wild)
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-frames",
+                    ("count", frames), ("max", comp.FrameSlots.Count)));
+            }
 
             if (comp.Bees > 0 || comp.OutBees > 0)
             {
@@ -104,6 +107,14 @@ public abstract partial class SharedBeehiveSystem : EntitySystem
 
             args.PushMarkup(Loc.GetString("beekeeping-hive-examine-nectar",
                 ("level", comp.NectarLevel.ToString())));
+
+            if (comp.Wild && comp.SwarmModifier is { } modifierId && Proto.TryIndex(modifierId, out var modifier))
+            {
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-modifier",
+                    ("color", modifier.Color.ToHex()),
+                    ("name", Loc.GetString(modifier.Name)),
+                    ("desc", Loc.GetString(modifier.Description))));
+            }
 
             switch (comp.Crowding)
             {

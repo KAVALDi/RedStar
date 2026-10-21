@@ -19,6 +19,7 @@ namespace Content.Server._RedStar.Beekeeping;
 public sealed partial class BeehiveSystem : SharedBeehiveSystem
 {
     [Dependency] private IConfigurationManager _cfg = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private BeeForagerSystem _foragers = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
@@ -262,7 +263,16 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             }
             else
             {
-                // Once the grace runs out, the extra bees leave one by one.
+                // The moment the grace runs out, the extra bees leave together as a swarm; with an egg in the hive the
+                // old queen goes with them and a young one stays. Bees still too many after that leave one by one.
+                if (comp.Crowding != BeehiveCrowding.Leaving)
+                {
+                    if (comp.HasEgg && _swarm.TrySwarm(hive))
+                        _queen.EndEgg(hive);
+                    else
+                        _swarm.LeaveInSwarm(hive, comp.Bees + comp.OutBees - comp.MaxBees);
+                }
+
                 SetCrowding(hive, BeehiveCrowding.Leaving);
                 if (now >= comp.NextCrowdingLeave)
                 {
@@ -315,7 +325,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     public void UpdateMaxBees(Entity<BeehiveComponent> hive)
     {
         GetFrames(hive, _frames);
-        var max = _frames.Count * hive.Comp.BeesPerFrame;
+        var max = hive.Comp.Wild ? hive.Comp.WildMaxBees : _frames.Count * hive.Comp.BeesPerFrame;
         if (hive.Comp.MaxBees == max)
             return;
 
@@ -371,7 +381,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             return;
 
         GetFrames(hive, _frames);
-        if (!HasRoomForComb(_frames))
+        if (comp.Wild ? comp.WildCombs >= comp.MaxWildCombs : !HasRoomForComb(_frames))
             return;
 
         var made = Math.Min(workers * comp.CombsPerWorkerPerMinute * traits.CombRate * seconds / 60f,
@@ -383,7 +393,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         comp.Nectar -= made * combCost;
 
         var changed = false;
-        while (comp.CombProgress >= 1f && AddComb(hive, _frames))
+        while (comp.CombProgress >= 1f && (comp.Wild ? AddWildComb(hive) : AddComb(hive, _frames)))
         {
             comp.CombProgress -= 1f;
             changed = true;
@@ -420,11 +430,11 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             return ApiaryNectarUse.Idle;
 
         GetFrames(hive, _frames);
-        if (_frames.Count == 0)
+        if (!comp.Wild && _frames.Count == 0)
             return ApiaryNectarUse.NoFrames;
 
         var growing = comp.Bees + comp.OutBees < comp.MaxBees;
-        var room = HasRoomForComb(_frames);
+        var room = comp.Wild ? comp.WildCombs < comp.MaxWildCombs : HasRoomForComb(_frames);
         var workers = WorkersAtHome(comp) > 0;
 
         if (growing)
@@ -538,8 +548,30 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
     #region Appearance
 
+    /// <summary>
+    /// A wild hive keeps its combs inside, up to its limit.
+    /// </summary>
+    private bool AddWildComb(Entity<BeehiveComponent> hive)
+    {
+        if (hive.Comp.WildCombs >= hive.Comp.MaxWildCombs)
+            return false;
+
+        hive.Comp.WildCombs++;
+        _queen.TakeCombPayload(hive, null);
+
+        return true;
+    }
+
     public void UpdateHiveAppearance(Entity<BeehiveComponent> hive)
     {
+        if (hive.Comp.Wild)
+        {
+            var shown = hive.Comp.MaxWildCombs > 0 &&
+                        hive.Comp.WildCombs >= hive.Comp.MaxWildCombs * hive.Comp.WildHoneyShown;
+            _appearance.SetData(hive, WildBeehiveVisuals.Honey, shown);
+            return;
+        }
+
         GetFrames(hive, _frames);
         _appearance.SetData(hive, BeehiveVisuals.Frames, _frames.Count);
         _appearance.SetData(hive, BeehiveVisuals.Frame1, FillAt(0));
