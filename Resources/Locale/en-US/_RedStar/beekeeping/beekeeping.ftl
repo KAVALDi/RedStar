@@ -1,6 +1,8 @@
 guide-entry-beekeeping = Beekeeping
 guide-entry-beekeeping-analyzer = Apiary analyzer
 guide-entry-beekeeping-queen = Queen and traits
+guide-entry-beekeeping-wild = Swarms and wild hives
+
 ## Hive
 
 beekeeping-slot-queen = Queen
@@ -136,6 +138,10 @@ beekeeping-queen-trait-lost = The queen lost a trait: { $trait }.
 beekeeping-queen-trait-replaced = The queen gained { $trait } in place of { $old }.
 beekeeping-queen-trait-nothing = The mutagen did nothing: the queen has no room for traits.
 
+cmd-beekeeping_clear-desc = Removes angry bees, angry queens, swarms, lost bees and wild hives from your map. With "all", from every map.
+cmd-beekeeping_clear-help = Usage: beekeeping_clear [all]
+cmd-beekeeping_clear-no-map = You have no map: take a body or pass "all".
+cmd-beekeeping_clear-done = Removed: { $count }.
 beekeeping-queen-hive-limit = The queen does not take: there are too many hives in the sector.
 beekeeping-bee-bite = The bee bites your hand!
 beekeeping-bee-sting = The bee stings your hand!
@@ -148,18 +154,24 @@ beekeeping-jelly-collected = You collect the royal jelly.
 beekeeping-queen-slot-added = The queen has room for more traits: { $slots } slots.
 beekeeping-queen-slots-max = The queen already has as many slots as she can.
 
+beekeeping-hive-crowd-swarm = The bees are too crowded: part of the colony flies off in a swarm!
+beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young queen stays behind.
+
 ## Admin debug verbs
 
 beekeeping-debug-fill-nectar = Hive: full nectar
 beekeeping-debug-frames-honey = Hive: frames to honey
 beekeeping-debug-frames-wax = Hive: frames to wax
+beekeeping-debug-wild-half = Hive: fill with honey halfway
+beekeeping-debug-wild-full = Hive: fill with honey completely
 beekeeping-debug-fill-bees = Hive: bees up to the limit
 beekeeping-debug-restore-scout = Hive: bring the scout back
 beekeeping-debug-scout-now = Hive: scout the whole area now
 beekeeping-debug-scout-launch = Hive: send the scout out now
 beekeeping-debug-forager-launch = Hive: send a forager
+beekeeping-debug-swarm = Hive: bring about a swarm
 beekeeping-debug-egg = Hive: lay a queen egg
-beekeeping-debug-egg-die = Hive: the egg dies
+beekeeping-debug-egg-die = Hive: the egg dies (swarm)
 beekeeping-debug-speed-fast = Hive: run 10 times faster
 beekeeping-debug-speed-normal = Hive: normal speed
 beekeeping-debug-window = Hive: debug window
@@ -303,6 +315,8 @@ beekeeping-debug-forager-no-trays = The hive knows no trays: send the scout firs
 beekeeping-debug-forager-too-many = { $max } foragers are already out, the hive lets out no more.
 beekeeping-debug-forager-no-workers = No free workers are home.
 beekeeping-debug-forager-failed = The forager could not fly off.
+beekeeping-debug-swarm-no-queen = No swarm without a queen.
+beekeeping-debug-swarm-failed = The swarm did not leave: too many wild hives on the map, or the hive is not on a grid.
 apiary-analyzer-brood-going = yes
 apiary-analyzer-brood-stopped = no
 apiary-analyzer-stat-egg-wait = Egg wait
@@ -318,4 +332,19 @@ bee-trait-lazy-queen = Lazy queen
 bee-trait-lazy-queen-desc = The queen's egg comes much later.
 bee-trait-fragile-egg = Fragile egg
 bee-trait-fragile-egg-desc = The queen's egg lives half as long, collect the jelly fast.
+beekeeping-hive-examine-swarm-modifier = The swarm was special: [color={ $color }]{ $name }[/color]. { $desc }
+swarm-modifier-plain = Plain swarm
+swarm-modifier-plain-desc = Nothing special about it.
+swarm-modifier-shy = Shy swarm
+swarm-modifier-shy-desc = Only a third of the colony left.
+swarm-modifier-homebody = Homebody
+swarm-modifier-homebody-desc = It did not look for a vent and settled near the hive.
+swarm-modifier-rich = Rich hive
+swarm-modifier-rich-desc = Holds 12 combs instead of 8.
+swarm-modifier-huge = Huge swarm
+swarm-modifier-huge-desc = Three quarters of the colony left.
+swarm-modifier-wanderer = Wanderer
+swarm-modifier-wanderer-desc = It looked for a vent and a nest twice as far.
+swarm-modifier-tainted = Tainted hive
+swarm-modifier-tainted-desc = Something is off about the combs.
 apiary-analyzer-row-instability = Instability

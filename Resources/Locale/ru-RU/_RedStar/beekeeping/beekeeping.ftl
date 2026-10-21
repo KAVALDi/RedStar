@@ -1,6 +1,8 @@
 guide-entry-beekeeping = Пчеловодство
 guide-entry-beekeeping-analyzer = Анализатор пасеки
 guide-entry-beekeeping-queen = Матка и признаки
+guide-entry-beekeeping-wild = Рои и дикие ульи
+
 ## Улей
 
 beekeeping-slot-queen = Матка
@@ -137,6 +139,10 @@ beekeeping-queen-trait-lost = Матка потеряла признак: { $tra
 beekeeping-queen-trait-replaced = Матка получила признак { $trait } вместо признака { $old }.
 beekeeping-queen-trait-nothing = Мутаген не подействовал: у матки нет места для признаков.
 
+cmd-beekeeping_clear-desc = Убирает со своей карты злых пчёл, злых маток, рои, заблудившихся пчёл и дикие ульи. С "all" со всех карт.
+cmd-beekeeping_clear-help = Использование: beekeeping_clear [all]
+cmd-beekeeping_clear-no-map = Нет своей карты: зайдите в тело или укажите "all".
+cmd-beekeeping_clear-done = Убрано: { $count }.
 beekeeping-queen-hive-limit = Матка не приживается: в секторе слишком много ульев.
 beekeeping-bee-bite = Пчела кусает вас за руку!
 beekeeping-bee-sting = Пчела жалит вас в руку!
@@ -149,18 +155,24 @@ beekeeping-jelly-collected = Вы собрали маточное молочко
 beekeeping-queen-slot-added = У матки стало больше места для признаков: слотов { $slots }.
 beekeeping-queen-slots-max = У матки уже столько слотов, сколько возможно.
 
+beekeeping-hive-crowd-swarm = Пчёлам тесно: часть колонии улетает роем!
+beekeeping-hive-swarm = Старая матка улетает из улья с роем! В улье осталась молодая матка.
+
 ## Отладочные действия админа
 
 beekeeping-debug-fill-nectar = Улей: полный запас нектара
 beekeeping-debug-frames-honey = Улей: рамки до мёда
 beekeeping-debug-frames-wax = Улей: рамки до воска
+beekeeping-debug-wild-half = Улей: заполнить мёдом наполовину
+beekeeping-debug-wild-full = Улей: заполнить мёдом полностью
 beekeeping-debug-fill-bees = Улей: пчёл до предела
 beekeeping-debug-restore-scout = Улей: вернуть разведчицу
 beekeeping-debug-scout-now = Улей: разведать всё вокруг сейчас
 beekeeping-debug-scout-launch = Улей: отправить разведчицу в полёт
 beekeeping-debug-forager-launch = Улей: отправить собирательницу
+beekeeping-debug-swarm = Улей: довести до роения
 beekeeping-debug-egg = Улей: положить яйцо матки
-beekeeping-debug-egg-die = Улей: яйцо погибает
+beekeeping-debug-egg-die = Улей: яйцо погибает (роение)
 beekeeping-debug-speed-fast = Улей: ускорить в 10 раз
 beekeeping-debug-speed-normal = Улей: обычная скорость
 beekeeping-debug-window = Улей: окно отладки
@@ -304,6 +316,8 @@ beekeeping-debug-forager-no-trays = Улей не знает ни одного �
 beekeeping-debug-forager-too-many = В воздухе уже { $max } собирательницы, больше улей не выпускает.
 beekeeping-debug-forager-no-workers = Дома нет свободных рабочих.
 beekeeping-debug-forager-failed = Собирательница не смогла вылететь.
+beekeeping-debug-swarm-no-queen = Без матки роя не будет.
+beekeeping-debug-swarm-failed = Рой не вылетел: на карте уже слишком много диких ульев или улей не на сетке.
 apiary-analyzer-brood-going = есть
 apiary-analyzer-brood-stopped = нет
 apiary-analyzer-stat-egg-wait = Ожидание яйца
@@ -319,4 +333,19 @@ bee-trait-lazy-queen = Вялая матка
 bee-trait-lazy-queen-desc = Яйцо матки откладывается заметно позже.
 bee-trait-fragile-egg = Хрупкое яйцо
 bee-trait-fragile-egg-desc = Яйцо матки живёт вдвое меньше, молочко нужно собирать быстро.
+beekeeping-hive-examine-swarm-modifier = Рой был особенный: [color={ $color }]{ $name }[/color]. { $desc }
+swarm-modifier-plain = Обычный рой
+swarm-modifier-plain-desc = Ничем не примечателен.
+swarm-modifier-shy = Робкий рой
+swarm-modifier-shy-desc = Ушла только треть колонии.
+swarm-modifier-homebody = Домосед
+swarm-modifier-homebody-desc = Вентиляцию не искал и поселился рядом с ульем.
+swarm-modifier-rich = Богатый улей
+swarm-modifier-rich-desc = Вмещает 12 сот вместо 8.
+swarm-modifier-huge = Крупный рой
+swarm-modifier-huge-desc = Ушли три четверти колонии.
+swarm-modifier-wanderer = Странник
+swarm-modifier-wanderer-desc = Искал вентиляцию и гнездо вдвое дальше.
+swarm-modifier-tainted = Заражённый улей
+swarm-modifier-tainted-desc = В сотах что-то подозрительное.
 apiary-analyzer-row-instability = Нестабильность
