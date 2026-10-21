@@ -1,0 +1,295 @@
+- type: entity
+  parent: BaseItem
+  id: BeeQueen
+  name: queen bee
+  description: The mother of a bee colony. Put her into an empty hive with frames, and a colony starts.
+  components:
+  - type: BeeQueen
+    traits:
+    - PestControl
+  # What is injected into her: mutagen is used up at once, the rest is payload (with a sting).
+  - type: Solution
+    id: queen
+    solution:
+      maxVol: 25
+  - type: InjectableSolution
+    solution: queen
+  - type: BeeTraitVisuals
+  # A bee does not thud when it lands.
+  - type: EmitSoundOnLand
+    sound: null
+  - type: BeeHoming
+  # Heavier than a worker: a slower, calmer wobble while she flies home.
+  - type: BeeBuzzVisuals
+    amplitude: 0.1
+    speed: 0.7
+    whileFlying: true
+  # Buzzes in a hand like the other bees; flying home it switches to the flying buzz (BeeHoming).
+  - type: AmbientSound
+    range: 1.5
+    volume: -12
+    sound:
+      path: /Audio/_RedStar/Ambience/Beekeeping/bee_in_hand.ogg
+  # The grey mask carries the colour of the colony.
+  # noRot: the sprite stays upright after a throw and while flying home.
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    noRot: true
+    layers:
+    - state: queen-base
+      map: [ "enum.BeeForagerVisualLayers.Body" ]
+    - state: queen-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: queen-wings
+      map: [ "enum.BeeForagerVisualLayers.Wings" ]
+    - state: queen-base-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: Appearance
+  # Side view facing left; mirrored while she flies home to the right.
+  - type: GenericVisualizer
+    visuals:
+      enum.BeeForagerVisuals.FacingRight:
+        enum.BeeForagerVisualLayers.Body:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Grey:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Wings:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Angry:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+  - type: Item
+    size: Tiny
+  - type: GuideHelp
+    guides:
+    - Beekeeping
+
+# Bees taken out of a hive. The role is fixed by the prototype; the lifetime runs anywhere, even in a locker.
+- type: entity
+  abstract: true
+  parent: BaseItem
+  id: BaseBeeItem
+  components:
+  - type: Item
+    size: Tiny
+  # Left on the floor or thrown, the bee flies back into its own hive, wobbling like a flying bee.
+  - type: BeeHoming
+  - type: BeeBuzzVisuals
+    amplitude: 0.1
+    speed: 1.2
+    whileFlying: true
+  - type: Appearance
+  - type: BeeTraitVisuals
+  # A bee does not thud when it lands.
+  - type: EmitSoundOnLand
+    sound: null
+  - type: AmbientSound
+    range: 1.5
+    volume: -12
+    sound:
+      path: /Audio/_RedStar/Ambience/Beekeeping/bee_in_hand.ogg
+  - type: GuideHelp
+    guides:
+    - Beekeeping
+
+- type: entity
+  parent: BaseBeeItem
+  id: BeeScout
+  name: scout bee
+  description: The only scout of its hive. Hold it to a tray and it remembers the place; bring it home and the hive learns about it.
+  components:
+  - type: BeeItem
+    role: Scout
+    memoryLimit: 3
+  # Upright top-down sprite: looks right in any direction, so it is not turned while flying home.
+  - type: BeeHoming
+    facing: None
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    noRot: true
+    layers:
+    - state: scout
+    - state: scout-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: scout-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: TimedDespawn
+    lifetime: 180
+
+- type: entity
+  parent: BaseBeeItem
+  id: BeePollinator
+  name: pollinator bee
+  description: A worker bee dusted with pollen. Hold it to a plant to pollinate it.
+  components:
+  - type: BeeItem
+    role: Pollinator
+    charges: 3
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    noRot: true
+    layers:
+    - state: worker-base
+      map: [ "enum.BeeForagerVisualLayers.Body" ]
+    - state: worker-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: worker-wings
+      map: [ "enum.BeeForagerVisualLayers.Wings" ]
+    - state: worker-base-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: Appearance
+  # Side view facing left; mirrored while it flies home to the right.
+  - type: GenericVisualizer
+    visuals:
+      enum.BeeForagerVisuals.FacingRight:
+        enum.BeeForagerVisualLayers.Body:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Grey:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Wings:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Angry:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+  - type: TimedDespawn
+    lifetime: 300
+
+# A visible forager: a short-lived picture of one visit. Flies straight to a tray, circles, dives into the
+# flower, comes back out and flies home.
+# Not an item and not a mob: it cannot be picked up, hit or calmed, and nothing happens when it disappears.
+- type: entity
+  id: BeeForager
+  name: bee
+  description: A worker bee on its way to a flower.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: BeeForager
+  # A lost forager can be caught by hand.
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    drawdepth: Mobs
+    noRot: true
+    layers:
+    - state: worker-base
+      map: [ "enum.BeeForagerVisualLayers.Body" ]
+    - state: worker-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: worker-wings
+      map: [ "enum.BeeForagerVisualLayers.Wings" ]
+  - type: Appearance
+  # The sprite is a side view facing left; it is mirrored while the bee flies to the right.
+  - type: GenericVisualizer
+    visuals:
+      enum.BeeForagerVisuals.FacingRight:
+        enum.BeeForagerVisualLayers.Body:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Grey:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+        enum.BeeForagerVisualLayers.Wings:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
+  # Moved by the server every tick, no physics: it touches nothing. Dives into the flower and the hive by shrinking.
+  - type: BeeShrinkVisuals
+    shrinkTime: 0.6
+  # A little wandering on the way, like a real bee; small enough that it still dives into the flower.
+  - type: BeeBuzzVisuals
+    amplitude: 0.08
+    speed: 1.4
+  - type: AmbientSound
+    range: 3
+    volume: -11
+    sound:
+      path: /Audio/_RedStar/Ambience/Beekeeping/bee_flying.ogg
+  # Safety net: the system removes the bee when it is back or dies lost; this only catches a stuck one.
+  - type: TimedDespawn
+    lifetime: 120
+
+# The hive's scout on its automatic flight: tile by tile through the free tiles around the hive, into the flower
+# of a tray it finds, and back home. Like a forager it cannot be picked up or hit.
+- type: entity
+  id: BeeScoutFlyer
+  name: scout bee
+  description: The hive's scout, looking for flowers.
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: BeeScoutFlight
+  # Top-down sprite, kept upright: turning it at every corner looked jerky.
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    drawdepth: Mobs
+    noRot: true
+    layers:
+    - state: scout
+    - state: scout-grey
+      color: "#E79A3F"
+  - type: Appearance
+  - type: BeeShrinkVisuals
+    shrinkTime: 0.6
+  # A little wandering on the way, like a real bee.
+  - type: BeeBuzzVisuals
+    amplitude: 0.12
+    speed: 1.1
+  # A little louder than the worker: the scout is alone and should be heard over the workers.
+  - type: AmbientSound
+    range: 3
+    volume: -10
+    sound:
+      path: /Audio/_RedStar/Ambience/Beekeeping/bee_flying.ogg
+  # Safety net: the system removes the scout when it is back.
+  - type: TimedDespawn
+    lifetime: 60
+
+# Hidden look-alikes kept inside every hive: the context menu shows them as live icons of the hive's bees.
+- type: entity
+  id: BeeScoutIcon
+  name: scout bee
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    layers:
+    - state: scout
+    - state: scout-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: scout-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: Appearance
+  - type: BeeTraitVisuals
+
+- type: entity
+  id: BeePollinatorIcon
+  name: pollinator bee
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
+    layers:
+    - state: worker-base
+    - state: worker-grey
+      color: "#E79A3F"
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
+    - state: worker-wings
+    - state: worker-base-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
+  - type: Appearance
+  - type: BeeTraitVisuals
