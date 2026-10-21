@@ -18,6 +18,7 @@ namespace Content.Server._RedStar.Beekeeping;
 /// </summary>
 public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
 {
+    [Dependency] private MeatBeehiveSystem _meat = default!;
     private static readonly TimeSpan UpdateInterval = TimeSpan.FromSeconds(1);
 
     [Dependency] private BeehiveSystem _beehive = default!;
@@ -113,6 +114,9 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
     {
         var comp = hive.Comp;
         state.Wild = comp.Wild;
+        state.Diet = comp.Diet;
+        if (comp.Diet == BeehiveDiet.Meat)
+            FillMeat(hive, state);
         state.Bees = comp.Bees;
         state.OutBees = comp.OutBees;
         state.MaxBees = comp.MaxBees;
@@ -154,6 +158,28 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
             if (TerminatingOrDeleted(source.Tray))
                 continue;
 
+            if (comp.Diet == BeehiveDiet.Meat)
+            {
+                // Only the kind of creature, never its name or what it wears: a humanoid by species, anything else by what
+                // it is.
+                var data = new ApiaryTrayData
+                {
+                    State = _scout.GetTrayState(hive, source),
+                    Creature = true,
+                    CreaturePrototype = MetaData(source.Tray).EntityPrototype?.ID,
+                };
+
+                if (TryComp<HumanoidProfileComponent>(source.Tray, out var profile) &&
+                    _proto.TryIndex(profile.Species, out var species))
+                {
+                    data.CreatureName = species.Name;
+                    data.CreaturePrototype = species.Prototype;
+                }
+
+                state.Trays.Add(data);
+                continue;
+            }
+
             var plant = TryComp<PlantTrayComponent>(source.Tray, out var tray) &&
                         tray.PlantEntity is { } plantUid &&
                         !TerminatingOrDeleted(plantUid)
@@ -176,6 +202,58 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
 #pragma warning disable CS0618
             state.Health = Math.Max(0f, max - _damageable.GetTotalDamage((hive, damageable)).Float());
 #pragma warning restore CS0618
+        }
+    }
+
+    /// <summary>
+    /// What a meat hive would give when broken now, and what it holds: the blood in stock and in the combs, and the
+    /// healing reagent the combs will carry.
+    /// </summary>
+    private void FillMeat(Entity<BeehiveComponent> hive, ApiaryAnalyzerState state)
+    {
+        var meatComp = _meat.MeatOf(hive);
+        var comp = hive.Comp;
+        state.MeatDrops = MeatBeehiveSystem.MeatDrops(meatComp);
+        state.MeatMax = meatComp.MeatDropCap;
+        state.MeatBase = meatComp.MeatBase;
+        state.MeatPerDrop = meatComp.MeatPerDrop;
+
+        var total = 0f;
+        foreach (var meat in _proto.EnumeratePrototypes<BeeMeatPrototype>())
+        {
+            total += meat.WeightFor(meatComp.BloodTypes);
+        }
+
+        if (total > 0f)
+        {
+            foreach (var meat in _proto.EnumeratePrototypes<BeeMeatPrototype>())
+            {
+                var weight = meat.WeightFor(meatComp.BloodTypes);
+                if (weight > 0f)
+                    state.MeatChances.Add(new ApiaryMeatChance { Meat = meat.ID, Percent = weight / total * 100f });
+            }
+
+            state.MeatChances.Sort((a, b) => b.Percent.CompareTo(a.Percent));
+        }
+
+        var held = new Dictionary<string, float>();
+        void Add(Solution solution)
+        {
+            foreach (var (reagent, quantity) in solution.Contents)
+            {
+                held[reagent.Prototype] = held.GetValueOrDefault(reagent.Prototype) + quantity.Float();
+            }
+        }
+
+        Add(meatComp.Blood);
+        Add(meatComp.CombBlooded);
+        if (comp.WildCombs > 0)
+            held[meatComp.CombHealReagent] = held.GetValueOrDefault(meatComp.CombHealReagent) + meatComp.CombHeal * comp.WildCombs;
+
+        foreach (var (reagent, amount) in held)
+        {
+            if (amount > 0f)
+                state.Chemicals.Add(new ApiaryReagentData { Reagent = reagent, Amount = amount });
         }
     }
 }

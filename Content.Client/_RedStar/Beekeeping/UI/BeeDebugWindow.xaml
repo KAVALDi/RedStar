@@ -47,6 +47,8 @@
                             <Label Name="NextForager" StyleClasses="LabelWeak" />
                             <Label Text="{Loc beekeeping-debug-foragers}" Margin="0 0 8 0" />
                             <Label Name="Foragers" StyleClasses="LabelWeak" />
+                            <Label Text="{Loc beekeeping-debug-angry}" Margin="0 0 8 0" />
+                            <Label Name="Angry" StyleClasses="LabelWeak" />
                             <Label Text="{Loc beekeeping-debug-row-egg}" Margin="0 0 8 0" />
                             <Label Name="Egg" StyleClasses="LabelWeak" />
                         </GridContainer>

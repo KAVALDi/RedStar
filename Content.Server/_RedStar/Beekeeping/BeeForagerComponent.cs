@@ -122,10 +122,48 @@ public sealed partial class BeeForagerComponent : Component
     public float CircleStart;
 
     /// <summary>
+    /// A meat forager reaching its target through the pipes: the vent it dives into near the hive, the vent it comes
+    /// out of near the target, and where it is on the way.
+    /// </summary>
+    [ViewVariables]
+    public EntityUid? VentEntry;
+
+    [ViewVariables]
+    public EntityUid? VentExit;
+
+    [ViewVariables]
+    public BeeVentStage VentStage;
+
+    /// <summary>
+    /// A flight to a vent instead of to the target or the hive: where it ends, in grid coordinates.
+    /// </summary>
+    [ViewVariables]
+    public bool UseWaypoint;
+
+    [ViewVariables]
+    public Vector2 Waypoint;
+
+    /// <summary>
     /// Times the bee already went looking for a moved tray or hive on this trip.
     /// </summary>
     [ViewVariables]
     public int Searches;
+}
+
+public enum BeeVentStage : byte
+{
+    /// <summary>A straight flight, or the route is done.</summary>
+    None,
+    /// <summary>Flying from the hive to the vent it dives into.</summary>
+    ToEntry,
+    /// <summary>In the pipes, on the way to the target's vent.</summary>
+    PipeOut,
+    /// <summary>Out of the target's vent, flying to the target.</summary>
+    ToTarget,
+    /// <summary>Flying from the target back to that vent.</summary>
+    ToExit,
+    /// <summary>In the pipes, on the way back.</summary>
+    PipeBack,
 }
 
 public enum BeeForagerPhase : byte

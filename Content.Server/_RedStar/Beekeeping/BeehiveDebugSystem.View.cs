@@ -80,6 +80,19 @@ public sealed partial class BeehiveDebugSystem
             });
         }
 
+        var angry = EntityQueryEnumerator<BeehiveAngryBeeComponent, TimedDespawnComponent>();
+        while (angry.MoveNext(out _, out var bee, out var despawn))
+        {
+            if (bee.Hive != hive || !bee.Counted)
+                continue;
+
+            data.Outside.Add(new BeeOutsideDebugData
+            {
+                Kind = bee.Scout ? BeeOutsideKind.AngryScout : BeeOutsideKind.Angry,
+                SecondsLeft = despawn.Lifetime,
+            });
+        }
+
         var foragers = EntityQueryEnumerator<BeeForagerComponent>();
         while (foragers.MoveNext(out _, out var forager))
         {
@@ -219,6 +232,15 @@ public sealed partial class BeehiveDebugSystem
                 Position = _transform.GetWorldPosition(bee),
                 Target = System.Numerics.Vector2.Transform(forager.Target, gridMatrix),
             });
+        }
+
+        data.Angry = comp.AngryOut;
+        data.Diet = comp.Diet;
+        if (TryComp<MeatBeehiveComponent>(hive, out var meatComp))
+        {
+            data.Meat = meatComp.Meat;
+            data.BloodKinds = meatComp.BloodTypes.Count;
+            data.BloodStock = meatComp.Blood.Volume.Float();
         }
 
         AddOutsideBees(hive, data, now);

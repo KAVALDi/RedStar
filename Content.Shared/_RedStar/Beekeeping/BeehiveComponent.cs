@@ -50,6 +50,12 @@ public sealed partial class BeehiveComponent : Component
     [DataField, AutoNetworkedField]
     public int OutBees;
 
+    /// <summary>
+    /// Of <see cref="OutBees"/>, the angry bees in the air.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public int AngryOut;
+
     #region Emergency queen
 
     /// <summary>
@@ -176,6 +182,31 @@ public sealed partial class BeehiveComponent : Component
     public int MaxWildCombs = 8;
 
     /// <summary>
+    /// What the colony lives on. Plants like every hive; a meat hive is a wild one that grew where there were
+    /// creatures and no plants, and feeds on blood.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public BeehiveDiet Diet = BeehiveDiet.Plants;
+
+    /// <summary>
+    /// How far around where a swarm comes out it looks for plants and creatures to choose its diet, in tiles.
+    /// </summary>
+    [DataField]
+    public float DietRange = 8f;
+
+    /// <summary>
+    /// A creature lighter than this is small, in kilograms of its fixtures. A mouse weighs about 13, a human about 70.
+    /// </summary>
+    [DataField]
+    public float SmallCreatureMass = 30f;
+
+    /// <summary>
+    /// Small creatures count for the choice of diet only when at least this many are around.
+    /// </summary>
+    [DataField]
+    public int MinSmallCreatures = 2;
+
+    /// <summary>
     /// The quirk of the swarm that built this wild hive, shown when it is examined.
     /// </summary>
     [DataField, AutoNetworkedField]
@@ -222,6 +253,61 @@ public sealed partial class BeehiveComponent : Component
     /// </summary>
     [DataField]
     public EntProtoId DaughterQueenPrototype = "BeeQueen";
+
+    #endregion
+
+    #region Angry hive
+
+    /// <summary>
+    /// Bees that fly out on every hit, on top of the ones for lost health.
+    /// </summary>
+    [DataField]
+    public int AngryPerHit = 1;
+
+    /// <summary>
+    /// Every this much damage taken lets one more bee out. What is left over counts towards the next one.
+    /// </summary>
+    [DataField]
+    public float AngryDamageStep = 10f;
+
+    /// <summary>
+    /// Damage taken that has not let a bee out yet. Server only.
+    /// </summary>
+    [ViewVariables]
+    public float AngryDamageProgress;
+
+    /// <summary>
+    /// Most angry bees of this hive in the air at once.
+    /// </summary>
+    [DataField]
+    public int MaxAngryBees = 10;
+
+    /// <summary>
+    /// Bees that fly out when a frame is taken out of a hive with aggressive bees.
+    /// </summary>
+    [DataField]
+    public int FrameAngerBees = 2;
+
+    /// <summary>
+    /// Payload each angry bee takes from the queen when it flies out.
+    /// </summary>
+    [DataField]
+    public float PayloadPerAngryBee = 2f;
+
+    [DataField]
+    public EntProtoId AngryBeePrototype = "MobBeehiveAngryBee";
+
+    [DataField]
+    public EntProtoId AngryScoutPrototype = "MobBeehiveAngryScout";
+
+    [DataField]
+    public EntProtoId AngryQueenPrototype = "MobBeehiveAngryQueen";
+
+    /// <summary>
+    /// The scout flying as an angry bee, if it is. Only one at a time. Server only.
+    /// </summary>
+    [ViewVariables]
+    public EntityUid? AngryScout;
 
     #endregion
 
@@ -775,4 +861,16 @@ public enum BeehiveCrowding : byte
     /// Over the limit after the grace period. Extra bees leave and returns are refused.
     /// </summary>
     Leaving,
+}
+
+/// <summary>
+/// What a colony feeds on.
+/// </summary>
+[Serializable, NetSerializable]
+public enum BeehiveDiet : byte
+{
+    /// <summary>Nectar from plants.</summary>
+    Plants,
+    /// <summary>Blood from the creatures around.</summary>
+    Meat,
 }

@@ -105,7 +105,8 @@ public sealed partial class BeeQueenSystem : EntitySystem
             var inContainer = _container.TryGetContainingContainer(uid, out var container);
             var home = inContainer &&
                        (HasComp<BeehiveComponent>(container!.Owner) ||
-                        TryComp<BeeSwarmComponent>(container.Owner, out var carrier) && !carrier.Searching);
+                        TryComp<BeeSwarmComponent>(container.Owner, out var carrier) && !carrier.Searching ||
+                        HasComp<BeehiveAngryQueenComponent>(container.Owner));
 
             if (home)
             {

@@ -1,3 +1,4 @@
+using Content.Shared.Chemistry.Reagent;
 using Content.Shared.DoAfter;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
@@ -73,6 +74,18 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
 
     public int UsedSlots;
     public int Instability;
+    public BeehiveDiet Diet;
+
+    /// <summary>
+    /// A meat hive: pieces of meat that would fall out if it were broken now, the most it gives, the bites on the dead
+    /// that add one more piece, the chance of each kind and what the hive holds.
+    /// </summary>
+    public int MeatDrops;
+    public int MeatMax;
+    public int MeatBase;
+    public int MeatPerDrop;
+    public List<ApiaryMeatChance> MeatChances = new();
+    public List<ApiaryReagentData> Chemicals = new();
     public int Slots;
     public float Payload;
     public float PayloadCap;
@@ -138,7 +151,30 @@ public sealed class ApiaryTrayData
     public NetEntity? Plant;
     public EntProtoId? PlantPrototype;
     public ApiaryTrayState State;
+
+    /// <summary>
+    /// A creature of a meat hive instead of a tray. Nothing that identifies it is sent, no name and no entity: only its
+    /// kind, the species for a humanoid (its localized name) or the prototype of an animal, and the plain picture of
+    /// that kind.
+    /// </summary>
+    public bool Creature;
+    public string? CreatureName;
+    public EntProtoId? CreaturePrototype;
 }
 
 [Serializable, NetSerializable]
 public sealed partial class ApiaryAnalyzerDoAfterEvent : SimpleDoAfterEvent;
+
+[Serializable, NetSerializable]
+public sealed class ApiaryMeatChance
+{
+    public ProtoId<BeeMeatPrototype> Meat;
+    public float Percent;
+}
+
+[Serializable, NetSerializable]
+public sealed class ApiaryReagentData
+{
+    public ProtoId<ReagentPrototype> Reagent;
+    public float Amount;
+}

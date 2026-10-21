@@ -18,6 +18,8 @@ namespace Content.Server._RedStar.Beekeeping;
 /// </summary>
 public sealed partial class BeehiveSystem : SharedBeehiveSystem
 {
+    [Dependency] private AngryBeehiveSystem _angry = default!;
+    [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private BeeForagerSystem _foragers = default!;
@@ -113,6 +115,8 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
         UpdateMaxBees(ent);
         UpdateHiveAppearance(ent);
+
+        _angry.AngerOnFrameRemoved(ent);
     }
 
     /// <summary>
@@ -558,6 +562,8 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
         hive.Comp.WildCombs++;
         _queen.TakeCombPayload(hive, null);
+        if (hive.Comp.Diet == BeehiveDiet.Meat)
+            _meat.TakeCombBlood(hive);
 
         return true;
     }
@@ -569,6 +575,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             var shown = hive.Comp.MaxWildCombs > 0 &&
                         hive.Comp.WildCombs >= hive.Comp.MaxWildCombs * hive.Comp.WildHoneyShown;
             _appearance.SetData(hive, WildBeehiveVisuals.Honey, shown);
+            _appearance.SetData(hive, WildBeehiveVisuals.Meat, hive.Comp.Diet == BeehiveDiet.Meat);
             return;
         }
 

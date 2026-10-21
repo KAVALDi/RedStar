@@ -81,6 +81,7 @@ public sealed partial class BeeDebugWindow : FancyWindow
             $"{data.Combs} / {data.MaxCombs}",
             progress: data.MaxCombs > 0 ? (float) data.Combs / data.MaxCombs : 0f);
 
+        Angry.Text = data.Angry.ToString();
         Egg.Text = data.HasEgg
             ? Loc.GetString("beekeeping-debug-egg-there", ("s", (int) data.EggLeft))
             : data.EggCooldown > 0f
@@ -116,6 +117,14 @@ public sealed partial class BeeDebugWindow : FancyWindow
 
         queen.PushNewline();
         queen.AddText(Loc.GetString("beekeeping-debug-queen-line", ("slots", data.Slots), ("payload", $"{data.Payload:0.#}")));
+        queen.PushNewline();
+        queen.AddText(Loc.GetString($"beekeeping-debug-diet-{data.Diet.ToString().ToLowerInvariant()}"));
+        if (data.Diet == BeehiveDiet.Meat)
+        {
+            queen.PushNewline();
+            queen.AddText(Loc.GetString("beekeeping-debug-meat-line",
+                ("meat", data.Meat), ("kinds", data.BloodKinds), ("stock", $"{data.BloodStock:0.#}")));
+        }
         QueenInfo.SetMessage(queen);
 
         Health.Update(Loc.GetString("beekeeping-debug-health"),
@@ -132,7 +141,9 @@ public sealed partial class BeeDebugWindow : FancyWindow
             {
                 BeeOutsideKind.Scout => "beekeeping-debug-outside-scout",
                 BeeOutsideKind.Pollinator => "beekeeping-debug-outside-pollinator",
-                _ => "beekeeping-debug-outside-lost",
+                BeeOutsideKind.AngryScout => "beekeeping-debug-outside-angry-scout",
+                BeeOutsideKind.Lost => "beekeeping-debug-outside-lost",
+                _ => "beekeeping-debug-outside-angry",
             };
             OutsideBees.AddChild(new Label
             {
@@ -141,7 +152,8 @@ public sealed partial class BeeDebugWindow : FancyWindow
             });
         }
 
-        SourcesHeading.Text = Loc.GetString("beekeeping-debug-section-trays", ("count", data.Sources.Count));
+        SourcesHeading.Text = Loc.GetString(data.Diet == BeehiveDiet.Meat ? "beekeeping-debug-section-targets" : "beekeeping-debug-section-trays",
+            ("count", data.Sources.Count));
         Sources.RemoveAllChildren();
         foreach (var source in data.Sources)
         {
@@ -173,7 +185,7 @@ public sealed partial class BeeDebugWindow : FancyWindow
         var text = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical };
         text.AddChild(new Label
         {
-            Text = Loc.GetString($"beekeeping-debug-state-{source.State.ToString().ToLowerInvariant()}"),
+            Text = Loc.GetString($"beekeeping-debug-{(hive.Diet == BeehiveDiet.Meat ? "creature" : "state")}-{source.State.ToString().ToLowerInvariant()}"),
             FontColorOverride = BeeDebugOverlay.SourceColor(source.State),
         });
         var details = new Label

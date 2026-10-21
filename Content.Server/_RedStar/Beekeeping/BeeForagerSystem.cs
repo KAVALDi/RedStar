@@ -32,12 +32,13 @@ namespace Content.Server._RedStar.Beekeeping;
 /// <summary>
 /// Visible forager bees: a short picture of one visit. The bee flies to the tray, circles over the plant, dives into the
 /// flower, comes back out, flies home and dives into the hive. A tray or hive that was moved is looked for nearby; a bee
-/// that cannot find it is lost, circles, can be caught by hand and dies after a while. A swarm uses the same
-/// flight. Positions are set in the coordinates of the grid, every tick only while a player is near; the
+/// that cannot find it is lost, circles, can be caught by hand and dies after a while. A swarm and a meat colony's bees
+/// use the same flight. Positions are set in the coordinates of the grid, every tick only while a player is near; the
 /// client smooths them and animates the dives.
 /// </summary>
 public sealed partial class BeeForagerSystem : EntitySystem
 {
+    [Dependency] private WeldableSystem _weldable = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private SharedHandsSystem _hands = default!;
@@ -46,6 +47,7 @@ public sealed partial class BeeForagerSystem : EntitySystem
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private BeeSwarmSystem _swarm = default!;
+    [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private SharedMapSystem _map = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
@@ -63,6 +65,11 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// How far from where it should be a tray or hive still counts as in place, in tiles.
     /// </summary>
     private const float InPlace = 0.6f;
+
+    /// <summary>
+    /// How near a bee must be to a creature to bite it, in tiles.
+    /// </summary>
+    private const float BiteReach = 1f;
 
     /// <summary>
     /// Radius in tiles of a lost bee's circling.
@@ -96,11 +103,13 @@ public sealed partial class BeeForagerSystem : EntitySystem
     public bool TrySpawnForager(Entity<BeehiveComponent> hive,
         TransformComponent hiveXform,
         MapCoordinates hiveMap,
-        EntityUid tray)
+        EntityUid tray,
+        int? limit = null,
+        (EntityUid Entry, EntityUid Exit)? route = null)
     {
         var comp = hive.Comp;
         comp.Foragers.RemoveAll(f => TerminatingOrDeleted(f));
-        if (comp.Foragers.Count >= comp.MaxForagers)
+        if (comp.Foragers.Count >= (limit ?? comp.MaxForagers))
             return false;
 
         if (hiveXform.GridUid is not { } grid || !TryComp<MapGridComponent>(grid, out var gridComp))
@@ -110,17 +119,31 @@ public sealed partial class BeeForagerSystem : EntitySystem
         // Wherever the tray stands now, bolted to a tile or not.
         var target = _transform.WithEntityId(Transform(tray).Coordinates, grid).Position;
 
-        var bee = Spawn(comp.ForagerPrototype, new EntityCoordinates(grid, home));
+        var meatComp = comp.Diet == BeehiveDiet.Meat ? _meat.MeatOf(hive) : null;
+        var bee = Spawn(meatComp?.MeatForagerPrototype ?? comp.ForagerPrototype,
+            new EntityCoordinates(grid, home));
         if (!TryComp<BeeForagerComponent>(bee, out var forager))
         {
             Del(bee);
             return false;
         }
 
+        // A meat colony's bees take the color of the blood and, once it is furious, show angry eyes.
+        if (meatComp != null)
+            _queen.SetTraitVisuals(bee, _meat.MeatLook(hive), _meat.RageLevel(hive) > 0f);
+
         forager.Hive = hive;
         forager.Tray = tray;
         forager.Home = home;
         forager.Target = target;
+        if (meatComp != null)
+            forager.Speed *= 1f + meatComp.RageSpeedBonus * _meat.RageLevel(hive);
+        if (route is { } way)
+        {
+            forager.VentEntry = way.Entry;
+            forager.VentExit = way.Exit;
+            forager.VentStage = BeeVentStage.ToEntry;
+        }
 
         comp.Foragers.Add(bee);
 
@@ -191,7 +214,10 @@ public sealed partial class BeeForagerSystem : EntitySystem
                     if (now >= forager.PhaseEnd)
                     {
                         SetSize(uid, BeeFlightSize.Full);
-                        StartFlight(bee, BeeForagerPhase.Outbound, forager.Home, forager.Target);
+                        if (forager.VentStage == BeeVentStage.ToEntry && VentSpot(forager.VentEntry, uid) is { } entrySpot)
+                            StartFlight(bee, BeeForagerPhase.Outbound, forager.Home, entrySpot, waypoint: true);
+                        else
+                            StartFlight(bee, BeeForagerPhase.Outbound, forager.Home, forager.Target);
                     }
                     break;
 
@@ -200,6 +226,22 @@ public sealed partial class BeeForagerSystem : EntitySystem
                         MoveAlong(bee, now);
                     if (now < forager.PhaseEnd)
                         break;
+
+                    if (forager.VentStage == BeeVentStage.ToEntry)
+                    {
+                        // The vent was welded shut or removed while the bee flew to it: it goes back home.
+                        if (VentSpot(forager.VentEntry, uid) == null)
+                        {
+                            ClearRoute(forager);
+                            StartFlight(bee, BeeForagerPhase.Return, Transform(uid).LocalPosition, forager.Home);
+                        }
+                        else
+                        {
+                            EnterPipe(bee, BeeVentStage.PipeOut, forager.VentEntry);
+                        }
+
+                        break;
+                    }
 
                     if (swarm is { VentExit: not null })
                     {
@@ -273,7 +315,20 @@ public sealed partial class BeeForagerSystem : EntitySystem
                     if (watched)
                         MoveAlong(bee, now);
                     if (now >= forager.PhaseEnd)
-                        ArriveHome(bee);
+                    {
+                        if (forager.VentStage == BeeVentStage.ToExit)
+                        {
+                            // The vent it came by is shut now: the bee is lost, the route and its slot are freed.
+                            if (VentSpot(forager.VentExit, uid) == null)
+                                LoseInPipe(bee);
+                            else
+                                EnterPipe(bee, BeeVentStage.PipeBack, forager.VentExit);
+                        }
+                        else
+                        {
+                            ArriveHome(bee);
+                        }
+                    }
                     break;
 
                 case BeeForagerPhase.Land:
@@ -285,14 +340,19 @@ public sealed partial class BeeForagerSystem : EntitySystem
                     if (now >= forager.PhaseEnd)
                     {
                         SetSize(uid, BeeFlightSize.Hidden);
-                        SetPhase(bee, BeeForagerPhase.VentHidden, TimeSpan.FromSeconds(2));
+                        SetPhase(bee, BeeForagerPhase.VentHidden,
+                            forager.VentStage is BeeVentStage.PipeOut or BeeVentStage.PipeBack
+                                ? PipeTime(forager)
+                                : TimeSpan.FromSeconds(2));
                     }
                     break;
 
                 case BeeForagerPhase.VentHidden:
                     if (now >= forager.PhaseEnd)
                     {
-                        if (swarm == null)
+                        if (forager.VentStage is BeeVentStage.PipeOut or BeeVentStage.PipeBack)
+                            ComeOutOfPipe(bee);
+                        else if (swarm == null)
                             QueueDel(uid);
                         else
                             _swarm.SwarmComeOut(bee, swarm);
@@ -300,7 +360,9 @@ public sealed partial class BeeForagerSystem : EntitySystem
                     break;
 
                 case BeeForagerPhase.VentOut:
-                    if (now >= forager.PhaseEnd && swarm != null)
+                    if (now >= forager.PhaseEnd && forager.VentStage is BeeVentStage.PipeOut or BeeVentStage.PipeBack)
+                        LeftPipe(bee);
+                    else if (now >= forager.PhaseEnd && swarm != null)
                         _swarm.SwarmLeftVent(bee, swarm);
                     break;
 
@@ -328,13 +390,45 @@ public sealed partial class BeeForagerSystem : EntitySystem
             return;
         }
 
-        var off = (trayPos - comp.Target).Length() > InPlace;
+        // A creature moves about: its bee bites as soon as it is within reach, not only at the spot it first flew to.
+        BeehiveComponent? meatHive = null;
+        var hunting = !TerminatingOrDeleted(comp.Hive) &&
+                      TryComp(comp.Hive, out meatHive) &&
+                      meatHive.Diet == BeehiveDiet.Meat;
+
+        // One dragged out of the hive's range or sight on the way is no longer a source: the bee goes back empty.
+        if (hunting && comp.Tray is { } hunted)
+        {
+            var hiveUid = comp.Hive;
+            var hiveXform = Transform(hiveUid);
+            if (_meat.CheckCreature((hiveUid, meatHive!), hiveXform, _transform.GetMapCoordinates(hiveUid, hiveXform), hunted) != BeeSourceCheck.Ripe)
+            {
+                comp.Searches = 0;
+                StartReturn(bee, Transform(bee).LocalPosition);
+                return;
+            }
+        }
+        var off = hunting
+            ? (trayPos - Transform(bee).LocalPosition).Length() > BiteReach
+            : (trayPos - comp.Target).Length() > InPlace;
         if (off)
         {
             comp.Searches++;
             comp.Target = trayPos;
             StartFlight(bee, BeeForagerPhase.Outbound, Transform(bee).LocalPosition, trayPos);
             return;
+        }
+
+        // A meat colony's bee bites a living creature without landing and flies straight back; it lands on a corpse.
+        if (hunting && comp.Tray is { } creature)
+        {
+            var dead = _meat.BiteCreature(bee, (comp.Hive, meatHive!), creature);
+            comp.Searches = 0;
+            if (!dead)
+            {
+                StartReturn(bee, Transform(bee).LocalPosition);
+                return;
+            }
         }
 
         StartCircle(bee, BeeForagerPhase.Hover,
@@ -373,7 +467,8 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// </summary>
     private Vector2? FindNearby(Entity<BeeForagerComponent> bee, EntityUid? target)
     {
-        if (target is not { } uid || TerminatingOrDeleted(uid) || bee.Comp.Searches >= 2)
+        var searches = TryComp<BeehiveComponent>(bee.Comp.Hive, out var targetHive) && targetHive.Diet == BeehiveDiet.Meat ? 6 : 2;
+        if (target is not { } uid || TerminatingOrDeleted(uid) || bee.Comp.Searches >= searches)
             return null;
 
         var beeXform = Transform(bee);
@@ -455,11 +550,15 @@ public sealed partial class BeeForagerSystem : EntitySystem
         QueueDel(ent);
     }
 
-    public void StartFlight(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, Vector2 from, Vector2 to)
+    public void StartFlight(Entity<BeeForagerComponent> bee, BeeForagerPhase phase, Vector2 from, Vector2 to,
+        bool waypoint = false)
     {
         var speed = Math.Max(0.1f, bee.Comp.Speed);
         bee.Comp.From = from;
-        if (phase == BeeForagerPhase.Return)
+        bee.Comp.UseWaypoint = waypoint;
+        if (waypoint)
+            bee.Comp.Waypoint = to;
+        else if (phase == BeeForagerPhase.Return)
             bee.Comp.Home = to;
         else
             bee.Comp.Target = to;
@@ -481,7 +580,9 @@ public sealed partial class BeeForagerSystem : EntitySystem
     /// </summary>
     private void MoveAlong(Entity<BeeForagerComponent> bee, TimeSpan now)
     {
-        var to = bee.Comp.Phase == BeeForagerPhase.Return ? bee.Comp.Home : bee.Comp.Target;
+        var to = bee.Comp.UseWaypoint
+            ? bee.Comp.Waypoint
+            : bee.Comp.Phase == BeeForagerPhase.Return ? bee.Comp.Home : bee.Comp.Target;
         var total = (bee.Comp.PhaseEnd - bee.Comp.PhaseStart).TotalSeconds;
         var progress = total > 0 ? (float) Math.Clamp((now - bee.Comp.PhaseStart).TotalSeconds / total, 0, 1) : 1f;
         _transform.SetLocalPosition(bee, Vector2.Lerp(bee.Comp.From, to, progress));
@@ -545,10 +646,132 @@ public sealed partial class BeeForagerSystem : EntitySystem
     }
 
     /// <summary>
-    /// The way back home.
+    /// Where a vent is, in the coordinates of the bee's grid. Null if the vent is gone, welded shut or off the grid.
+    /// </summary>
+    private Vector2? VentSpot(EntityUid? vent, EntityUid bee)
+    {
+        if (vent is not { } uid || TerminatingOrDeleted(uid) || _weldable.IsWelded(uid))
+            return null;
+
+        var grid = Transform(bee).GridUid;
+        return grid != null && Transform(uid).GridUid == grid
+            ? _transform.WithEntityId(Transform(uid).Coordinates, grid.Value).Position
+            : null;
+    }
+
+    /// <summary>
+    /// The bee reaches a vent and dives into it.
+    /// </summary>
+    private void EnterPipe(Entity<BeeForagerComponent> bee, BeeVentStage stage, EntityUid? vent)
+    {
+        bee.Comp.VentStage = stage;
+        bee.Comp.UseWaypoint = false;
+        SetSize(bee, BeeFlightSize.Shrinking);
+        SetPhase(bee, BeeForagerPhase.VentIn, ShrinkTime(bee));
+    }
+
+    /// <summary>
+    /// The bee is lost in the pipes (a vent on its route was welded shut or removed): the route is cleared, the bee
+    /// goes, and it no longer counts as one of the hive's foragers out.
+    /// </summary>
+    private void LoseInPipe(Entity<BeeForagerComponent> bee)
+    {
+        ClearRoute(bee.Comp);
+        if (TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive))
+            hive.Foragers.Remove(bee);
+
+        QueueDel(bee);
+    }
+
+    private static void ClearRoute(BeeForagerComponent forager)
+    {
+        forager.VentStage = BeeVentStage.None;
+        forager.VentEntry = null;
+        forager.VentExit = null;
+        forager.UseWaypoint = false;
+    }
+
+    /// <summary>
+    /// How long the bee is in the pipes: the straight distance between the two vents over the pipe speed, and a bit.
+    /// </summary>
+    private TimeSpan PipeTime(BeeForagerComponent forager)
+    {
+        var speed = 3f;
+        if (TryComp<MeatBeehiveComponent>(forager.Hive, out var meatComp))
+            speed = Math.Max(0.5f, meatComp.VentPipeSpeed);
+
+        if (forager.VentEntry is not { } entry || forager.VentExit is not { } exit ||
+            TerminatingOrDeleted(entry) || TerminatingOrDeleted(exit))
+        {
+            return TimeSpan.FromSeconds(1);
+        }
+
+        var distance = (_transform.GetWorldPosition(entry) - _transform.GetWorldPosition(exit)).Length();
+        return TimeSpan.FromSeconds(distance / speed + 0.5f);
+    }
+
+    /// <summary>
+    /// The bee leaves the pipes by the vent at the other end. If that vent is gone or welded shut, the bee is lost.
+    /// </summary>
+    private void ComeOutOfPipe(Entity<BeeForagerComponent> bee)
+    {
+        var comp = bee.Comp;
+        var vent = comp.VentStage == BeeVentStage.PipeOut ? comp.VentExit : comp.VentEntry;
+        if (vent is not { } uid || TerminatingOrDeleted(uid) || _weldable.IsWelded(uid))
+        {
+            // The vent at the end of the pipes is shut: the bee is lost, and nothing of the route is left behind.
+            LoseInPipe(bee);
+            return;
+        }
+
+        _transform.SetCoordinates(bee, Transform(uid).Coordinates);
+        SetSize(bee, BeeFlightSize.Growing);
+        SetPhase(bee, BeeForagerPhase.VentOut, ShrinkTime(bee));
+    }
+
+    /// <summary>
+    /// Out of the vent: at the target's end the bee flies to the creature, at the hive's end it flies home.
+    /// </summary>
+    private void LeftPipe(Entity<BeeForagerComponent> bee)
+    {
+        var comp = bee.Comp;
+        SetSize(bee, BeeFlightSize.Full);
+        var here = Transform(bee).LocalPosition;
+        if (comp.VentStage == BeeVentStage.PipeBack)
+        {
+            comp.VentStage = BeeVentStage.None;
+            StartFlight(bee, BeeForagerPhase.Return, here, comp.Home);
+            return;
+        }
+
+        comp.VentStage = BeeVentStage.ToTarget;
+        if (comp.Tray is { } creature &&
+            !TerminatingOrDeleted(creature) &&
+            Transform(bee).GridUid is { } grid &&
+            Transform(creature).GridUid == grid)
+        {
+            StartFlight(bee, BeeForagerPhase.Outbound, here,
+                _transform.WithEntityId(Transform(creature).Coordinates, grid).Position);
+            return;
+        }
+
+        StartReturn(bee, here);
+    }
+
+    /// <summary>
+    /// The way back: straight home, or through the same pipes the bee came by, first to the vent it came out of.
     /// </summary>
     private void StartReturn(Entity<BeeForagerComponent> bee, Vector2 from)
     {
-        StartFlight(bee, BeeForagerPhase.Return, from, bee.Comp.Home);
+        var comp = bee.Comp;
+        if (comp.VentStage is BeeVentStage.ToTarget or BeeVentStage.ToExit && VentSpot(comp.VentExit, bee) is { } spot)
+        {
+            comp.VentStage = BeeVentStage.ToExit;
+            StartFlight(bee, BeeForagerPhase.Return, from, spot, waypoint: true);
+            return;
+        }
+
+        comp.VentStage = BeeVentStage.None;
+        StartFlight(bee, BeeForagerPhase.Return, from, comp.Home);
     }
 }

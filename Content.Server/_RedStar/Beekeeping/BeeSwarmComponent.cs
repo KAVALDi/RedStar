@@ -23,6 +23,12 @@ public sealed partial class BeeSwarmComponent : Component
     public int Bees;
 
     /// <summary>
+    /// What the wild hive will live on, picked where the swarm came out.
+    /// </summary>
+    [ViewVariables]
+    public BeehiveDiet Diet;
+
+    /// <summary>
     /// The wild hive to build.
     /// </summary>
     [ViewVariables]

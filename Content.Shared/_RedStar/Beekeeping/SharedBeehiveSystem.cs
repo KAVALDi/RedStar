@@ -108,6 +108,9 @@ public abstract partial class SharedBeehiveSystem : EntitySystem
             args.PushMarkup(Loc.GetString("beekeeping-hive-examine-nectar",
                 ("level", comp.NectarLevel.ToString())));
 
+            if (comp.Wild && comp.Diet == BeehiveDiet.Meat)
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-meat"));
+
             if (comp.Wild && comp.SwarmModifier is { } modifierId && Proto.TryIndex(modifierId, out var modifier))
             {
                 args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-modifier",

@@ -34,6 +34,7 @@ public sealed partial class BeeScoutSystem : EntitySystem
     [Dependency] private BeeForagerSystem _foragers = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private SharedMapSystem _map = default!;
+    [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private BeehiveSystem _hive = default!;
     [Dependency] private IGameTiming _timing = default!;
@@ -67,6 +68,9 @@ public sealed partial class BeeScoutSystem : EntitySystem
             Del(bee);
             return false;
         }
+
+        if (_meat.MeatLook(hive) is { } look)
+            _queen.SetTraitVisuals(bee, look, false);
 
         flight.Hive = hive;
         flight.Phase = BeeScoutPhase.Emerge;

@@ -157,4 +157,21 @@ public sealed partial class BeeTraitPrototype : IPrototype
     [DataField]
     public bool Aggressive;
 
+    /// <summary>
+    /// Angry bees let out by each hit on the hive, on top of the usual one.
+    /// </summary>
+    [DataField]
+    public int AngryPerHit;
+
+    /// <summary>
+    /// Multiplies the damage that lets one more angry bee out.
+    /// </summary>
+    [DataField]
+    public float AngryDamageStep = 1f;
+
+    /// <summary>
+    /// In each batch of angry bees the scout comes out last, only when no workers are left at home.
+    /// </summary>
+    [DataField]
+    public bool GuardedScout;
 }

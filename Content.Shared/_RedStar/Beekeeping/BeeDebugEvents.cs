@@ -50,6 +50,11 @@ public sealed class BeeHiveDebugData
     public int MaxCombs;
 
     /// <summary>
+    /// Angry bees of this hive in the air.
+    /// </summary>
+    public int Angry;
+
+    /// <summary>
     /// The queen egg: whether there is one, seconds until it dies, seconds of cooldown left, and seconds the colony
     /// has been full enough for the next one.
     /// </summary>
@@ -62,6 +67,10 @@ public sealed class BeeHiveDebugData
     /// The queen's traits, slots and payload.
     /// </summary>
     public List<ProtoId<BeeTraitPrototype>> Traits = new();
+    public BeehiveDiet Diet;
+    public int Meat;
+    public int BloodKinds;
+    public float BloodStock;
     public int Slots;
     public float Payload;
     public bool HasQueen;
@@ -118,6 +127,8 @@ public enum BeeOutsideKind : byte
 {
     Scout,
     Pollinator,
+    Angry,
+    AngryScout,
     Lost,
 }
 

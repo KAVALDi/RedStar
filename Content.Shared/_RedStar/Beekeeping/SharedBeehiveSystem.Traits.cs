@@ -61,6 +61,9 @@ public abstract partial class SharedBeehiveSystem
             totals.PestControl |= trait.PestControl;
             totals.Sting |= trait.Sting;
             totals.Aggressive |= trait.Aggressive;
+            totals.AngryPerHit += trait.AngryPerHit;
+            totals.AngryDamageStep *= trait.AngryDamageStep;
+            totals.GuardedScout |= trait.GuardedScout;
         }
 
         return totals;
@@ -177,4 +180,7 @@ public struct BeeTraitTotals()
     public bool PestControl;
     public bool Sting;
     public bool Aggressive;
+    public int AngryPerHit;
+    public float AngryDamageStep = 1f;
+    public bool GuardedScout;
 }

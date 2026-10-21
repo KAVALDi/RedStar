@@ -20,6 +20,7 @@ namespace Content.Server._RedStar.Beekeeping;
 /// </summary>
 public sealed partial class BeehiveDebugSystem : EntitySystem
 {
+    [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private BeeForagerSystem _foragers = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
@@ -96,6 +97,20 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
         });
 
         AddDebugVerb(ref args, "beekeeping-debug-scout-now", () => ScoutWholeRange(ent));
+
+        // Plants or meat, to try the meat colony without waiting for a swarm. Sources the old diet found are dropped.
+        AddDebugVerb(ref args, ent.Comp.Diet == BeehiveDiet.Meat ? "beekeeping-debug-diet-to-plants" : "beekeeping-debug-diet-to-meat", () =>
+        {
+            ent.Comp.Diet = ent.Comp.Diet == BeehiveDiet.Meat ? BeehiveDiet.Plants : BeehiveDiet.Meat;
+            if (ent.Comp.Diet == BeehiveDiet.Meat)
+                _meat.MeatOf(ent);
+            else
+                RemComp<MeatBeehiveComponent>(ent);
+
+            ent.Comp.KnownSources.Clear();
+            Dirty(ent);
+            _hive.UpdateHiveAppearance(ent);
+        });
 
         // Lets the swarm out right now: a full colony, then the swarm itself, with no waiting for the egg or its
         // cooldown. If it cannot leave, the admin is told why.
@@ -244,6 +259,14 @@ public sealed partial class BeehiveDebugSystem : EntitySystem
     /// </summary>
     private void ScoutWholeRange(Entity<BeehiveComponent> hive)
     {
+        // A meat hive has no scout: send a forager at a target now, whatever the workers' pace.
+        if (hive.Comp.Diet == BeehiveDiet.Meat)
+        {
+            hive.Comp.VisitBudget = Math.Max(1f, hive.Comp.VisitBudget);
+            _meat.Hunt(hive);
+            return;
+        }
+
         var xform = Transform(hive);
         if (xform.GridUid is not { } grid)
             return;
