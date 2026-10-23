@@ -100,7 +100,6 @@ public sealed partial class BeeErrandSystem
                 comp.OutBees++;
                 bee.Comp.SourceHive = hive;
                 bee.Comp.CountedOutside = true;
-                _queen.GiveTraits(hive, bee);
                 _popup.PopupEntity(Loc.GetString("beekeeping-forager-caught"), holder, holder);
             }
         }
