@@ -121,6 +121,8 @@ public sealed class BeeErrandTest : GameTest
             bee = server.System<BeeErrandSystem>().TrySpawnForager(hive, server.EntMan.GetComponent<TransformComponent>(_hive), _tray)
                   ?? EntityUid.Invalid;
             Assert.That(bee.IsValid(), "the forager flew out");
+            Assert.That(server.EntMan.GetComponent<BeeItemComponent>(bee).SourceHive, Is.EqualTo(_hive),
+                "a bee in the air already knows its hive, so the analyzer can read it");
 
             user = server.EntMan.SpawnEntity("MobHuman", new EntityCoordinates(map.Grid, 1.5f, 0.5f));
             Assert.That(hands.TryPickupAnyHand(user, bee, checkActionBlocker: false), "the forager was caught");

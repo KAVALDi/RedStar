@@ -277,7 +277,7 @@ public sealed partial class BeehiveComponent : Component
     /// <summary>
     /// Most angry bees of this hive in the air at once.
     /// </summary>
-    [DataField]
+    [DataField, GuidebookData]
     public int MaxAngryBees = 10;
 
     /// <summary>
