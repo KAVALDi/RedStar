@@ -320,7 +320,7 @@ public sealed partial class BeeItemSystem : EntitySystem
 
     /// <summary>
     /// A hand picks up an aggressive bee. Without a sting it bites a bare hand; with a sting it stings through any
-    /// gloves except sting-proof ones, and injects its payload.
+    /// gloves except sting-proof ones, and injects its payload. Not in water vapor.
     /// </summary>
     [SubscribeLocalEvent]
     private void OnBeePickedUp(Entity<BeeItemComponent> ent, ref GotEquippedHandEvent args)
@@ -330,6 +330,11 @@ public sealed partial class BeeItemSystem : EntitySystem
             return;
 
         var user = args.User;
+
+        // In water vapor even an aggressive bee keeps calm.
+        if (_hive.InCalmingVapor(user))
+            return;
+
         _inventory.TryGetSlotEntity(user, "gloves", out var gloves);
 
         if (!totals.Sting)

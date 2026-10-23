@@ -1,5 +1,6 @@
 using Content.Server.NPC.HTN;
 using Content.Server.NPC.Systems;
+using Content.Shared.Damage.Systems;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Mobs;
@@ -12,6 +13,8 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
 using Robust.Shared.Physics.Systems;
+using Robust.Shared.Player;
+using Robust.Shared.Random;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
@@ -36,6 +39,7 @@ public sealed partial class BeeErrandSystem : EntitySystem
     [Dependency] private SharedPhysicsSystem _physics = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
+    [Dependency] private IRobustRandom _random = default!;
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private MovementSpeedModifierSystem _speed = default!;
     [Dependency] private IGameTiming _timing = default!;
@@ -64,7 +68,18 @@ public sealed partial class BeeErrandSystem : EntitySystem
     /// </summary>
     private static readonly ProtoId<HTNCompoundPrototype> ErrandTask = "BeeErrandCompound";
 
+    /// <summary>
+    /// How far from a hive a player has to be for its visible bees to be worth showing, in tiles: about a screen.
+    /// </summary>
+    private const float WatchRange = 15f;
+
+    /// <summary>
+    /// How far around the hive a loop of a bee loitering goes, in tiles.
+    /// </summary>
+    private const float LoiterRange = 2f;
+
     private readonly HashSet<Entity<BeeErrandComponent>> _errandsNear = new();
+    private readonly HashSet<Entity<ActorComponent>> _watchers = new();
 
     public override void Update(float frameTime)
     {
@@ -86,133 +101,6 @@ public sealed partial class BeeErrandSystem : EntitySystem
         }
     }
     private readonly HashSet<Entity<BeehiveAngryBeeComponent>> _angryNear = new();
-
-    #region Letting bees out
-
-    /// <summary>
-    /// Lets out the visible foragers whose time has come.
-    /// </summary>
-    public void UpdatePendingForagers(Entity<BeehiveComponent> hive)
-    {
-        var comp = hive.Comp;
-        if (comp.PendingForagers.Count == 0)
-            return;
-
-        var now = _timing.CurTime;
-        var xform = Transform(hive);
-        for (var i = comp.PendingForagers.Count - 1; i >= 0; i--)
-        {
-            var (tray, at) = comp.PendingForagers[i];
-            if (now < at)
-                continue;
-
-            comp.PendingForagers.RemoveAt(i);
-            if (!TerminatingOrDeleted(tray))
-                TrySpawnForager(hive, xform, tray);
-        }
-    }
-
-    /// <summary>
-    /// A forager flies out to <paramref name="target"/>, if the hive has room for one more in the air and the area is not
-    /// full of bees. A meat colony's bee may go by a <paramref name="route"/> through the pipes.
-    /// </summary>
-    public EntityUid? TrySpawnForager(Entity<BeehiveComponent> hive,
-        TransformComponent hiveXform,
-        EntityUid target,
-        int? limit = null,
-        EntProtoId? prototype = null,
-        (EntityUid Entry, EntityUid Exit)? route = null)
-    {
-        var comp = hive.Comp;
-        comp.Foragers.RemoveAll(f => TerminatingOrDeleted(f));
-        if (comp.Foragers.Count >= (limit ?? comp.MaxForagers) || !AreaHasRoom(hiveXform.Coordinates))
-            return null;
-
-        if (Release(hive, hiveXform, prototype ?? comp.ForagerPrototype, target, route) is not { } bee)
-            return null;
-
-        comp.Foragers.Add(bee);
-        return bee;
-    }
-
-    /// <summary>
-    /// The scout flies to the first of the trays it found and back; the hive learns all of them when it lands.
-    /// </summary>
-    public bool TrySpawnScout(Entity<BeehiveComponent> hive, TransformComponent hiveXform, List<EntityUid> found)
-    {
-        if (found.Count == 0 ||
-            !AreaHasRoom(hiveXform.Coordinates) ||
-            Release(hive, hiveXform, hive.Comp.ScoutFlyerPrototype, found[0], null) is not { } bee)
-        {
-            return false;
-        }
-
-        Comp<BeeErrandComponent>(bee).Found = new List<EntityUid>(found);
-        hive.Comp.ScoutFlyer = bee;
-        return true;
-    }
-
-    /// <summary>
-    /// A bee of <paramref name="prototype"/> comes out of the hive on its errand.
-    /// </summary>
-    public EntityUid? Release(EntityUid hive,
-        TransformComponent hiveXform,
-        string prototype,
-        EntityUid? target,
-        (EntityUid Entry, EntityUid Exit)? route,
-        EntityCoordinates? spot = null)
-    {
-        var bee = Spawn(prototype, hiveXform.Coordinates);
-        if (!TryComp<BeeErrandComponent>(bee, out var errand))
-        {
-            Del(bee);
-            return null;
-        }
-
-        errand.Hive = hive;
-        errand.Target = target;
-        errand.Spot = spot;
-        errand.VentEntry = route?.Entry;
-        errand.VentExit = route?.Exit;
-        // It grows out of the hive as it sets off.
-        SetSize(bee, BeeFlightSize.Growing);
-        return bee;
-    }
-
-    /// <summary>
-    /// A bee that is already out (an angry bee whose time is up) flies home on a return errand: its task becomes the
-    /// errand's, it goes into the hive and the hive gets it back (<see cref="BeeErrandHomeEvent"/>).
-    /// </summary>
-    public void SendHome(EntityUid bee, EntityUid hive)
-    {
-        var errand = EnsureComp<BeeErrandComponent>(bee);
-        errand.Kind = BeeErrandKind.Return;
-        errand.Hive = hive;
-        errand.Stage = BeeErrandStage.Back;
-        if (!TryComp<HTNComponent>(bee, out var htn))
-            return;
-
-        htn.RootTask = new HTNCompoundTask { Task = ErrandTask };
-        _npc.WakeNPC(bee, htn);
-        _htn.Replan(htn);
-    }
-
-    /// <summary>
-    /// Whether one more bee may come out around <paramref name="coordinates"/>: bees on errands and angry bees within
-    /// <see cref="BeekeepingCVars.AreaBeeRadius"/> are counted, once, and only when a bee is about to leave.
-    /// </summary>
-    public bool AreaHasRoom(EntityCoordinates coordinates)
-    {
-        var limit = _cfg.GetCVar(BeekeepingCVars.AreaBeeLimit);
-        var radius = _cfg.GetCVar(BeekeepingCVars.AreaBeeRadius);
-        _errandsNear.Clear();
-        _angryNear.Clear();
-        _lookup.GetEntitiesInRange(coordinates, radius, _errandsNear);
-        _lookup.GetEntitiesInRange(coordinates, radius, _angryNear);
-        return _errandsNear.Count + _angryNear.Count < limit;
-    }
-
-    #endregion
 
     #region The way
 
@@ -389,6 +277,16 @@ public sealed partial class BeeErrandSystem : EntitySystem
     /// </summary>
     private void Arrive(Entity<BeeErrandComponent> bee)
     {
+        // Into fire or air its hive could not work in, a bee does not dive: it turns back.
+        if (bee.Comp.Target is { } target &&
+            !TerminatingOrDeleted(target) &&
+            TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) &&
+            _hive.AirFor(hive, target) != BeehivePauseReason.None)
+        {
+            bee.Comp.Stage = BeeErrandStage.Back;
+            return;
+        }
+
         var ev = new BeeErrandArrivedEvent(bee.Comp.Target);
         RaiseLocalEvent(bee, ref ev);
 
@@ -400,8 +298,8 @@ public sealed partial class BeeErrandSystem : EntitySystem
         switch (result)
         {
             case BeeErrandArrival.Visit:
-                if (bee.Comp.Target is { } target)
-                    DiveInto(bee, BeeErrandAct.Visit, target);
+                if (bee.Comp.Target is { } visited)
+                    DiveInto(bee, BeeErrandAct.Visit, visited);
                 else
                     StartStep(bee, BeeErrandAct.Visit, BeeFlightSize.Shrinking, ShrinkTime(bee));
                 break;
@@ -557,116 +455,6 @@ public sealed partial class BeeErrandSystem : EntitySystem
     private void Hide(EntityUid bee, bool hidden)
     {
         _physics.SetCanCollide(bee, !hidden);
-    }
-
-    #endregion
-
-    #region Caught, killed, lost
-
-    /// <summary>
-    /// A forager caught by hand becomes a bee in hand, like one taken from the hive, and can be brought back.
-    /// </summary>
-    [SubscribeLocalEvent]
-    private void OnInteractHand(Entity<BeeErrandComponent> ent, ref InteractHandEvent args)
-    {
-        if (args.Handled || ent.Comp.Kind != BeeErrandKind.Forage || ent.Comp.Act != BeeErrandAct.None)
-            return;
-
-        args.Handled = true;
-        if (!TryComp<BeehiveComponent>(ent.Comp.Hive, out var comp) || TerminatingOrDeleted(ent.Comp.Hive))
-            return;
-
-        var hive = new Entity<BeehiveComponent>(ent.Comp.Hive, comp);
-        var item = Spawn(comp.PollinatorPrototype, Transform(args.User).Coordinates);
-        if (!TryComp<BeeItemComponent>(item, out var bee))
-        {
-            Del(item);
-            return;
-        }
-
-        // The worker it showed now really is outside the hive.
-        if (comp.Bees > 0)
-        {
-            comp.Bees--;
-            comp.OutBees++;
-            bee.SourceHive = hive;
-            bee.CountedOutside = true;
-        }
-
-        _queen.GiveTraits(hive, (item, bee));
-        _hands.PickupOrDrop(args.User, item);
-        _popup.PopupEntity(Loc.GetString("beekeeping-forager-caught"), args.User, args.User);
-        End(ent);
-    }
-
-    /// <summary>
-    /// A killed bee is gone at once; it never makes it home.
-    /// </summary>
-    [SubscribeLocalEvent]
-    private void OnMobStateChanged(Entity<BeeErrandComponent> ent, ref MobStateChangedEvent args)
-    {
-        if (args.NewMobState == MobState.Dead)
-            QueueDel(ent);
-    }
-
-    /// <summary>
-    /// A bee that goes without its errand being over (killed, lost in the pipes, out of time looking for its way) is a
-    /// worker the colony loses. The scout keeps its place; only what it found is lost. A swarm's bees left the colony when
-    /// it set off.
-    /// </summary>
-    [SubscribeLocalEvent]
-    private void OnTerminating(Entity<BeeErrandComponent> ent, ref EntityTerminatingEvent args)
-    {
-        if (ent.Comp.Ended || TerminatingOrDeleted(ent.Comp.Hive) || !TryComp<BeehiveComponent>(ent.Comp.Hive, out var hive))
-            return;
-
-        ent.Comp.Ended = true;
-        hive.Foragers.Remove(ent);
-        if (ent.Comp.Kind is BeeErrandKind.Forage or BeeErrandKind.Hunt)
-            _hive.RemoveHomeBee((ent.Comp.Hive, hive));
-
-        var ev = new BeeErrandLostEvent(ent, ent.Comp.Hive, ent.Comp.Kind);
-        RaiseLocalEvent(ref ev);
-    }
-
-    #endregion
-
-    #region Looks
-
-    /// <summary>
-    /// The sprite is a side view facing left: mirror it while the bee heads to the right of where it is, along its
-    /// grid, since the camera turns with the grid the player stands on.
-    /// </summary>
-    private void Face(EntityUid bee, EntityCoordinates to)
-    {
-        var xform = Transform(bee);
-        if (xform.GridUid is not { } grid)
-            return;
-
-        var from = _transform.WithEntityId(xform.Coordinates, grid).Position;
-        var target = _transform.WithEntityId(to, grid).Position;
-        SetFacing(bee, target - from);
-    }
-
-    public void SetFacing(EntityUid bee, System.Numerics.Vector2 localDirection)
-    {
-        if (localDirection.LengthSquared() < 0.0001f)
-            return;
-
-        _appearance.SetData(bee, BeeForagerVisuals.FacingRight, localDirection.X > 0f);
-    }
-
-    public void SetSize(EntityUid bee, BeeFlightSize size)
-    {
-        _appearance.SetData(bee, BeeForagerVisuals.Size, size);
-    }
-
-    public TimeSpan ShrinkTime(EntityUid bee)
-    {
-        var seconds = TryComp<BeeShrinkVisualsComponent>(bee, out var visuals)
-            ? visuals.ShrinkTime
-            : DefaultShrinkTime;
-        return TimeSpan.FromSeconds(seconds);
     }
 
     #endregion

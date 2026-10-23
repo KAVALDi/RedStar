@@ -56,3 +56,9 @@ public readonly record struct BeeErrandLostEvent(EntityUid Bee, EntityUid Hive, 
 /// </summary>
 [ByRefEvent]
 public readonly record struct BeeErrandHomeEvent(EntityUid Hive);
+
+/// <summary>
+/// Raised (broadcast) when someone hurts a forager or the scout of a hive: the colony may defend it.
+/// </summary>
+[ByRefEvent]
+public readonly record struct BeeErrandAttackedEvent(EntityUid Bee, EntityUid Hive, EntityUid Attacker);

@@ -58,6 +58,7 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private ISharedAdminLogManager _adminLog = default!;
     [Dependency] private BeehiveSystem _hive = default!;
+    [Dependency] private Content.Shared.StatusEffect.StatusEffectsSystem _status = default!;
     [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private InventorySystem _inventory = default!;
@@ -112,6 +113,24 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     }
 
     /// <summary>
+    /// Someone hurt one of the hive's foragers or its scout: a bee or two come out after them.
+    /// </summary>
+    [SubscribeLocalEvent]
+    private void OnErrandBeeAttacked(ref BeeErrandAttackedEvent args)
+    {
+        if (!TryComp<BeehiveComponent>(args.Hive, out var comp) || _timing.CurTime < comp.NextDefense)
+            return;
+
+        comp.NextDefense = _timing.CurTime + comp.DefenseCooldown;
+        ReleaseAngryBees((args.Hive, comp), DefendingBees, args.Attacker);
+    }
+
+    /// <summary>
+    /// Angry bees one attack on a forager brings out.
+    /// </summary>
+    private const int DefendingBees = 2;
+
+    /// <summary>
     /// A frame taken out of a hive with aggressive bees lets a few out.
     /// </summary>
     public void AngerOnFrameRemoved(Entity<BeehiveComponent> hive)
@@ -131,9 +150,14 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     /// Lets up to <paramref name="count"/> bees out of the hive as angry bees, the scout first if it is home.
     /// Stops at the hive's and the map's limits and when no bees are home. Returns how many flew out.
     /// </summary>
-    private int ReleaseAngryBees(Entity<BeehiveComponent> hive, int count)
+    private int ReleaseAngryBees(Entity<BeehiveComponent> hive, int count, EntityUid? after = null)
     {
         var comp = hive.Comp;
+
+        // In water vapor the colony keeps calm.
+        if (_hive.InCalmingVapor(hive, comp))
+            return 0;
+
         var xform = Transform(hive);
         var mapLimit = _cfg.GetCVar(BeekeepingCVars.AngryBeeLimit);
         var onMap = CountAngryBeesOnMap(xform.MapUid);
@@ -175,6 +199,8 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
             }
 
             GiveAngryPayload(hive, (bee, angry));
+            if (after is { } attacker)
+                _faction.AggroEntity(bee, attacker);
             released++;
             onMap++;
         }
@@ -525,6 +551,19 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     /// </summary>
     private void UpdateCalmedBees()
     {
+        // Water vapor calms angry bees and queens the way a splash of water does, for as long as they are in it.
+        if (_timing.CurTime >= _nextVaporCheck)
+        {
+            _nextVaporCheck = _timing.CurTime + VaporCheckInterval;
+            var vapor = EntityQueryEnumerator<BeehiveAngryBeeComponent>();
+            while (vapor.MoveNext(out var uid, out _))
+                CalmInVapor(uid);
+
+            var vaporQueens = EntityQueryEnumerator<BeehiveAngryQueenComponent>();
+            while (vaporQueens.MoveNext(out var uid, out _))
+                CalmInVapor(uid);
+        }
+
         var bees = EntityQueryEnumerator<BeehiveAngryBeeComponent, HTNComponent>();
         while (bees.MoveNext(out var uid, out var bee, out var htn))
         {
@@ -536,6 +575,15 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
         {
             queen.Calmed = UpdateCalm((uid, htn), queen.Calmed);
         }
+    }
+
+    private static readonly TimeSpan VaporCheckInterval = TimeSpan.FromSeconds(1);
+    private TimeSpan _nextVaporCheck;
+
+    private void CalmInVapor(EntityUid bee)
+    {
+        if (_hive.InCalmingVapor(bee))
+            _status.TryAddStatusEffect<PacifiedComponent>(bee, "Pacified", VaporCheckInterval * 2, true);
     }
 
     private bool UpdateCalm(Entity<HTNComponent> mob, bool calmed)

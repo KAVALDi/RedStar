@@ -38,6 +38,15 @@ public sealed class MeatHuntTest : GameTest
                     mapSys.SetTile(grid, map.Grid.Comp, new Vector2i(x, y), plating);
             }
 
+            // Breathable air: bees do not dive into vacuum.
+            var air = new Content.Shared.Atmos.GasMixture(Content.Shared.Atmos.Atmospherics.CellVolume)
+            {
+                Temperature = Content.Shared.Atmos.Atmospherics.T20C,
+            };
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Oxygen, Content.Shared.Atmos.Atmospherics.OxygenMolesStandard);
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Nitrogen, Content.Shared.Atmos.Atmospherics.NitrogenMolesStandard);
+            server.System<Content.Server.Atmos.EntitySystems.AtmosphereSystem>().SetMapAtmosphere(map.MapUid, false, air);
+
             EntityCoordinates At(float x, float y) => new(grid, new Vector2(x + 0.5f, y + 0.5f));
 
             _hive = server.EntMan.SpawnEntity("Beehive", At(0, 0));

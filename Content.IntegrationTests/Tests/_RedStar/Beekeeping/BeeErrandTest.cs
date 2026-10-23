@@ -23,6 +23,15 @@ public sealed class BeeErrandTest : GameTest
         var server = Server;
         await server.WaitPost(() =>
         {
+            // Breathable air: bees do not fly into vacuum.
+            var air = new Content.Shared.Atmos.GasMixture(Content.Shared.Atmos.Atmospherics.CellVolume)
+            {
+                Temperature = Content.Shared.Atmos.Atmospherics.T20C,
+            };
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Oxygen, Content.Shared.Atmos.Atmospherics.OxygenMolesStandard);
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Nitrogen, Content.Shared.Atmos.Atmospherics.NitrogenMolesStandard);
+            server.System<Content.Server.Atmos.EntitySystems.AtmosphereSystem>().SetMapAtmosphere(map.MapUid, false, air);
+
             var mapSystem = server.System<SharedMapSystem>();
             for (var x = 0; x <= 5; x++)
             {

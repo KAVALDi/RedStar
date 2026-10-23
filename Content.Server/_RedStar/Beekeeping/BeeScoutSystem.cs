@@ -87,7 +87,18 @@ public sealed partial class BeeScoutSystem : EntitySystem
     {
         var finds = Math.Clamp(hive.Comp.ScoutFinds + _hive.GetHiveTotals(hive).ScoutFinds, 1, 5);
         FindNewTrays(hive, finds, _found);
-        return _errands.TrySpawnScout(hive, Transform(hive), _found);
+        if (_found.Count == 0)
+            return false;
+
+        // With nobody around to watch the trip, the hive simply learns what the scout found.
+        var xform = Transform(hive);
+        if (!_errands.SomeoneWatching(xform.Coordinates))
+        {
+            Learn(hive, _found);
+            return false;
+        }
+
+        return _errands.TrySpawnScout(hive, xform, _found);
     }
 
     /// <summary>
@@ -153,10 +164,20 @@ public sealed partial class BeeScoutSystem : EntitySystem
         if (TerminatingOrDeleted(hiveUid) || !TryComp<BeehiveComponent>(hiveUid, out var comp) || scout.Comp.Found is not { } found)
             return;
 
-        var hive = new Entity<BeehiveComponent>(hiveUid, comp);
+        Learn((hiveUid, comp), found);
+        if (comp.ScoutFlyer == scout.Owner)
+            comp.ScoutFlyer = null;
+    }
+
+    /// <summary>
+    /// The hive learns the trays the scout found, those that still check out.
+    /// </summary>
+    private void Learn(Entity<BeehiveComponent> hive, List<EntityUid> found)
+    {
+        var comp = hive.Comp;
         var now = _timing.CurTime;
-        var xform = Transform(hiveUid);
-        var hiveMap = _transform.GetMapCoordinates(hiveUid, xform);
+        var xform = Transform(hive);
+        var hiveMap = _transform.GetMapCoordinates(hive, xform);
 
         foreach (var tray in found)
         {
@@ -169,9 +190,6 @@ public sealed partial class BeeScoutSystem : EntitySystem
                 source.NextVisit = now + comp.InactiveRecheck;
             }
         }
-
-        if (comp.ScoutFlyer == scout.Owner)
-            comp.ScoutFlyer = null;
     }
 
     /// <summary>

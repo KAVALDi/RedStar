@@ -170,4 +170,71 @@ public sealed class AngryBeehiveTest : GameTest
             Assert.That(comp.ScoutState, Is.EqualTo(BeeScoutState.Home), "the scout is home too");
         });
     }
+
+    /// <summary>
+    /// In water vapor the colony keeps calm: a hit lets no angry bees out.
+    /// </summary>
+    [Test]
+    public async Task VaporKeepsTheHiveCalm()
+    {
+        var server = Server;
+        var map = await Pair.CreateTestMap();
+        var slots = server.System<ItemSlotsSystem>();
+        EntityUid hive = default;
+
+        await server.WaitPost(() =>
+        {
+            var air = new Content.Shared.Atmos.GasMixture(Content.Shared.Atmos.Atmospherics.CellVolume)
+            {
+                Temperature = Content.Shared.Atmos.Atmospherics.T20C,
+            };
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Oxygen, 21f);
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Nitrogen, 79f);
+            air.AdjustMoles(Content.Shared.Atmos.Gas.WaterVapor, 5f);
+            server.System<Content.Server.Atmos.EntitySystems.AtmosphereSystem>().SetMapAtmosphere(map.MapUid, false, air);
+
+            hive = server.EntMan.SpawnEntity("Beehive", map.GridCoords);
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(hive);
+            Assert.That(slots.TryInsert(hive, comp.FrameSlots[0], server.EntMan.SpawnEntity("BeeFrame", map.GridCoords), null));
+            Assert.That(slots.TryInsert(hive, comp.QueenSlot, server.EntMan.SpawnEntity("BeeQueen", map.GridCoords), null));
+            comp.Bees = 5;
+        });
+        await RunTicksSync(5);
+
+        await server.WaitAssertion(() =>
+        {
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(hive);
+            Assert.That(server.System<BeehiveSystem>().InCalmingVapor(hive, comp), "the vapor is around the hive");
+            server.System<DamageableSystem>().TryChangeDamage(hive, new DamageSpecifier { DamageDict = { ["Blunt"] = 25 } });
+            Assert.That(comp.AngryOut, Is.Zero, "no angry bee came out");
+            Assert.That(comp.Bees, Is.EqualTo(5));
+        });
+    }
+
+    /// <summary>
+    /// Someone hits a forager: a couple of angry bees come out of its hive after them.
+    /// </summary>
+    [Test]
+    public async Task HittingAForagerBringsDefenders()
+    {
+        var server = Server;
+        var map = await Pair.CreateTestMap();
+        var slots = server.System<ItemSlotsSystem>();
+
+        await server.WaitAssertion(() =>
+        {
+            var hive = server.EntMan.SpawnEntity("Beehive", map.GridCoords);
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(hive);
+            Assert.That(slots.TryInsert(hive, comp.FrameSlots[0], server.EntMan.SpawnEntity("BeeFrame", map.GridCoords), null));
+            Assert.That(slots.TryInsert(hive, comp.QueenSlot, server.EntMan.SpawnEntity("BeeQueen", map.GridCoords), null));
+            comp.Bees = 5;
+            var tray = server.EntMan.SpawnEntity("HydroponicsTrayEmpty", map.GridCoords);
+            var bee = server.System<BeeErrandSystem>().TrySpawnForager((hive, comp), server.EntMan.GetComponent<TransformComponent>(hive), tray);
+            Assert.That(bee, Is.Not.Null);
+
+            var attacker = server.EntMan.SpawnEntity("MobHuman", map.GridCoords);
+            server.System<DamageableSystem>().TryChangeDamage(bee!.Value, new DamageSpecifier { DamageDict = { ["Blunt"] = 1 } }, origin: attacker);
+            Assert.That(comp.AngryOut, Is.EqualTo(2), "two bees came out to defend it");
+        });
+    }
 }
