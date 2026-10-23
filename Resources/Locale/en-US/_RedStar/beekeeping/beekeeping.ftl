@@ -161,12 +161,16 @@ beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young quee
 ## Apiary analyzer
 
 apiary-analyzer-section-feeding = What to inject
-apiary-analyzer-feed-how = Use a syringe on a queen you hold.
-apiary-analyzer-feed-mutagen = [bold]{ $reagent }[/bold]: every { $per }u rolls a trait, a new one or the loss of one she has, and her instability grows. Taken in: { $progress } of { $per }.
-apiary-analyzer-feed-jelly = [bold]{ $reagent }[/bold]: every { $per }u opens one more trait slot ({ $slots } of { $max } now). Taken in: { $progress } of { $per }.
-apiary-analyzer-feed-jelly-max = [bold]{ $reagent }[/bold]: she has all { $max } trait slots already.
-apiary-analyzer-feed-payload = Anything else stays in her as payload for the sting, up to { $cap }u (now { $payload }u).
-apiary-analyzer-feed-no-sting = Anything else is wasted: without a sting she keeps no payload.
+apiary-analyzer-feed-progress = { $progress } of { $per } u
+apiary-analyzer-feed-jelly-full = all slots
+apiary-analyzer-feed-other = Other reagents
+apiary-analyzer-feed-other-no-sting = need a sting
+apiary-analyzer-feed-help-how = [bold]Inject the queen you hold in your hand with a syringe.[/bold]
+apiary-analyzer-feed-help-mutagen = [bold]{ CAPITALIZE($reagent) }[/bold]: every { $per } u give her a new trait or take one away, and she grows less stable.
+apiary-analyzer-feed-help-jelly = [bold]{ CAPITALIZE($reagent) }[/bold]: every { $per } u open one more trait slot, up to { $max }.
+apiary-analyzer-feed-help-sting = [bold]Other reagents[/bold]: a queen with a sting holds up to { $cap } u. Her bees carry them in their stings and add them to the combs.
+apiary-analyzer-feed-help-no-sting = [bold]Other reagents[/bold]: only a queen with a sting takes them, up to { $cap } u.
+apiary-analyzer-stats-plain = as plain bees
 apiary-analyzer-section-traits = Traits
 apiary-analyzer-section-colony-traits = Colony traits
 apiary-analyzer-section-stats = Characteristics

@@ -162,12 +162,16 @@ beekeeping-hive-swarm = Старая матка улетает из улья с 
 ## Apiary analyzer
 
 apiary-analyzer-section-feeding = Что ввести шприцем
-apiary-analyzer-feed-how = Вводите шприцем в матку, которую держите в руке.
-apiary-analyzer-feed-mutagen = [bold]{ $reagent }[/bold]: каждые { $per } ед. дают бросок признака, новый или потерю одного из имеющихся, а нестабильность растёт. Накоплено { $progress } из { $per }.
-apiary-analyzer-feed-jelly = [bold]{ $reagent }[/bold]: каждые { $per } ед. открывают ещё один слот признака (сейчас { $slots } из { $max }). Накоплено { $progress } из { $per }.
-apiary-analyzer-feed-jelly-max = [bold]{ $reagent }[/bold]: у неё уже все { $max } слота признаков.
-apiary-analyzer-feed-payload = Всё остальное копится в ней грузом для жала, до { $cap } ед. (сейчас { $payload } ед.).
-apiary-analyzer-feed-no-sting = Всё остальное без пользы: без жала она груз не держит.
+apiary-analyzer-feed-progress = { $progress } из { $per } ед.
+apiary-analyzer-feed-jelly-full = все слоты
+apiary-analyzer-feed-other = Другие реагенты
+apiary-analyzer-feed-other-no-sting = нужно жало
+apiary-analyzer-feed-help-how = [bold]Вводите шприцем в матку, которую держите в руке.[/bold]
+apiary-analyzer-feed-help-mutagen = [bold]{ CAPITALIZE($reagent) }[/bold]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
+apiary-analyzer-feed-help-jelly = [bold]{ CAPITALIZE($reagent) }[/bold]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
+apiary-analyzer-feed-help-sting = [bold]Другие реагенты[/bold]: матка с жалом вмещает до { $cap } ед. Пчёлы несут их в жале и добавляют в соты.
+apiary-analyzer-feed-help-no-sting = [bold]Другие реагенты[/bold]: их принимает только матка с жалом, до { $cap } ед.
+apiary-analyzer-stats-plain = как у обычных пчёл
 apiary-analyzer-section-traits = Признаки
 apiary-analyzer-section-colony-traits = Признаки колонии
 apiary-analyzer-section-stats = Характеристики

@@ -161,7 +161,11 @@
                     <Label Text="{Loc apiary-analyzer-section-traits}"
                            StyleClasses="LabelKeyText"
                            Margin="0 0 0 2" />
-                    <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
+                    <!-- As tall as the traits need, up to a limit; past it they scroll. -->
+                    <ScrollContainer VerticalExpand="True"
+                                     HScrollEnabled="False"
+                                     ReturnMeasure="True"
+                                     MaxHeight="500">
                         <BoxContainer Name="TraitDetails"
                                       Orientation="Vertical"
                                       MaxWidth="340" />
@@ -172,14 +176,25 @@
             <PanelContainer Name="FeedingPanel"
                             StyleClasses="BackgroundPanelDark"
                             Visible="False">
-                <!-- Folded by default: it is a reference the botanist reads once, and it is long. -->
-                <Collapsible Margin="0 8" MaxWidth="340">
-                    <CollapsibleHeading Name="FeedingHeading"
-                                        Title="{Loc apiary-analyzer-section-feeding}" />
-                    <CollapsibleBody>
-                        <RichTextLabel Name="Feeding" Margin="0 2 0 0" />
-                    </CollapsibleBody>
-                </Collapsible>
+                <!-- How far along each reagent is; the info mark explains, on hover, what each one does. -->
+                <BoxContainer Orientation="Vertical" Margin="0 8" MaxWidth="340">
+                    <Control>
+                        <Label Text="{Loc apiary-analyzer-section-feeding}"
+                               StyleClasses="LabelKeyText"
+                               Margin="0 0 0 2" />
+                        <TextureRect Name="FeedingHelp"
+                                     TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
+                                     Stretch="KeepAspectCentered"
+                                     SetSize="16 16"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Center"
+                                     Margin="0 0 6 0"
+                                     MouseFilter="Stop" />
+                    </Control>
+                    <GridContainer Name="Feeding"
+                                   Columns="2"
+                                   HorizontalExpand="True" />
+                </BoxContainer>
             </PanelContainer>
         </BoxContainer>
     </BoxContainer>

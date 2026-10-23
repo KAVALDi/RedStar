@@ -36,16 +36,22 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         Nectar.AccentColor = Color.Orange;
         Combs.AccentColor = Color.Khaki;
         Health.AccentColor = Color.Crimson;
-        FeedingHeading.Label.StyleClasses.Add("LabelKeyText");
         NectarHelp.TooltipSupplier = _ =>
         {
             var tooltip = new Tooltip { MaxWidth = 600 };
             tooltip.SetMessage(_nectarHelp);
             return tooltip;
         };
+        FeedingHelp.TooltipSupplier = _ =>
+        {
+            var tooltip = new Tooltip { MaxWidth = 400 };
+            tooltip.SetMessage(_feedingHelp);
+            return tooltip;
+        };
     }
 
     private FormattedMessage _nectarHelp = new();
+    private FormattedMessage _feedingHelp = new();
 
     /// <summary>
     /// Traits whose description was folded: the list is rebuilt on every refresh and keeps them folded.
@@ -122,6 +128,9 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         return msg;
     }
 
+    /// <summary>
+    /// Only what the traits change: a line the same as for plain bees says nothing.
+    /// </summary>
     private void UpdateStats(BeeTraitTotals totals)
     {
         Stats.RemoveAllChildren();
@@ -137,20 +146,41 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         AddFactor("apiary-analyzer-stat-egg-life", totals.EggLife, higherIsBetter: true);
         AddFactor("apiary-analyzer-stat-egg-cooldown", totals.EggCooldown, higherIsBetter: false);
         AddBonus("apiary-analyzer-stat-scout-finds", totals.ScoutFinds);
-        AddRow(Stats, "apiary-analyzer-stat-mutation",
-            Loc.GetString("apiary-analyzer-units", ("amount", $"{totals.PollinationMutation:0.#}")),
-            totals.PollinationMutation > 0f ? Color.Gold : Color.DimGray);
-        AddRow(Stats, "apiary-analyzer-stat-flight-pollination", $"{totals.FlightPollination * 100f:0}%",
-            DeltaColor(totals.FlightPollination, true));
+        if (totals.PollinationMutation > 0f)
+        {
+            AddRow(Stats, "apiary-analyzer-stat-mutation",
+                Loc.GetString("apiary-analyzer-units", ("amount", $"{totals.PollinationMutation:0.#}")), Color.Gold);
+        }
+
+        if (!IsPlain(totals.FlightPollination))
+        {
+            AddRow(Stats, "apiary-analyzer-stat-flight-pollination", $"{totals.FlightPollination * 100f:0}%",
+                DeltaColor(totals.FlightPollination, true));
+        }
+
         AddFactor("apiary-analyzer-stat-comb-yield", totals.CombYield, higherIsBetter: true);
         AddBonus("apiary-analyzer-stat-cap-wax", totals.CapWax);
         AddShift("apiary-analyzer-stat-cold", totals.ColdTolerance, "K");
         AddShift("apiary-analyzer-stat-heat", totals.HeatTolerance, "K");
         AddShift("apiary-analyzer-stat-pressure", totals.PressureTolerance, Loc.GetString("apiary-analyzer-kpa"));
+
+        if (Stats.ChildCount == 0)
+        {
+            Stats.AddChild(WeakLabel("apiary-analyzer-stats-plain"));
+            Stats.AddChild(new Control());
+        }
+    }
+
+    private static bool IsPlain(float delta)
+    {
+        return MathF.Abs(delta) < 0.001f;
     }
 
     private void AddFactor(string name, float factor, bool higherIsBetter)
     {
+        if (IsPlain(factor - 1f))
+            return;
+
         AddRow(Stats, name, $"×{factor:0.##}", DeltaColor(factor - 1f, higherIsBetter));
     }
 
@@ -159,18 +189,24 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
     /// </summary>
     private void AddShift(string name, float shift, string unit)
     {
+        if (IsPlain(shift))
+            return;
+
         var value = shift > 0f ? $"+{shift:0} {unit}" : $"{shift:0} {unit}";
         AddRow(Stats, name, value, DeltaColor(shift, true));
     }
 
     private void AddBonus(string name, int bonus)
     {
+        if (bonus == 0)
+            return;
+
         AddRow(Stats, name, bonus > 0 ? $"+{bonus}" : bonus.ToString(), DeltaColor(bonus, true));
     }
 
     private static Color DeltaColor(float delta, bool higherIsBetter)
     {
-        if (MathF.Abs(delta) < 0.001f)
+        if (IsPlain(delta))
             return Color.DimGray;
 
         return delta > 0f == higherIsBetter ? Color.LimeGreen : Color.Crimson;
@@ -405,7 +441,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         {
             case ApiaryScanKind.Queen:
                 InfoHeading.Text = Loc.GetString("apiary-analyzer-section-queen");
-                AddQueenRows(state);
+                AddQueenRows(state, payload: false);
                 break;
             case ApiaryScanKind.Scout:
                 InfoHeading.Text = Loc.GetString("apiary-analyzer-section-scout");
@@ -433,29 +469,44 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
 
         var mutagen = ReagentName(feeding.Mutagen);
         var jelly = ReagentName(feeding.Jelly);
-        var lines = new List<string>
-        {
-            Loc.GetString("apiary-analyzer-feed-how"),
-            Loc.GetString("apiary-analyzer-feed-mutagen",
-                ("reagent", mutagen),
-                ("per", $"{feeding.MutagenPerRoll:0.#}"),
-                ("progress", $"{feeding.MutagenProgress:0.#}")),
-            state.Slots >= feeding.MaxSlots
-                ? Loc.GetString("apiary-analyzer-feed-jelly-max", ("reagent", jelly), ("max", feeding.MaxSlots))
-                : Loc.GetString("apiary-analyzer-feed-jelly",
-                    ("reagent", jelly),
-                    ("per", $"{feeding.JellyPerSlot:0.#}"),
-                    ("progress", $"{feeding.JellyProgress:0.#}"),
-                    ("slots", state.Slots),
-                    ("max", feeding.MaxSlots)),
-            state.Totals.Sting
-                ? Loc.GetString("apiary-analyzer-feed-payload",
-                    ("payload", $"{state.Payload:0.#}"),
-                    ("cap", $"{state.PayloadCap:0.#}"))
-                : Loc.GetString("apiary-analyzer-feed-no-sting"),
-        };
 
-        Feeding.SetMessage(FormattedMessage.FromMarkupOrThrow(string.Join("\n", lines)));
+        Feeding.RemoveAllChildren();
+        AddFeedingRow(mutagen, Loc.GetString("apiary-analyzer-feed-progress",
+            ("progress", $"{feeding.MutagenProgress:0.#}"), ("per", $"{feeding.MutagenPerRoll:0.#}")));
+        AddFeedingRow(jelly, state.Slots >= feeding.MaxSlots
+            ? Loc.GetString("apiary-analyzer-feed-jelly-full")
+            : Loc.GetString("apiary-analyzer-feed-progress",
+                ("progress", $"{feeding.JellyProgress:0.#}"), ("per", $"{feeding.JellyPerSlot:0.#}")));
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-other"), state.Totals.Sting
+            ? Loc.GetString("apiary-analyzer-feed-progress",
+                ("progress", $"{state.Payload:0.#}"), ("per", $"{state.PayloadCap:0.#}"))
+            : Loc.GetString("apiary-analyzer-feed-other-no-sting"));
+
+        var help = new List<string>
+        {
+            Loc.GetString("apiary-analyzer-feed-help-how"),
+            Loc.GetString("apiary-analyzer-feed-help-mutagen",
+                ("reagent", mutagen), ("per", $"{feeding.MutagenPerRoll:0.#}")),
+            Loc.GetString("apiary-analyzer-feed-help-jelly",
+                ("reagent", jelly), ("per", $"{feeding.JellyPerSlot:0.#}"), ("max", feeding.MaxSlots)),
+            Loc.GetString(state.Totals.Sting ? "apiary-analyzer-feed-help-sting" : "apiary-analyzer-feed-help-no-sting",
+                ("cap", $"{state.PayloadCap:0.#}")),
+        };
+        _feedingHelp = FormattedMessage.FromMarkupOrThrow(string.Join("\n", help));
+    }
+
+    private void AddFeedingRow(string name, string value)
+    {
+        // Reagent names are lower case, they start a line here.
+        var title = name.Length > 0 ? char.ToUpper(name[0]) + name[1..] : name;
+        Feeding.AddChild(new Label { Text = title, Margin = new Thickness(0, 0, 8, 0) });
+        Feeding.AddChild(new Label
+        {
+            Text = value,
+            HorizontalExpand = true,
+            HorizontalAlignment = Control.HAlignment.Right,
+            StyleClasses = { StyleClass.LabelWeak },
+        });
     }
 
     private string ReagentName(ProtoId<ReagentPrototype> reagent)
@@ -463,16 +514,20 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         return _proto.TryIndex(reagent, out var proto) ? proto.LocalizedName : reagent.Id;
     }
 
-    private void AddQueenRows(ApiaryAnalyzerState state)
+    /// <param name="payload">Off for a queen in hand: her reagents are listed with the syringe rows.</param>
+    private void AddQueenRows(ApiaryAnalyzerState state, bool payload = true)
     {
         // Coloured like the stats: grey when nothing special, red for wear on the queen.
         AddRow(BeeInfo, "apiary-analyzer-row-slots",
             Loc.GetString("apiary-analyzer-of", ("value", state.UsedSlots), ("max", state.Slots)), Color.DimGray);
         AddRow(BeeInfo, "apiary-analyzer-row-instability", state.Instability.ToString(),
             DeltaColor(state.Instability, false));
-        AddRow(BeeInfo, "apiary-analyzer-row-payload",
-            Loc.GetString("apiary-analyzer-of", ("value", $"{state.Payload:0.#}"), ("max", $"{state.PayloadCap:0.#}")),
-            Color.DimGray);
+        if (payload)
+        {
+            AddRow(BeeInfo, "apiary-analyzer-row-payload",
+                Loc.GetString("apiary-analyzer-of", ("value", $"{state.Payload:0.#}"), ("max", $"{state.PayloadCap:0.#}")),
+                Color.DimGray);
+        }
     }
 
     /// <summary>
