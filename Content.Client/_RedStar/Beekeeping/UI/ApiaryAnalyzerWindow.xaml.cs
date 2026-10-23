@@ -472,12 +472,17 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         var jelly = ReagentName(feeding.Jelly);
 
         Feeding.RemoveAllChildren();
-        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-mutagen"), Loc.GetString("apiary-analyzer-feed-progress",
-            ("progress", $"{feeding.MutagenProgress:0.#}"), ("per", $"{feeding.MutagenPerRoll:0.#}")));
-        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-jelly"), state.Slots >= feeding.MaxSlots
-            ? Loc.GetString("apiary-analyzer-feed-jelly-full")
-            : Loc.GetString("apiary-analyzer-feed-progress",
-                ("progress", $"{feeding.JellyProgress:0.#}"), ("per", $"{feeding.JellyPerSlot:0.#}")));
+        // What each reagent gives her; once some is in but not enough for it, how much is still missing.
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-mutagen"),
+            feeding.MutagenProgress > 0f
+                ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.MutagenPerRoll - feeding.MutagenProgress:0.#}"))
+                : Loc.GetString("apiary-analyzer-feed-mutagen-gives"));
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-jelly"),
+            state.Slots >= feeding.MaxSlots
+                ? Loc.GetString("apiary-analyzer-feed-jelly-full")
+                : feeding.JellyProgress > 0f
+                    ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.JellyPerSlot - feeding.JellyProgress:0.#}"))
+                    : Loc.GetString("apiary-analyzer-feed-jelly-gives"));
         AddFeedingRow(Loc.GetString("apiary-analyzer-feed-other"), state.Totals.Sting
             ? Loc.GetString("apiary-analyzer-feed-progress",
                 ("progress", $"{state.Payload:0.#}"), ("per", $"{state.PayloadCap:0.#}"))
