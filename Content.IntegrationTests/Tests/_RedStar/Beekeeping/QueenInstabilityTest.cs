@@ -1,6 +1,9 @@
 #nullable enable
 using Content.IntegrationTests.Fixtures;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Systems;
+using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Content.Shared._RedStar.Beekeeping.Systems;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;
@@ -49,7 +52,7 @@ public sealed class QueenInstabilityTest : GameTest
     [Test]
     public async Task AngryTraits()
     {
-        var hive = Server.System<Content.Server._RedStar.Beekeeping.BeehiveSystem>();
+        var hive = Server.System<Content.Server._RedStar.Beekeeping.Systems.BeehiveSystem>();
         await Server.WaitAssertion(() =>
         {
             var hot = hive.GetTotals(new ProtoId<BeeTraitPrototype>[] { "Hotheaded" });

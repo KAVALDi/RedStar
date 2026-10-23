@@ -1,6 +1,6 @@
 #nullable enable
 using Content.IntegrationTests.Fixtures;
-using Content.Server._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Systems;
 using Content.Shared.Inventory;
 using Content.Shared.NPC.Systems;
 using Robust.Shared.GameObjects;
