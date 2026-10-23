@@ -1,55 +1,9 @@
-using Content.Shared.DoAfter;
-using Content.Shared._RedStar.Beekeeping.Prototypes;
-using Content.Shared._RedStar.Beekeeping.Systems;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Serialization;
+using Content.Shared._RedStar.Beekeeping.Data;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 
 namespace Content.Shared._RedStar.Beekeeping.UI;
-
-[Serializable, NetSerializable]
-public enum ApiaryAnalyzerUiKey : byte
-{
-    Key,
-}
-
-[Serializable, NetSerializable]
-public enum ApiaryTrayState : byte
-{
-    /// <summary>The plant is ripe: the workers visit it.</summary>
-    Ripe,
-    /// <summary>The plant is still growing.</summary>
-    Growing,
-    /// <summary>No plant, or the workers cannot reach the tray now.</summary>
-    Blind,
-}
-
-[Serializable, NetSerializable]
-public enum ApiaryNectarUse : byte
-{
-    /// <summary>Nothing to spend it on.</summary>
-    Idle,
-    /// <summary>The colony is not full yet but no comb can be built: nectar waits for the next bee.</summary>
-    Bees,
-    /// <summary>The colony grows and the rest of the nectar becomes combs.</summary>
-    BeesAndCombs,
-    /// <summary>The colony is full: nectar becomes combs.</summary>
-    Combs,
-    /// <summary>Every frame is full: nectar piles up until combs are cut.</summary>
-    FramesFull,
-    /// <summary>No workers at home to build combs.</summary>
-    NoWorkers,
-    /// <summary>A hive without frames: no room for bees or combs.</summary>
-    NoFrames,
-}
-
-[Serializable, NetSerializable]
-public enum ApiaryScanKind : byte
-{
-    Hive,
-    Queen,
-    Scout,
-    Pollinator,
-}
 
 /// <summary>
 /// What the apiary analyzer shows. A hive fills the colony part, a queen or a bee only the traits and its own lines.
@@ -122,24 +76,3 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
 
     #endregion
 }
-
-[Serializable, NetSerializable]
-public sealed class ApiaryFrameData
-{
-    public NetEntity Frame;
-    public EntProtoId? Prototype;
-    public int Combs;
-    public int MaxCombs;
-}
-
-[Serializable, NetSerializable]
-public sealed class ApiaryTrayData
-{
-    public NetEntity Tray;
-    public NetEntity? Plant;
-    public EntProtoId? PlantPrototype;
-    public ApiaryTrayState State;
-}
-
-[Serializable, NetSerializable]
-public sealed partial class ApiaryAnalyzerDoAfterEvent : SimpleDoAfterEvent;

@@ -4,6 +4,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.FixedPoint;
 using Content.Shared.Verbs;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Events;
 using Robust.Shared.Utility;
 

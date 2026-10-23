@@ -2,6 +2,7 @@ using System.Globalization;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Verbs;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Robust.Shared.Containers;
 using Robust.Shared.Prototypes;
 

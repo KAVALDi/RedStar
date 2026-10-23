@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Data;
 using Content.Shared.Audio;
 using Content.Shared.Database;
 using Content.Shared.Throwing;

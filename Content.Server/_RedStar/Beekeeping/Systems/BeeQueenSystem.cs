@@ -8,6 +8,7 @@ using Content.Shared.FixedPoint;
 using Content.Shared.Popups;
 using Content.Shared.Random.Helpers;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.Visuals;

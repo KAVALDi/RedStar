@@ -2,6 +2,7 @@ using Robust.Shared.Containers;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Examine;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Timing;
 
