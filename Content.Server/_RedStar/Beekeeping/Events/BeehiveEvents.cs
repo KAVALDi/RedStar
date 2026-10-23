@@ -1,3 +1,5 @@
+using Content.Server._RedStar.Beekeeping.Components;
+
 namespace Content.Server._RedStar.Beekeeping.Events;
 
 /// <summary>

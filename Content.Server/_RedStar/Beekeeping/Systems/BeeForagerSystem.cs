@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Events;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Popups;

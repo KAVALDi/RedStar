@@ -1,6 +1,7 @@
 #nullable enable
 using System.Linq;
 using Content.IntegrationTests.Fixtures;
+using Content.Server._RedStar.Beekeeping.Components;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Storage.Components;
 using Content.Shared._RedStar.Beekeeping.Components;

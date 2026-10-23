@@ -1,6 +1,5 @@
-using Content.Shared._RedStar.Beekeeping;
 
-namespace Content.Server._RedStar.Beekeeping;
+namespace Content.Server._RedStar.Beekeeping.Components;
 
 /// <summary>
 /// A swarm leaving its hive with the old queen. It flies like a forager (<see cref="BeeForagerComponent"/>) straight

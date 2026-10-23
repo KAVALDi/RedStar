@@ -1,9 +1,10 @@
 using Content.Server.Administration;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Components;
 using Content.Shared.Administration;
+using Content.Shared._RedStar.Beekeeping.Components;
 using Robust.Shared.Console;
 
-namespace Content.Server._RedStar.Beekeeping;
+namespace Content.Server._RedStar.Beekeeping.Commands;
 
 /// <summary>
 /// Removes the bees that got out of hand on the admin's map: angry bees, angry queens, swarms, lost foragers and wild

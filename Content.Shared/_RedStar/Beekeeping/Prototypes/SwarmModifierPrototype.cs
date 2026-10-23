@@ -1,7 +1,7 @@
 using Content.Shared.Random;
 using Robust.Shared.Prototypes;
 
-namespace Content.Shared._RedStar.Beekeeping;
+namespace Content.Shared._RedStar.Beekeeping.Prototypes;
 
 /// <summary>
 /// A quirk of one swarm, rolled once when it leaves the hive by <see cref="Weight"/>, not tied to the queen's traits.

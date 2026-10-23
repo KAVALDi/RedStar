@@ -1,6 +1,7 @@
 using Content.Shared.Storage.Components;
+using Content.Shared._RedStar.Beekeeping.Components;
 
-namespace Content.Shared._RedStar.Beekeeping;
+namespace Content.Shared._RedStar.Beekeeping.Systems;
 
 /// <summary>
 /// A closing locker takes in a wild hive lying in it. The locker already finds it (the hive has the body of an item),

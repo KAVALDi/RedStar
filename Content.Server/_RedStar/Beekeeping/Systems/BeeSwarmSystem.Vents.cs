@@ -1,13 +1,14 @@
+using Content.Server._RedStar.Beekeeping.Components;
 using Content.Shared.NodeContainer.NodeGroups;
 using Content.Server.Atmos.Piping.Unary.Components;
-using Content.Shared._RedStar.Beekeeping;
 using Content.Shared.Mobs.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Tools.Systems;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
 
-namespace Content.Server._RedStar.Beekeeping;
+namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
 /// A swarm can leave through the air vents: it dives into a vent it can see and comes out of another vent of the same

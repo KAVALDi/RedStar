@@ -1,3 +1,5 @@
+using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Events;
 using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Stacks;
 using Content.Shared.DoAfter;
@@ -16,6 +18,9 @@ using Content.Shared.Random.Helpers;
 using Content.Shared.Storage.Components;
 using Content.Shared.Storage.EntitySystems;
 using Content.Shared._RedStar.Beekeeping;
+using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
@@ -23,7 +28,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
-namespace Content.Server._RedStar.Beekeeping;
+namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
 /// Swarming. When a queen egg dies uncollected, the old queen leaves with half the bees and a young queen from the
