@@ -161,6 +161,14 @@ public sealed partial class BeeErrandSystem
     {
         var comp = hive.Comp;
         var now = _timing.CurTime;
+
+        // A colony that has just got its queen settles in first: no bee circles the hive the moment she goes in.
+        if (comp.NextLoiter == TimeSpan.Zero)
+        {
+            comp.NextLoiter = now + comp.LoiterInterval * (0.5 + _random.NextDouble());
+            return;
+        }
+
         if (now < comp.NextLoiter)
             return;
 
