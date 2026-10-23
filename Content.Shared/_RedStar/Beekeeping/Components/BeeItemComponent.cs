@@ -2,10 +2,10 @@ using Content.Shared.Chemistry.Components;
 using Content.Shared.Damage;
 using Content.Shared.FixedPoint;
 using Content.Shared.Guidebook;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
-using Robust.Shared.Serialization;
 
 namespace Content.Shared._RedStar.Beekeeping.Components;
 
@@ -171,11 +171,4 @@ public sealed partial class BeeItemComponent : Component
     /// </summary>
     [ViewVariables]
     public bool Worked;
-}
-
-[Serializable, NetSerializable]
-public enum BeeRole : byte
-{
-    Scout,
-    Pollinator,
 }

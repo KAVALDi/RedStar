@@ -1,6 +1,7 @@
 using Content.Server.NPC.HTN;
 using Content.Server.NPC.Systems;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Data;
 using Content.Server._RedStar.Beekeeping.Events;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Hands.EntitySystems;

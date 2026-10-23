@@ -1,9 +1,9 @@
 using System.Numerics;
+using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
 using Robust.Shared.Animations;
-using Content.Shared._RedStar.Beekeeping.Components;
-using Content.Shared._RedStar.Beekeeping.Visuals;
 
 namespace Content.Client._RedStar.Beekeeping.Visuals;
 

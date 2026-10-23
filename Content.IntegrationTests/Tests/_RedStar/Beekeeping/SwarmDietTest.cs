@@ -3,6 +3,7 @@ using System.Numerics;
 using Content.IntegrationTests.Fixtures;
 using Content.Server._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;

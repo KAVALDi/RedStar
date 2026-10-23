@@ -1,9 +1,9 @@
 using System.Linq;
 using System.Numerics;
-using Robust.Client.GameObjects;
-using Robust.Shared.Timing;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Visuals;
+using Robust.Client.GameObjects;
+using Robust.Shared.Timing;
 
 namespace Content.Client._RedStar.Beekeeping.Visuals;
 
