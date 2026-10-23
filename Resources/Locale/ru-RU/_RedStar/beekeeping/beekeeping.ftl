@@ -174,7 +174,7 @@ apiary-analyzer-feed-other-no-sting = без жала
 apiary-analyzer-feed-help-how = [color=#A88B5E]Достаньте матку из улья и введите ей реагент:[/color]
 apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
 apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
-apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: матка с жалом вмещает { $cap } ед.
+apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: матка с жалом вмещает до { $cap } ед.
     Пчёлы несут их в жале и добавляют в соты.
 apiary-analyzer-feed-help-no-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: их принимает только матка с жалом, до { $cap } ед.
 apiary-analyzer-stats-plain = как у обычных пчёл
