@@ -36,6 +36,30 @@
                     </BoxContainer>
                 </PanelContainer>
 
+                <!-- A queen in hand: how far along each reagent is; the info mark explains, on hover, what each does. -->
+                <PanelContainer Name="FeedingPanel"
+                                StyleClasses="BackgroundPanel"
+                                HorizontalExpand="True"
+                                Visible="False">
+                    <BoxContainer Orientation="Vertical" Margin="0 8">
+                        <Control>
+                            <Label Text="{Loc apiary-analyzer-section-feeding}"
+                                   StyleClasses="LabelKeyText" />
+                            <TextureRect Name="FeedingHelp"
+                                         TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
+                                         Stretch="KeepAspectCentered"
+                                         SetSize="16 16"
+                                         HorizontalAlignment="Right"
+                                         VerticalAlignment="Center"
+                                         Margin="0 0 6 0"
+                                         MouseFilter="Stop" />
+                        </Control>
+                        <GridContainer Name="Feeding"
+                                       Columns="2"
+                                       HorizontalExpand="True" />
+                    </BoxContainer>
+                </PanelContainer>
+
                 <PanelContainer StyleClasses="BackgroundPanel"
                                 HorizontalExpand="True">
                     <BoxContainer Orientation="Vertical" Margin="0 8">
@@ -149,7 +173,7 @@
             </PanelContainer>
         </BoxContainer>
 
-        <!-- A queen or a bee: every trait with what it does, and for a queen what a syringe does to her. -->
+        <!-- A queen or a bee: every trait with what it does. -->
         <BoxContainer Name="BeeBox"
                       Orientation="Vertical"
                       HorizontalExpand="True"
@@ -170,30 +194,6 @@
                                       Orientation="Vertical"
                                       MaxWidth="340" />
                     </ScrollContainer>
-                </BoxContainer>
-            </PanelContainer>
-
-            <PanelContainer Name="FeedingPanel"
-                            StyleClasses="BackgroundPanelDark"
-                            Visible="False">
-                <!-- How far along each reagent is; the info mark explains, on hover, what each one does. -->
-                <BoxContainer Orientation="Vertical" Margin="0 8" MaxWidth="340">
-                    <Control>
-                        <Label Text="{Loc apiary-analyzer-section-feeding}"
-                               StyleClasses="LabelKeyText"
-                               Margin="0 0 0 2" />
-                        <TextureRect Name="FeedingHelp"
-                                     TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
-                                     Stretch="KeepAspectCentered"
-                                     SetSize="16 16"
-                                     HorizontalAlignment="Right"
-                                     VerticalAlignment="Center"
-                                     Margin="0 0 6 0"
-                                     MouseFilter="Stop" />
-                    </Control>
-                    <GridContainer Name="Feeding"
-                                   Columns="2"
-                                   HorizontalExpand="True" />
                 </BoxContainer>
             </PanelContainer>
         </BoxContainer>

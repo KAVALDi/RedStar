@@ -161,6 +161,8 @@ beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young quee
 ## Apiary analyzer
 
 apiary-analyzer-section-feeding = What to inject
+apiary-analyzer-feed-mutagen = Mutagen
+apiary-analyzer-feed-jelly = Royal jelly
 apiary-analyzer-feed-progress = { $progress } of { $per } u
 apiary-analyzer-feed-jelly-full = all slots
 apiary-analyzer-feed-other = Other reagents

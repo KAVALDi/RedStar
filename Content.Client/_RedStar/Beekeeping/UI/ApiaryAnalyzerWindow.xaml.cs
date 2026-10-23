@@ -471,9 +471,9 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         var jelly = ReagentName(feeding.Jelly);
 
         Feeding.RemoveAllChildren();
-        AddFeedingRow(mutagen, Loc.GetString("apiary-analyzer-feed-progress",
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-mutagen"), Loc.GetString("apiary-analyzer-feed-progress",
             ("progress", $"{feeding.MutagenProgress:0.#}"), ("per", $"{feeding.MutagenPerRoll:0.#}")));
-        AddFeedingRow(jelly, state.Slots >= feeding.MaxSlots
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-jelly"), state.Slots >= feeding.MaxSlots
             ? Loc.GetString("apiary-analyzer-feed-jelly-full")
             : Loc.GetString("apiary-analyzer-feed-progress",
                 ("progress", $"{feeding.JellyProgress:0.#}"), ("per", $"{feeding.JellyPerSlot:0.#}")));
@@ -497,9 +497,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
 
     private void AddFeedingRow(string name, string value)
     {
-        // Reagent names are lower case, they start a line here.
-        var title = name.Length > 0 ? char.ToUpper(name[0]) + name[1..] : name;
-        Feeding.AddChild(new Label { Text = title, Margin = new Thickness(0, 0, 8, 0) });
+        Feeding.AddChild(new Label { Text = name, Margin = new Thickness(0, 0, 8, 0) });
         Feeding.AddChild(new Label
         {
             Text = value,

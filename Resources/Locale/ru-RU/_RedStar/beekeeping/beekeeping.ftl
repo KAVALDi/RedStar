@@ -162,6 +162,8 @@ beekeeping-hive-swarm = Старая матка улетает из улья с 
 ## Apiary analyzer
 
 apiary-analyzer-section-feeding = Что ввести шприцем
+apiary-analyzer-feed-mutagen = Мутаген
+apiary-analyzer-feed-jelly = Молочко
 apiary-analyzer-feed-progress = { $progress } из { $per } ед.
 apiary-analyzer-feed-jelly-full = все слоты
 apiary-analyzer-feed-other = Другие реагенты
