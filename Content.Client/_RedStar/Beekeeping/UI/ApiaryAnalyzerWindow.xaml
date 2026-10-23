@@ -173,12 +173,14 @@
             <PanelContainer Name="FeedingPanel"
                             StyleClasses="BackgroundPanelDark"
                             Visible="False">
-                <BoxContainer Orientation="Vertical" Margin="0 8" MaxWidth="340">
-                    <Label Text="{Loc apiary-analyzer-section-feeding}"
-                           StyleClasses="LabelKeyText"
-                           Margin="0 0 0 2" />
-                    <RichTextLabel Name="Feeding" />
-                </BoxContainer>
+                <!-- Folded by default: it is a reference the botanist reads once, and it is long. -->
+                <Collapsible Margin="0 8" MaxWidth="340">
+                    <CollapsibleHeading Name="FeedingHeading"
+                                        Title="{Loc apiary-analyzer-section-feeding}" />
+                    <CollapsibleBody>
+                        <RichTextLabel Name="Feeding" Margin="0 2 0 0" />
+                    </CollapsibleBody>
+                </Collapsible>
             </PanelContainer>
         </BoxContainer>
     </BoxContainer>

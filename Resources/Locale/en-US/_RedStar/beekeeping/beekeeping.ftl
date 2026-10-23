@@ -295,7 +295,7 @@ apiary-analyzer-section-targets = Recent targets ({ $count })
 apiary-analyzer-targets-none = The bees have not bitten anyone yet.
 beekeeping-bite-blocked = The sealed suit stops the bee from biting.
 
-beekeeping-trait-hidden = hidden trait
+beekeeping-trait-hidden = hidden
 beekeeping-trait-hidden-desc = Nobody has seen it at work yet. It shows itself in what the colony does, or after the queen has worked in a hive for a while.
 beekeeping-trait-revealed = The bees show a trait: { $trait }.
 beekeeping-queen-trait-gained-hidden = Something changed in the queen: she has a new trait, and nobody knows yet what it is.

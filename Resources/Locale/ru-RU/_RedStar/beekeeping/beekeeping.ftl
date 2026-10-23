@@ -296,7 +296,7 @@ apiary-analyzer-section-targets = Недавние цели ({ $count })
 apiary-analyzer-targets-none = Пчёлы ещё никого не кусали.
 beekeeping-bite-blocked = Герметичный костюм не даёт пчеле укусить.
 
-beekeeping-trait-hidden = скрытый признак
+beekeeping-trait-hidden = скрытый
 beekeeping-trait-hidden-desc = Его ещё никто не видел в деле. Он проявится в работе колонии или после того, как матка поработает в улье.
 beekeeping-trait-revealed = Пчёлы проявили признак: { $trait }.
 beekeeping-queen-trait-gained-hidden = В матке что-то изменилось: у неё новый признак, и пока никто не знает какой.

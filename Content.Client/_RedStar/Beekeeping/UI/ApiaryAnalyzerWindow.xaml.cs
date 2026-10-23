@@ -36,6 +36,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         Nectar.AccentColor = Color.Orange;
         Combs.AccentColor = Color.Khaki;
         Health.AccentColor = Color.Crimson;
+        FeedingHeading.Label.StyleClasses.Add("LabelKeyText");
         NectarHelp.TooltipSupplier = _ =>
         {
             var tooltip = new Tooltip { MaxWidth = 600 };
@@ -45,6 +46,11 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
     }
 
     private FormattedMessage _nectarHelp = new();
+
+    /// <summary>
+    /// Traits whose description was folded: the list is rebuilt on every refresh and keeps them folded.
+    /// </summary>
+    private readonly HashSet<string> _foldedTraits = new();
 
     public void UpdateState(ApiaryAnalyzerState state)
     {
@@ -382,33 +388,15 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             TraitDetails.AddChild(WeakLabel("beekeeping-traits-none"));
         for (var i = 0; i < state.HiddenTraits; i++)
         {
-            var hidden = new FormattedMessage();
-            hidden.PushColor(Color.Gray);
-            hidden.AddText(Loc.GetString("beekeeping-trait-hidden"));
-            hidden.Pop();
-            hidden.AddText(Loc.GetString("apiary-analyzer-trait-separator") + Loc.GetString("beekeeping-trait-hidden-desc"));
-            var hiddenLabel = new RichTextLabel();
-            hiddenLabel.SetMessage(hidden);
-            TraitDetails.AddChild(hiddenLabel);
+            TraitDetails.AddChild(TraitEntry($"hidden-{i}", Loc.GetString("beekeeping-trait-hidden"), Color.Gray,
+                Loc.GetString("beekeeping-trait-hidden-desc")));
         }
+
         foreach (var id in state.Traits)
         {
-            var line = new FormattedMessage();
-            if (_proto.Resolve(id, out var trait))
-            {
-                line.PushColor(trait.Color);
-                line.AddText(Loc.GetString(trait.Name));
-                line.Pop();
-                line.AddText(Loc.GetString("apiary-analyzer-trait-separator") + Loc.GetString(trait.Description));
-            }
-            else
-            {
-                line.AddText(id.Id);
-            }
-
-            var label = new RichTextLabel();
-            label.SetMessage(line);
-            TraitDetails.AddChild(label);
+            TraitDetails.AddChild(_proto.Resolve(id, out var trait)
+                ? TraitEntry(id, Loc.GetString(trait.Name), trait.Color, Loc.GetString(trait.Description))
+                : TraitEntry(id, id.Id, Color.White, string.Empty));
         }
 
         BeeInfo.RemoveAllChildren();
@@ -484,6 +472,30 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         AddRow(BeeInfo, "apiary-analyzer-row-payload",
             Loc.GetString("apiary-analyzer-of", ("value", $"{state.Payload:0.#}"), ("max", $"{state.PayloadCap:0.#}")),
             Color.DimGray);
+    }
+
+    /// <summary>
+    /// A trait's name in its colour that folds and unfolds what it does.
+    /// </summary>
+    private Collapsible TraitEntry(string key, string name, Color color, string description)
+    {
+        var heading = new CollapsibleHeading(name);
+        heading.Label.FontColorOverride = color;
+        var text = new RichTextLabel { Margin = new Thickness(16, 0, 0, 2) };
+        text.SetMessage(FormattedMessage.FromUnformatted(description));
+        var entry = new Collapsible(heading, new CollapsibleBody { Children = { text } })
+        {
+            BodyVisible = !_foldedTraits.Contains(key),
+        };
+
+        heading.OnToggled += args =>
+        {
+            if (args.Pressed)
+                _foldedTraits.Remove(key);
+            else
+                _foldedTraits.Add(key);
+        };
+        return entry;
     }
 
     private static Label WeakLabel(string loc)
