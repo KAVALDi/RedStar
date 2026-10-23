@@ -28,6 +28,7 @@ beekeeping-hive-examine-dying = [color=red]Колония без матки вы
 beekeeping-hive-examine-scout-outside = Разведчица вне улья.
 beekeeping-hive-examine-scout-lost = Улей потерял разведчицу. Новая появится через { $minutes } мин { $seconds } с.
 beekeeping-hive-examine-scout-lost-grow = Улей потерял разведчицу. Новая появится, когда колония подрастёт.
+beekeeping-hive-examine-vapor = [color=lightblue]Водяной пар успокаивает пчёл.[/color]
 beekeeping-hive-examine-paused = [color=orange]Пчёлы затихли: { $reason ->
     [Vacuum] здесь нечем дышать
     [HighPressure] слишком высокое давление

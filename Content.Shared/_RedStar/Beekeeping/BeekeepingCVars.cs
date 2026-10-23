@@ -14,4 +14,16 @@ public sealed class BeekeepingCVars
     public static readonly CVarDef<int> ActiveHiveLimit =
         CVarDef.Create("beekeeping.active_hive_limit", 8, CVar.SERVERONLY);
 
+    /// <summary>
+    /// Bees out of their hives (on errands or angry) within <see cref="AreaBeeRadius"/> of a hive. Past it the hive lets
+    /// no more out: the colony keeps working, only fewer bees are seen.
+    /// </summary>
+    public static readonly CVarDef<int> AreaBeeLimit =
+        CVarDef.Create("beekeeping.area_bee_limit", 20, CVar.SERVERONLY);
+
+    /// <summary>
+    /// Radius in tiles of <see cref="AreaBeeLimit"/>.
+    /// </summary>
+    public static readonly CVarDef<float> AreaBeeRadius =
+        CVarDef.Create("beekeeping.area_bee_radius", 10f, CVar.SERVERONLY);
 }

@@ -105,7 +105,7 @@ public sealed partial class BeeQueenSystem
         switch (homing.Comp.Facing)
         {
             case BeeHomingFacing.Mirror:
-                _foragers.SetFacing(homing, localDirection);
+                _errands.SetFacing(homing, localDirection);
                 break;
             case BeeHomingFacing.Rotate:
                 // The sprite looks up (+Y) at rotation zero.

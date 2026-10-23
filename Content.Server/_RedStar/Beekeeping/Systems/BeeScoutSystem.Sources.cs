@@ -11,7 +11,7 @@ namespace Content.Server._RedStar.Beekeeping.Systems;
 /// <summary>
 /// Nectar: the hive remembers the trays its scout found, and workers make abstract visits to them. A tray does not have
 /// to be bolted down: a moved tray is still the same tray. A visit and a find both need a clear straight line from the
-/// hive to the tray. Visible foragers (<see cref="BeeForagerSystem"/>) only show a visit; they compute nothing.
+/// hive to the tray. Visible foragers (<see cref="BeeErrandSystem"/>) only act a visit out; they compute nothing.
 /// </summary>
 public sealed partial class BeeScoutSystem
 {

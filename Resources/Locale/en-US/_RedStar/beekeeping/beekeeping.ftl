@@ -28,6 +28,7 @@ beekeeping-hive-examine-dying = [color=red]Without a queen the colony is dying o
 beekeeping-hive-examine-scout-outside = The scout is out of the hive.
 beekeeping-hive-examine-scout-lost = The hive lost its scout. A new one in { $minutes } min { $seconds } s.
 beekeeping-hive-examine-scout-lost-grow = The hive lost its scout. A new one comes once the colony grows.
+beekeeping-hive-examine-vapor = [color=lightblue]Water vapor keeps the bees calm.[/color]
 beekeeping-hive-examine-paused = [color=orange]The bees have gone quiet: { $reason ->
     [Vacuum] there is no air to breathe
     [HighPressure] the pressure is too high
