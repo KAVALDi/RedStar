@@ -7,7 +7,7 @@ using Robust.Shared.Console;
 namespace Content.Server._RedStar.Beekeeping.Commands;
 
 /// <summary>
-/// Removes the bees that got out of hand on the admin's map: angry bees, angry queens, swarms, lost foragers and wild
+/// Removes the bees that got out of hand on the admin's map: angry bees, angry queens, swarms, bees on errands and wild
 /// hives. Hives built by players and the bees in their hands are left alone. With "all", every map.
 /// </summary>
 [AdminCommand(AdminFlags.Admin)]
@@ -35,15 +35,8 @@ public sealed partial class BeekeepingClearCommand : LocalizedEntityCommands
         var removed = 0;
         removed += Clear<BeeSwarmComponent>(map);
 
-        var foragers = EntityManager.EntityQueryEnumerator<BeeForagerComponent, TransformComponent>();
-        while (foragers.MoveNext(out var uid, out var forager, out var xform))
-        {
-            if (forager.Phase == BeeForagerPhase.Lost && (map == null || xform.MapUid == map))
-            {
-                EntityManager.QueueDeleteEntity(uid);
-                removed++;
-            }
-        }
+        // Bees out on errands are in the air for a short while anyway; whatever is out now goes.
+        removed += Clear<BeeErrandComponent>(map);
 
         var hives = EntityManager.EntityQueryEnumerator<BeehiveComponent, TransformComponent>();
         while (hives.MoveNext(out var uid, out var hive, out var xform))

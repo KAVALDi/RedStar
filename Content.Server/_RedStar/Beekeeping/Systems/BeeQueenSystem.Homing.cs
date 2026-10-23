@@ -245,21 +245,19 @@ public sealed partial class BeeQueenSystem
             site = _swarm.SearchHop(homing, origin, (grid, gridComp), BeeSwarmSystem.SearchHopLength);
         }
 
-        var flyer = Spawn(queen.NestFlyerPrototype, new EntityCoordinates(grid, home));
-        if (!TryComp<BeeSwarmComponent>(flyer, out var swarm) ||
-            !TryComp<BeeForagerComponent>(flyer, out var forager) ||
+        // She has no hive: the errand's hive is left empty, she never flies back.
+        if (_errands.Release(default, xform, queen.NestFlyerPrototype, storage, null,
+                storage == null ? new EntityCoordinates(grid, site) : null) is not { } flyer ||
+            !TryComp<BeeSwarmComponent>(flyer, out var swarm) ||
             !_container.Insert(homing.Owner, _container.EnsureContainer<ContainerSlot>(flyer, swarm.Container), force: true))
         {
-            Del(flyer);
             return false;
         }
 
         swarm.WildHive = queen.WildHivePrototype;
         swarm.Storage = storage;
         swarm.Searching = storage == null;
-        forager.Home = home;
-        _foragers.SetSize(flyer, BeeFlightSize.Full);
-        _foragers.Fly((flyer, forager), BeeForagerPhase.Outbound, home, site);
+        _errands.SetSize(flyer, BeeFlightSize.Full);
 
         _adminLog.Add(LogType.Action, LogImpact.Low,
             $"{ToPrettyString(homing):queen} was let go and flew off to found a wild hive");
