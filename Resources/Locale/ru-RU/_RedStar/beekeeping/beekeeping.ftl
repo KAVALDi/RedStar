@@ -286,4 +286,3 @@ apiary-analyzer-chemicals-none = В улье пока нет химически�
 apiary-analyzer-section-targets = Недавние цели ({ $count })
 apiary-analyzer-targets-none = Пчёлы ещё никого не кусали.
 beekeeping-bite-blocked = Герметичный костюм не даёт пчеле укусить.
-beekeeping-bee-swing-miss = Промах: пчела слишком мала для замаха, бейте точно по ней.

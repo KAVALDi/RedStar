@@ -3,7 +3,7 @@ using Content.Shared._RedStar.Beekeeping;
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// A swarm leaving its hive with the old queen. It flies like a forager (<see cref="BeeForagerComponent"/>) straight
+/// A swarm leaving its hive with the old queen. It is an NPC on an errand (<see cref="BeeErrandComponent"/>) that flies
 /// to a nest site it picked, and builds a wild hive there with its bees. The queen item rides inside it; if the swarm
 /// is gone before it lands, the queen drops where it was.
 /// </summary>

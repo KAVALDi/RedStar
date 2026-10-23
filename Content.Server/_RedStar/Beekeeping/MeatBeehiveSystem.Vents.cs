@@ -24,7 +24,7 @@ public sealed partial class MeatBeehiveSystem
     /// </summary>
     public (EntityUid Entry, EntityUid Exit)? FindHuntRoute(Entity<BeehiveComponent> hive, MapCoordinates hiveMap, EntityUid target)
     {
-        var meatComp = _meat.MeatOf(hive);
+        var meatComp = MeatOf(hive);
         var grid = Transform(hive).GridUid;
         var targetMap = _transform.GetMapCoordinates(target);
         var range = meatComp.VentHuntRange;
@@ -83,7 +83,7 @@ public sealed partial class MeatBeehiveSystem
     /// </summary>
     public void GatherCreaturesNearVents(Entity<BeehiveComponent> hive, MapCoordinates hiveMap)
     {
-        var meatComp = _meat.MeatOf(hive);
+        var meatComp = MeatOf(hive);
         foreach (var list in _viaExits.Values)
         {
             list.Clear();

@@ -61,7 +61,7 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     [Dependency] private SharedMapSystem _map = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private BeehiveSystem _hive = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
@@ -128,12 +128,11 @@ public sealed partial class BeeSwarmSystem : EntitySystem
                 : SearchHop(hive, hiveMap, (grid, gridComp), SearchHopLength);
         }
 
-        var home = _map.WorldToLocal(grid, gridComp, hiveMap.Position);
-        var swarm = Spawn(comp.SwarmPrototype, new EntityCoordinates(grid, home));
-        if (!TryComp<BeeSwarmComponent>(swarm, out var swarmComp) ||
-            !TryComp<BeeForagerComponent>(swarm, out var forager))
+        if (_errands.Release(hive, xform, comp.SwarmPrototype, storage,
+                ventRoute is { } way ? (way.Entry, way.Exit) : null,
+                storage == null && ventRoute == null ? new EntityCoordinates(grid, site) : null) is not { } swarm ||
+            !TryComp<BeeSwarmComponent>(swarm, out var swarmComp))
         {
-            Del(swarm);
             return false;
         }
 
@@ -186,9 +185,13 @@ public sealed partial class BeeSwarmSystem : EntitySystem
             {
                 // It flies to the place it settles in, not to the first one it saw.
                 swarmComp.Storage = quietStorage;
-                site = _transform.WithEntityId(Transform(quietStorage).Coordinates, grid).Position;
+                _errands.SetTarget(swarm, quietStorage);
             }
         }
+
+        // The exit was changed for the diet: the route goes there.
+        if (ventRoute is { } chosenRoute && swarmComp.VentExit is { } exit)
+            _errands.SetRoute(swarm, chosenRoute.Entry, exit);
 
         swarmComp.Searching = ventRoute == null && storage == null;
 
@@ -201,8 +204,6 @@ public sealed partial class BeeSwarmSystem : EntitySystem
             Log.Warning($"{ToPrettyString(hive)} could not take its young queen after swarming");
             _transform.DropNextTo(daughter, hive.Owner);
         }
-
-        _foragers.Launch((swarm, forager), hive, home, site);
 
         if (swarmComp.Diet == BeehiveDiet.Meat)
         {
@@ -257,19 +258,15 @@ public sealed partial class BeeSwarmSystem : EntitySystem
         var angle = _random.NextFloat() * MathF.Tau;
         var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
         var distance = Math.Min(comp.ScoutRange, _scout.FreeFlight(hiveMap, direction, comp.ScoutRange, hive) - 0.5f);
-        var home = _map.WorldToLocal(grid, gridComp, hiveMap.Position);
         var target = _map.WorldToLocal(grid, gridComp, hiveMap.Position + direction * Math.Max(distance, 0.5f));
-
-        var swarm = Spawn(comp.LeavingSwarmPrototype, new EntityCoordinates(grid, home));
-        if (!TryComp<BeeSwarmComponent>(swarm, out var swarmComp) || !TryComp<BeeForagerComponent>(swarm, out var forager))
+        if (_errands.Release(hive, xform, comp.LeavingSwarmPrototype, null, null, new EntityCoordinates(grid, target)) is not { } swarm ||
+            !TryComp<BeeSwarmComponent>(swarm, out var swarmComp))
         {
-            Del(swarm);
             return;
         }
 
         swarmComp.Scatter = true;
         swarmComp.Bees = count;
-        _foragers.Launch((swarm, forager), hive, home, target);
         _popup.PopupEntity(Loc.GetString("beekeeping-hive-crowd-swarm"), hive);
     }
 
@@ -393,51 +390,34 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     public const float SearchHopLength = 5f;
 
     /// <summary>
-    /// What a swarm or a lone queen does when a leg of its flight ends. The rest of the way (growing out of the hive,
-    /// the flight to the site) is the forager's.
+    /// What a swarm or a lone queen does where its errand took it: bees with no queen scatter, a swarm out of the pipes
+    /// looks for a place near the exit, a searching one looks around and flies on, and one at its site builds the hive.
     /// </summary>
     [SubscribeLocalEvent]
-    private void OnLegEnded(Entity<BeeSwarmComponent> ent, ref BeeLegEndedEvent args)
+    private void OnArrived(Entity<BeeSwarmComponent> ent, ref BeeErrandArrivedEvent args)
     {
-        if (!TryComp<BeeForagerComponent>(ent, out var forager))
-            return;
-
-        var bee = new Entity<BeeForagerComponent>(ent, forager);
-        var here = Transform(ent).LocalPosition;
         args.Handled = true;
-        switch (args.Phase)
+        if (ent.Comp.Scatter)
         {
-            case BeeForagerPhase.Outbound when ent.Comp.VentExit != null:
-                // At the vent: the swarm dives in.
-                _foragers.Shrink(bee, BeeForagerPhase.VentIn, BeeFlightSize.Shrinking, here);
-                break;
-            case BeeForagerPhase.Outbound when ent.Comp.Scatter:
-                // Bees with no queen scatter and are gone.
-                _foragers.Shrink(bee, BeeForagerPhase.Land, BeeFlightSize.Shrinking, here);
-                break;
-            case BeeForagerPhase.Outbound when ent.Comp.Searching:
-                // A lone queen looking for a home: look around, then fly on.
-                ContinueSearch(bee, ent.Comp);
-                break;
-            case BeeForagerPhase.Outbound:
-                // The swarm is at its site: the wild hive grows there.
-                LandSwarm(ent);
-                QueueDel(ent);
-                break;
-            case BeeForagerPhase.VentIn:
-                _foragers.SetSize(ent, BeeFlightSize.Hidden);
-                _foragers.Hold(bee, BeeForagerPhase.VentHidden, here, TimeSpan.FromSeconds(2));
-                break;
-            case BeeForagerPhase.VentHidden:
-                SwarmComeOut(bee, ent.Comp);
-                break;
-            case BeeForagerPhase.VentOut:
-                SwarmLeftVent(bee, ent.Comp);
-                break;
-            default:
-                args.Handled = false;
-                break;
+            args.Result = BeeErrandArrival.Gone;
+            return;
         }
+
+        if (ent.Comp.VentExit != null)
+        {
+            SwarmLeftVent(ent);
+            args.Result = BeeErrandArrival.KeepGoing;
+            return;
+        }
+
+        if (ent.Comp.Searching)
+        {
+            args.Result = ContinueSearch(ent) ? BeeErrandArrival.KeepGoing : BeeErrandArrival.Gone;
+            return;
+        }
+
+        LandSwarm(ent);
+        args.Result = BeeErrandArrival.Gone;
     }
 
     /// <summary>
@@ -465,36 +445,32 @@ public sealed partial class BeeSwarmSystem : EntitySystem
 
     /// <summary>
     /// A swarm or a lone queen searching for a home finished a hop: if a locker or crate is in sight now she heads there,
-    /// otherwise she hops on in a random direction.
+    /// otherwise she hops on in a random direction. False if she has nothing to search with any more.
     /// </summary>
-    public void ContinueSearch(Entity<BeeForagerComponent> bee, BeeSwarmComponent swarm)
+    public bool ContinueSearch(Entity<BeeSwarmComponent> swarm)
     {
-        var xform = Transform(bee);
+        var xform = Transform(swarm);
         if (xform.GridUid is not { } grid ||
             !TryComp<MapGridComponent>(grid, out var gridComp) ||
-            !_container.TryGetContainer(bee, swarm.Container, out var container) ||
+            !_container.TryGetContainer(swarm, swarm.Comp.Container, out var container) ||
             container.ContainedEntities.Count == 0 ||
             !TryComp<BeeQueenComponent>(container.ContainedEntities[0], out var queen))
         {
-            QueueDel(bee);
-            return;
+            return false;
         }
 
-        var origin = _transform.GetMapCoordinates(bee, xform);
-        var from = xform.LocalPosition;
-        Vector2 to;
-        if (PickNestStorage(bee, queen.NestRange, grid, origin) is { } storage)
+        var origin = _transform.GetMapCoordinates(swarm, xform);
+        if (PickNestStorage(swarm, queen.NestRange, grid, origin) is { } storage)
         {
-            swarm.Searching = false;
-            swarm.Storage = storage;
-            to = _transform.WithEntityId(Transform(storage).Coordinates, grid).Position;
-        }
-        else
-        {
-            to = SearchHop(bee, origin, (grid, gridComp), swarm.SearchHop);
+            swarm.Comp.Searching = false;
+            swarm.Comp.Storage = storage;
+            _errands.SetTarget(swarm.Owner, storage);
+            return true;
         }
 
-        _foragers.Fly(bee, BeeForagerPhase.Outbound, from, to);
+        var hop = SearchHop(swarm, origin, (grid, gridComp), swarm.Comp.SearchHop);
+        _errands.SetTarget(swarm.Owner, null, new EntityCoordinates(grid, hop));
+        return true;
     }
 
     public int CountWildHives(EntityUid? map)

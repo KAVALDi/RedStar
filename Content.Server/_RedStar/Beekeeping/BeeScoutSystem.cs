@@ -15,12 +15,12 @@ namespace Content.Server._RedStar.Beekeeping;
 /// The scout and the hive's known sources. When a trip is due the hive looks for trays with a living plant around it
 /// (<see cref="EntityLookupSystem"/>, a clear straight line from the hive), and the scout flies to the first one it
 /// found and back like a forager does; the hive learns the trays when it lands. The sources part keeps the known
-/// trays checked and sends the foragers out. Finding trays is all here; the flight is <see cref="BeeForagerSystem"/>'s.
+/// trays checked and sends the foragers out. Finding trays is all here; the flight is the bee's own, an NPC errand (<see cref="BeeErrandSystem"/>).
 /// </summary>
 public sealed partial class BeeScoutSystem : EntitySystem
 {
     [Dependency] private SharedPhysicsSystem _physics = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private BeehiveSystem _hive = default!;
@@ -87,7 +87,7 @@ public sealed partial class BeeScoutSystem : EntitySystem
     {
         var finds = Math.Clamp(hive.Comp.ScoutFinds + _hive.GetHiveTotals(hive).ScoutFinds, 1, 5);
         FindNewTrays(hive, finds, _found);
-        return _foragers.TrySpawnScout(hive, Transform(hive), _found);
+        return _errands.TrySpawnScout(hive, Transform(hive), _found);
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed partial class BeeScoutSystem : EntitySystem
     /// <summary>
     /// The scout is back: the hive learns every tray it saw that still checks out.
     /// </summary>
-    public void LandScout(Entity<BeeForagerComponent> scout)
+    public void LandScout(Entity<BeeErrandComponent> scout)
     {
         var hiveUid = scout.Comp.Hive;
         if (TerminatingOrDeleted(hiveUid) || !TryComp<BeehiveComponent>(hiveUid, out var comp) || scout.Comp.Found is not { } found)

@@ -1,63 +1,16 @@
 using Content.Shared._RedStar.Beekeeping;
 using Content.Shared.Damage.Systems;
-using System.Numerics;
-using Content.Shared.Destructible;
-using Content.Shared.Popups;
-using Content.Shared.Weapons.Melee;
-using Content.Shared.Weapons.Melee.Events;
 
 namespace Content.Server._RedStar.Beekeeping;
 
 /// <summary>
-/// The foragers of a meat colony can be hit. Each one killed costs the colony a bee and makes it furious for a while:
-/// the fewer bees are left, the faster they fly, the more are out at once and the likelier they go after whoever did
-/// it (a couple of times only, and never with the last few bees left).
+/// The foragers of a meat colony can be hit like any small mob. Each one killed costs the colony a bee (the errand
+/// takes care of that) and makes it furious for a while: the fewer bees are left, the faster they fly, the more are out
+/// at once and the likelier they go after whoever did it (a couple of times only, and never with the last few bees
+/// left).
 /// </summary>
 public sealed partial class MeatBeehiveSystem
 {
-    /// <summary>
-    /// A wide swing hits what has a body to hit, and a bee has none: it can only be hit by a click straight on it. When a
-    /// swing finds nothing and a meat forager was right in front of the attacker, he is told so.
-    /// </summary>
-    [SubscribeLocalEvent]
-    private void OnSwing(Entity<MeleeWeaponComponent> weapon, ref MeleeHitEvent args)
-    {
-        if (args.HitEntities.Count > 0 || args.Direction is not { } direction || direction.LengthSquared() < 0.0001f)
-            return;
-
-        var user = args.User;
-        var userMap = _transform.GetMapCoordinates(user);
-        var forward = direction.Normalized();
-
-        // Only the bees right around the attacker are looked at.
-        _swingBees.Clear();
-        _lookup.GetEntitiesInRange(userMap, SwingMissRange, _swingBees);
-        foreach (var (uid, flight) in _swingBees)
-        {
-            if (flight.Phase is BeeForagerPhase.Hidden or BeeForagerPhase.VentHidden ||
-                !TryComp<BeehiveComponent>(flight.Hive, out var hive) ||
-                hive.Diet != BeehiveDiet.Meat)
-            {
-                continue;
-            }
-
-            var offset = _transform.GetWorldPosition(uid) - userMap.Position;
-            var distance = offset.Length();
-            if (distance > SwingMissRange || distance < 0.01f || Vector2.Dot(offset / distance, forward) < 0.6f)
-                continue;
-
-            _popup.PopupEntity(Loc.GetString("beekeeping-bee-swing-miss"), user, user, PopupType.Small);
-            return;
-        }
-    }
-
-    /// <summary>
-    /// How far in front of a swing a bee counts as the one it missed, in tiles.
-    /// </summary>
-    private const float SwingMissRange = 2f;
-
-    private readonly HashSet<Entity<BeeForagerComponent>> _swingBees = new();
-
     /// <summary>
     /// How furious the colony is, from 0 (calm) to 1: at least <see cref="BeehiveComponent.RageMin"/> once provoked,
     /// growing as bees are lost.
@@ -80,19 +33,20 @@ public sealed partial class MeatBeehiveSystem
     /// Whoever hit a forager is remembered, whether the bee dies or not.
     /// </summary>
     [SubscribeLocalEvent]
-    private void OnForagerHurt(Entity<BeeForagerComponent> bee, ref DamageDealtEvent args)
+    private void OnForagerHurt(Entity<BeeHunterComponent> bee, ref DamageDealtEvent args)
     {
         if (!args.Damage.AnyPositive() ||
             args.Origin is not { } attacker ||
-            TerminatingOrDeleted(bee.Comp.Hive) ||
-            !TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) ||
+            !TryComp<BeeErrandComponent>(bee, out var errand) ||
+            TerminatingOrDeleted(errand.Hive) ||
+            !TryComp<BeehiveComponent>(errand.Hive, out var hive) ||
             hive.Diet != BeehiveDiet.Meat)
         {
             return;
         }
 
         // Someone already marked keeps what is left of the revenge: hitting more bees does not earn more attacks.
-        var meatComp = MeatOf(bee.Comp.Hive);
+        var meatComp = MeatOf(errand.Hive);
         var now = _timing.CurTime;
         if (meatComp.Attackers.TryGetValue(attacker, out var known) && now < known.Until)
             meatComp.Attackers[attacker] = (now + meatComp.RageDuration, known.Left);
@@ -100,23 +54,21 @@ public sealed partial class MeatBeehiveSystem
             meatComp.Attackers[attacker] = (now + meatComp.RageDuration, meatComp.RageRevenge);
     }
 
+    /// <summary>
+    /// A forager of a meat colony did not come back (the colony already lost the bee): it rages for a while.
+    /// </summary>
     [SubscribeLocalEvent]
-    private void OnForagerKilled(Entity<BeeForagerComponent> bee, ref DestructionEventArgs args)
+    private void OnForagerLost(ref BeeErrandLostEvent args)
     {
-        if (TerminatingOrDeleted(bee.Comp.Hive) ||
-            !TryComp<BeehiveComponent>(bee.Comp.Hive, out var comp) ||
+        if (args.Kind != BeeErrandKind.Hunt ||
+            !TryComp<BeehiveComponent>(args.Hive, out var comp) ||
             comp.Diet != BeehiveDiet.Meat)
         {
             return;
         }
 
-        // A visible forager is one of the hive's own bees: it is not taken out of Bees while it flies, so its death
-        // takes one bee from that count, once. Its slot among the foragers out is freed here as well.
-        var hive = new Entity<BeehiveComponent>(bee.Comp.Hive, comp);
-        _hive.RemoveHomeBee(hive);
-        var meatComp = MeatOf(hive);
+        var meatComp = MeatOf(args.Hive);
         meatComp.RageUntil = _timing.CurTime + meatComp.RageDuration;
-        comp.Foragers.Remove(bee);
     }
 
     /// <summary>

@@ -285,4 +285,3 @@ apiary-analyzer-chemicals-none = The hive holds no chemicals yet.
 apiary-analyzer-section-targets = Recent targets ({ $count })
 apiary-analyzer-targets-none = The bees have not bitten anyone yet.
 beekeeping-bite-blocked = The sealed suit stops the bee from biting.
-beekeeping-bee-swing-miss = Missed: the bee is too small for a swing, hit it straight on.

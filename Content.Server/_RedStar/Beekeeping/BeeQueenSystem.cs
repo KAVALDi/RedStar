@@ -31,7 +31,7 @@ public sealed partial class BeeQueenSystem : EntitySystem
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private ItemSlotsSystem _itemSlots = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private SharedAmbientSoundSystem _ambient = default!;
     [Dependency] private SharedContainerSystem _container = default!;

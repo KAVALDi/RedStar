@@ -23,7 +23,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private BeeSwarmSystem _swarm = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private BeeScoutSystem _scout = default!;
@@ -221,7 +221,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         }
 
         _queen.UpdateEgg(hive, hasQueen);
-        _foragers.UpdatePendingForagers(hive);
+        _errands.UpdatePendingForagers(hive);
         UpdateAmbience(hive);
     }
 

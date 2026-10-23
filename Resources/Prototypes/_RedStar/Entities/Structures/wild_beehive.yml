@@ -95,16 +95,37 @@
     guides:
     - Beekeeping
 
-# A swarm on its way to a new home: a cloud of bees around the old queen. It cannot be caught or hit.
+# A swarm on its way to a new home: a cloud of bees around the old queen. An NPC on an errand (BeeErrand) like the
+# hive's other bees, but it cannot be caught or hurt and pushes nobody about.
 - type: entity
+  parent: [ BaseMob, FlyingMobBase ]
   id: BeeSwarm
   name: bee swarm
   description: A buzzing cloud of bees following their queen to a new home.
   categories: [ HideSpawnMenu ]
   components:
-  - type: BeeForager
-    speed: 1
-  - type: BeeFlight
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape: !type:PhysShapeCircle
+          radius: 0.2
+        density: 30
+        mask:
+        - FlyingMobMask
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 1
+    baseSprintSpeed: 1
+    # A bee hovers and turns on the spot: it stops where it wants, gravity or not, instead of drifting on.
+    baseAcceleration: 20
+    baseFriction: 20
+    baseWeightlessModifier: 1
+    baseWeightlessAcceleration: 20
+    baseWeightlessFriction: 20
+  - type: HTN
+    rootTask:
+      task: BeeErrandCompound
+  - type: BeeErrand
+    kind: Swarm
   - type: BeeSwarm
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
@@ -164,9 +185,7 @@
   description: A queen bee looking for a new home.
   categories: [ HideSpawnMenu ]
   components:
-  # Unlike a swarm she is alone: a quick hand can catch her, so the server keeps her where she is drawn.
-  - type: BeeFlight
-    tracked: true
+  # Unlike a swarm she is alone: a quick hand can catch her.
   - type: Clickable
   - type: InteractionOutline
   - type: BeeCatchableQueen
