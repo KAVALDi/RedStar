@@ -1,6 +1,7 @@
 using Content.Shared.Botany.Components;
 using Content.Shared.Whitelist;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.UI;
 using Robust.Shared.Map;

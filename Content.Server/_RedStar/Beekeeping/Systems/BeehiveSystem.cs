@@ -8,6 +8,7 @@ using Content.Shared.Destructible;
 using Content.Shared.Examine;
 using Content.Shared._RedStar.Beekeeping;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.UI;
 using Content.Shared._RedStar.Beekeeping.Visuals;

@@ -13,6 +13,7 @@ using Content.Shared.Inventory;
 using Content.Shared.Popups;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Events;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;

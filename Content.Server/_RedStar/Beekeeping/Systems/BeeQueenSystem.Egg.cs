@@ -5,6 +5,7 @@ using Content.Shared.FixedPoint;
 using Content.Shared.Verbs;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Events;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Server._RedStar.Beekeeping.Systems;
