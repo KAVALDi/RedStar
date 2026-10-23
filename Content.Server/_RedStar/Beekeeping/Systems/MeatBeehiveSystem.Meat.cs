@@ -4,6 +4,7 @@ using Content.Shared.Random.Helpers;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.FixedPoint;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
 
 namespace Content.Server._RedStar.Beekeeping.Systems;

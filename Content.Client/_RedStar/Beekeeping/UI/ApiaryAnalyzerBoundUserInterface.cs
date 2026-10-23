@@ -1,6 +1,6 @@
+using Content.Shared._RedStar.Beekeeping.UI;
 using JetBrains.Annotations;
 using Robust.Client.UserInterface;
-using Content.Shared._RedStar.Beekeeping.UI;
 
 namespace Content.Client._RedStar.Beekeeping.UI;
 

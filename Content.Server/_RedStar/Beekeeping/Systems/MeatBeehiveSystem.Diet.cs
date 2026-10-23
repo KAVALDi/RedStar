@@ -2,6 +2,7 @@ using Content.Server._RedStar.Beekeeping.Components;
 using Content.Shared.Botany.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Robust.Shared.Map;
 using Robust.Shared.Physics.Components;
 
