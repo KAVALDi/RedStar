@@ -35,7 +35,7 @@
 - [bold]Известные источники.[/bold] Каждый лоток, который нашла разведчица, с растением в нём; у мясного улья вместо этого блок [bold]Недавние цели[/bold]: те, кого его пчёлы кусали в последние пять минут (разведчицы у такого улья нет). Слева от каждого лотка цветная полоска: [color=#98C379]зелёная[/color] значит растение спелое и рабочие его посещают, [color=#E5C07B]жёлтая[/color] значит растение ещё растёт, [color=#E06C75]красная[/color] значит лоток пустой (или существо недоступно) или рабочие до него не долетят. Если список пуст, разведчица ещё никуда не долетела или растения закрыты стенами.
 
 ## Матка и пчела в руке
-Справа будет каждый признак с объяснением, слева строки про саму пчелу. У матки слева ещё блок [bold]Что ввести шприцем[/bold]: что даёт матке мутаген (каждые [protodata="BeeQueen" comp="BeeQueen" member="MutagenPerRoll"/] ед. новый признак) и молочко (каждые [protodata="BeeQueen" comp="BeeQueen" member="JellyPerSlot"/] ед. слот признака), сколько до следующего не хватает, если часть уже введена, и сколько других реагентов в ней лежит. Наведите на значок «i» у заголовка, и анализатор объяснит, что делает каждый. Описание признака сворачивается кликом по его названию.
+Справа будет каждый признак с объяснением, слева строки про саму пчелу. У матки слева ещё блок [bold]Что ввести шприцем[/bold]: что даёт матке мутаген (каждые [protodata="BeeQueen" comp="BeeQueen" member="MutagenPerRoll"/] ед. новый признак) и молочко (каждые [protodata="BeeQueen" comp="BeeQueen" member="JellyPerSlot"/] ед. слот признака), сколько до следующего не хватает, если часть уже введена, и сколько других реагентов в ней лежит. Наведите на значок «i» у заголовка, и анализатор объяснит, что делает каждый. Описание признака сворачивается кликом по его названию или по самому тексту. Признак, который ещё не открыт, показан серым словом «скрытый» ([textlink="как он открывается" link="BeekeepingQueen"]).
 
 <Table Columns="2">
 <ColorBox Color="#453a59" OutlineColor="#5B5C6E"><Box>[bold]Кого смотрим[/bold]</Box></ColorBox>
@@ -82,5 +82,13 @@
 <ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Сколько лотков разведчица находит за раз.</Box></ColorBox>
 <ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Мутация при опылении</Box></ColorBox>
 <ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Сколько нестабильного мутагена получает растение при опылении.</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Опыление сборщицами</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Как часто рабочая, пока летает к растению, сама повышает его следующий урожай.</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Сот со срезки</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Во сколько раз больше сот даёт срез рамки.</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Воска с крышек</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Сколько воска добавляется к первому срезу запечатанной рамки.</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Стойкость к холоду, жаре и давлению</Box></ColorBox>
+<ColorBox OutlineColor="#5B5C6E"><Box Margin="4" HorizontalAlignment="Left">Насколько шире (плюс) или уже (минус) воздух, в котором пчёлы продолжают работать.</Box></ColorBox>
 </Table>
 </Document>
