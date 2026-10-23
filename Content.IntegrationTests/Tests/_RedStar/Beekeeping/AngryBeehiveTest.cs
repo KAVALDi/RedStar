@@ -1,13 +1,13 @@
 #nullable enable
 using System.Linq;
 using Content.IntegrationTests.Fixtures;
-using Content.Server._RedStar.Beekeeping;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Components;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.Damage;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Inventory;
 using Content.Shared.NPC.Systems;
+using Content.Shared._RedStar.Beekeeping.Components;
 using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;

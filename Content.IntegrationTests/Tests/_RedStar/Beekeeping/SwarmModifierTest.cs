@@ -1,7 +1,7 @@
 #nullable enable
 using System.Linq;
 using Content.IntegrationTests.Fixtures;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Robust.Shared.Prototypes;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;

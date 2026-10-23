@@ -2,10 +2,15 @@
 using System.Numerics;
 using System.Linq;
 using Content.IntegrationTests.Fixtures;
-using Content.Server._RedStar.Beekeeping;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Systems;
 using Content.Shared.Destructible;
 using Content.Shared.Tools.Components;
+using Content.Shared._RedStar.Beekeeping;
+using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Systems;
+using Content.Shared._RedStar.Beekeeping.UI;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
