@@ -167,7 +167,7 @@ apiary-analyzer-feed-jelly = Молочко
 apiary-analyzer-feed-progress = { $progress } из { $per } ед.
 apiary-analyzer-feed-jelly-full = все слоты
 apiary-analyzer-feed-other = Другие реагенты
-apiary-analyzer-feed-other-no-sting = нужно жало
+apiary-analyzer-feed-other-no-sting = без жала
 apiary-analyzer-feed-help-how = [color=#A88B5E]Достаньте матку из улья и вводите шприцем:[/color]
 apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
 apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.

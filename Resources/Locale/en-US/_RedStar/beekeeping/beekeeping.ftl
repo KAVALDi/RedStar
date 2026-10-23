@@ -166,7 +166,7 @@ apiary-analyzer-feed-jelly = Royal jelly
 apiary-analyzer-feed-progress = { $progress } of { $per } u
 apiary-analyzer-feed-jelly-full = all slots
 apiary-analyzer-feed-other = Other reagents
-apiary-analyzer-feed-other-no-sting = need a sting
+apiary-analyzer-feed-other-no-sting = no sting
 apiary-analyzer-feed-help-how = [color=#A88B5E]Take the queen out of the hive and inject her with a syringe:[/color]
 apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u give her a new trait or take one away, and she grows less stable.
 apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u open one more trait slot, up to { $max }.
