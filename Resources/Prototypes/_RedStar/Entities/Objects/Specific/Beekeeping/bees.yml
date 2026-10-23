@@ -166,20 +166,75 @@
   - type: TimedDespawn
     lifetime: 300
 
-# A visible forager: a short-lived picture of one visit. Flies straight to a tray, circles, dives into the
-# flower, comes back out and flies home.
-# Not an item and not a mob: it cannot be picked up, hit or calmed, and nothing happens when it disappears.
+# A bee of a hive out on an errand (BeeErrand): a small flying NPC like the station's own bees, moved by the engine's
+# pathfinding and steering. Its HTN task flies it from stop to stop of its errand; with nowhere to go it idles until
+# its time runs out, and then the colony has lost it.
 - type: entity
+  abstract: true
+  parent: [ BaseMob, MobDamageable, FlyingMobBase ]
+  id: BaseBeeErrand
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape: !type:PhysShapeCircle
+          radius: 0.1
+        density: 30
+        mask:
+        - FlyingMobMask
+        layer:
+        - FlyingMobLayer
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 2
+    baseSprintSpeed: 2
+    # A bee hovers and turns on the spot: it stops where it wants, gravity or not, instead of drifting on.
+    baseAcceleration: 20
+    baseFriction: 20
+    baseWeightlessModifier: 1
+    baseWeightlessAcceleration: 20
+    baseWeightlessFriction: 20
+  # One good hit and it is dead.
+  - type: MobThresholds
+    thresholds:
+      0: Alive
+      5: Dead
+  - type: NpcFactionMember
+    factions:
+    - Passive
+  - type: HTN
+    rootTask:
+      task: BeeErrandCompound
+  - type: Appearance
+  - type: BeeTraitVisuals
+  # Dives into the flower, the vent and the hive by shrinking.
+  - type: BeeShrinkVisuals
+    shrinkTime: 0.6
+  - type: AmbientSound
+    range: 3
+    volume: -11
+    sound:
+      path: /Audio/_RedStar/Ambience/Beekeeping/bee_flying.ogg
+  # Not something to catch and sell: a bee out on an errand.
+  - type: MobPrice
+    price: 0
+  # Safety net: an errand takes well under a minute; a bee that has not made it home by then is lost.
+  - type: TimedDespawn
+    lifetime: 120
+  - type: GuideHelp
+    guides:
+    - Beekeeping
+
+# A visible forager: one visit to a tray acted out. The nectar was counted by the hive already; the bee flies there,
+# dives into the flower, comes back out and flies home. It can be caught by hand.
+- type: entity
+  parent: BaseBeeErrand
   id: BeeForager
   name: bee
   description: A worker bee on its way to a flower.
-  categories: [ HideSpawnMenu ]
   components:
-  - type: BeeForager
-  - type: BeeFlight
-  # A lost forager can be caught by hand.
-  - type: Clickable
-  - type: InteractionOutline
+  - type: BeeErrand
+    kind: Forage
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
     drawdepth: Mobs
@@ -192,7 +247,9 @@
       map: [ "enum.BeeForagerVisualLayers.Grey" ]
     - state: worker-wings
       map: [ "enum.BeeForagerVisualLayers.Wings" ]
-  - type: Appearance
+    - state: worker-base-angry
+      visible: false
+      map: [ "enum.BeeForagerVisualLayers.Angry" ]
   # The sprite is a side view facing left; it is mirrored while the bee flies to the right.
   - type: GenericVisualizer
     visuals:
@@ -206,36 +263,34 @@
         enum.BeeForagerVisualLayers.Wings:
           True: { scale: "-1,1" }
           False: { scale: "1,1" }
-  # No physics: it touches nothing. The client draws it along its flight; it dives into the flower and the hive by
-  # shrinking.
-  - type: BeeShrinkVisuals
-    shrinkTime: 0.6
+        enum.BeeForagerVisualLayers.Angry:
+          True: { scale: "-1,1" }
+          False: { scale: "1,1" }
   # A little wandering on the way, like a real bee; small enough that it still dives into the flower.
   - type: BeeBuzzVisuals
     amplitude: 0.08
     speed: 1.4
-  - type: AmbientSound
-    range: 3
-    volume: -11
-    sound:
-      path: /Audio/_RedStar/Ambience/Beekeeping/bee_flying.ogg
-  # Safety net: the system removes the bee when it is back or dies lost; this only catches a stuck one.
-  - type: TimedDespawn
-    lifetime: 120
 
-# The hive's scout on its trip: it flies like a forager to the first tray it found, into the flower and back home,
-# and the hive learns the trays when it lands. Like a forager it cannot be picked up or hit.
+# The hive's scout on its trip: it flies to the first tray it found, into the flower and back home, and the hive learns
+# the trays when it lands.
 - type: entity
+  parent: BaseBeeErrand
   id: BeeScoutFlyer
   name: scout bee
   description: The hive's scout, looking for flowers.
-  categories: [ HideSpawnMenu ]
   components:
-  - type: BeeForager
-    speed: 2.5
-    hoverTimeMax: 1.5
-  - type: BeeFlight
-  # Top-down sprite, kept upright: turning it at every corner looked jerky.
+  - type: BeeErrand
+    kind: Scout
+  - type: MovementSpeedModifier
+    baseWalkSpeed: 2.5
+    baseSprintSpeed: 2.5
+    # A bee hovers and turns on the spot: it stops where it wants, gravity or not, instead of drifting on.
+    baseAcceleration: 20
+    baseFriction: 20
+    baseWeightlessModifier: 1
+    baseWeightlessAcceleration: 20
+    baseWeightlessFriction: 20
+  # Top-down sprite, kept upright: it looks right whichever way the scout flies.
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
     drawdepth: Mobs
@@ -244,9 +299,7 @@
     - state: scout
     - state: scout-grey
       color: "#E79A3F"
-  - type: Appearance
-  - type: BeeShrinkVisuals
-    shrinkTime: 0.6
+      map: [ "enum.BeeForagerVisualLayers.Grey" ]
   # A little wandering on the way, like a real bee.
   - type: BeeBuzzVisuals
     amplitude: 0.12
@@ -257,9 +310,6 @@
     volume: -10
     sound:
       path: /Audio/_RedStar/Ambience/Beekeeping/bee_flying.ogg
-  # Safety net: the system removes the scout when it is back.
-  - type: TimedDespawn
-    lifetime: 60
 
 # Hidden look-alikes kept inside every hive: the context menu shows them as live icons of the hive's bees.
 - type: entity
