@@ -138,17 +138,20 @@ public sealed partial class BeeErrandSystem
     }
 
     /// <summary>
-    /// Now and then, while someone is near and a worker is free, one flies a short loop around the hive and back in.
-    /// It is only something to look at: the colony loses nothing by it, unless the bee is killed.
+    /// Now and then, while someone is near and a worker is free, one flies a short loop around the hive and back in;
+    /// much more often when a swarm is coming. It is only something to look at: the colony loses nothing by it, unless
+    /// the bee is killed.
     /// </summary>
-    public void UpdateLoiter(Entity<BeehiveComponent> hive)
+    public void UpdateLoiter(Entity<BeehiveComponent> hive, bool restless)
     {
         var comp = hive.Comp;
         var now = _timing.CurTime;
         if (now < comp.NextLoiter)
             return;
 
-        comp.NextLoiter = now + comp.LoiterInterval * (0.5 + _random.NextDouble());
+        // Before a swarm the bees are restless and circle the hive much more often.
+        var interval = comp.LoiterInterval * (0.5 + _random.NextDouble());
+        comp.NextLoiter = now + (restless ? interval / Math.Max(1f, comp.RestlessLoiter) : interval);
         var xform = Transform(hive);
         comp.Foragers.RemoveAll(f => TerminatingOrDeleted(f));
         if (SharedBeehiveSystem.WorkersAtHome(comp) <= 0 ||

@@ -26,6 +26,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
     [Dependency] private DamageableSystem _damageable = default!;
     [Dependency] private DestructibleSystem _destructible = default!;
     [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private IPrototypeManager _proto = default!;
     [Dependency] private SharedSolutionContainerSystem _solutions = default!;
 
@@ -108,6 +109,17 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         state.PayloadCap = queen.Comp.PayloadCap.Float();
         if (_solutions.TryGetSolution(queen.Owner, queen.Comp.Solution, out _, out var payload))
             state.Payload = payload.Volume.Float();
+
+        state.Feeding = new ApiaryQueenFeeding
+        {
+            Mutagen = queen.Comp.Mutagen,
+            MutagenProgress = queen.Comp.MutagenProgress.Float(),
+            MutagenPerRoll = queen.Comp.MutagenPerRoll.Float(),
+            Jelly = queen.Comp.Jelly,
+            JellyProgress = queen.Comp.JellyProgress.Float(),
+            JellyPerSlot = queen.Comp.JellyPerSlot.Float(),
+            MaxSlots = queen.Comp.MaxSlots,
+        };
     }
 
     private void FillHive(Entity<BeehiveComponent> hive, ApiaryAnalyzerState state)
@@ -123,6 +135,8 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         state.Nectar = comp.Nectar;
         state.MaxNectar = comp.MaxNectar;
         state.HasEgg = comp.HasEgg;
+        if (_swarm.SwarmComing(hive))
+            state.SwarmIn = (float) Math.Max(0, (comp.EggDiesAt - _timing.CurTime).TotalSeconds);
         state.NectarUse = _beehive.GetNectarUse(hive);
         state.BroodGoing = _beehive.IsBroodGoing(hive);
         // Bees back home are gone from the world but stay in the list until the next take-off clears it.

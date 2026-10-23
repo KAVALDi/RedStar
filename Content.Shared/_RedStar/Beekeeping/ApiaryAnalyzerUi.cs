@@ -90,6 +90,11 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
     public float Payload;
     public float PayloadCap;
 
+    /// <summary>
+    /// A scanned queen: what a syringe of each reagent does to her and how far along she is.
+    /// </summary>
+    public ApiaryQueenFeeding? Feeding;
+
     #region Hive
 
     public bool Wild;
@@ -115,6 +120,12 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
     public float Health;
     public float MaxHealth;
     public bool HasEgg;
+
+    /// <summary>
+    /// A swarm is coming: seconds until the egg dies and the old queen leaves, unless the jelly is collected. Negative
+    /// when no swarm is coming.
+    /// </summary>
+    public float SwarmIn = -1f;
     public List<ApiaryFrameData> Frames = new();
     public List<ApiaryTrayData> Trays = new();
 
@@ -177,4 +188,20 @@ public sealed class ApiaryReagentData
 {
     public ProtoId<ReagentPrototype> Reagent;
     public float Amount;
+}
+
+/// <summary>
+/// What injecting a queen does: so many units of mutagen roll a trait, so many of royal jelly add a slot, and with a
+/// sting whatever else goes in stays as payload. The progress is what she has taken in towards the next one.
+/// </summary>
+[Serializable, NetSerializable]
+public sealed class ApiaryQueenFeeding
+{
+    public ProtoId<ReagentPrototype> Mutagen;
+    public float MutagenProgress;
+    public float MutagenPerRoll;
+    public ProtoId<ReagentPrototype> Jelly;
+    public float JellyProgress;
+    public float JellyPerSlot;
+    public int MaxSlots;
 }

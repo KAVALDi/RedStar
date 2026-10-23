@@ -30,6 +30,7 @@ beekeeping-hive-examine-dying = [color=red]Колония без матки вы
 beekeeping-hive-examine-scout-outside = Разведчица вне улья.
 beekeeping-hive-examine-scout-lost = Улей потерял разведчицу. Новая появится через { $minutes } мин { $seconds } с.
 beekeeping-hive-examine-scout-lost-grow = Улей потерял разведчицу. Новая появится, когда колония подрастёт.
+beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, скоро часть колонии улетит роем.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Водяной пар успокаивает пчёл.[/color]
 beekeeping-hive-examine-paused = [color=orange]Пчёлы затихли: { $reason ->
     [Vacuum] здесь нечем дышать
@@ -160,6 +161,13 @@ beekeeping-hive-crowd-swarm = Пчёлам тесно: часть колонии
 beekeeping-hive-swarm = Старая матка улетает из улья с роем! В улье осталась молодая матка.
 ## Apiary analyzer
 
+apiary-analyzer-section-feeding = Что ввести шприцем
+apiary-analyzer-feed-how = Вводите шприцем в матку, которую держите в руке.
+apiary-analyzer-feed-mutagen = [bold]{ $reagent }[/bold]: каждые { $per } ед. дают бросок признака, новый или потерю одного из имеющихся, а нестабильность растёт. Накоплено { $progress } из { $per }.
+apiary-analyzer-feed-jelly = [bold]{ $reagent }[/bold]: каждые { $per } ед. открывают ещё один слот признака (сейчас { $slots } из { $max }). Накоплено { $progress } из { $per }.
+apiary-analyzer-feed-jelly-max = [bold]{ $reagent }[/bold]: у неё уже все { $max } слота признаков.
+apiary-analyzer-feed-payload = Всё остальное копится в ней грузом для жала, до { $cap } ед. (сейчас { $payload } ед.).
+apiary-analyzer-feed-no-sting = Всё остальное без пользы: без жала она груз не держит.
 apiary-analyzer-section-traits = Признаки
 apiary-analyzer-section-colony-traits = Признаки колонии
 apiary-analyzer-section-stats = Характеристики
@@ -189,6 +197,7 @@ apiary-analyzer-bees-home = Дома
 apiary-analyzer-new-bee = Потомство
 apiary-analyzer-queen = Матка
 apiary-analyzer-egg = Яйцо
+apiary-analyzer-egg-swarm = есть, роение примерно через { $minutes } мин
 apiary-analyzer-yes = есть
 apiary-analyzer-no = нет
 apiary-analyzer-frames-none = Рамок нет.

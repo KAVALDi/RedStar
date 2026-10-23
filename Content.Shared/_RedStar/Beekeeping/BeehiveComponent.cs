@@ -736,6 +736,12 @@ public sealed partial class BeehiveComponent : Component
     [DataField]
     public TimeSpan LoiterInterval = TimeSpan.FromSeconds(30);
 
+    /// <summary>
+    /// Before a swarm the hive is restless: bees loiter around it this much more often.
+    /// </summary>
+    [DataField]
+    public float RestlessLoiter = 4f;
+
     [ViewVariables]
     public TimeSpan NextLoiter;
 

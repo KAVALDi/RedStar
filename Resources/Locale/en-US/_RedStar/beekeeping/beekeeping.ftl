@@ -30,6 +30,7 @@ beekeeping-hive-examine-dying = [color=red]Without a queen the colony is dying o
 beekeeping-hive-examine-scout-outside = The scout is out of the hive.
 beekeeping-hive-examine-scout-lost = The hive lost its scout. A new one in { $minutes } min { $seconds } s.
 beekeeping-hive-examine-scout-lost-grow = The hive lost its scout. A new one comes once the colony grows.
+beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off soon.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Water vapor keeps the bees calm.[/color]
 beekeeping-hive-examine-paused = [color=orange]The bees have gone quiet: { $reason ->
     [Vacuum] there is no air to breathe
@@ -159,6 +160,13 @@ beekeeping-hive-crowd-swarm = The bees are too crowded: part of the colony flies
 beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young queen stays behind.
 ## Apiary analyzer
 
+apiary-analyzer-section-feeding = What to inject
+apiary-analyzer-feed-how = Use a syringe on a queen you hold.
+apiary-analyzer-feed-mutagen = [bold]{ $reagent }[/bold]: every { $per }u rolls a trait, a new one or the loss of one she has, and her instability grows. Taken in: { $progress } of { $per }.
+apiary-analyzer-feed-jelly = [bold]{ $reagent }[/bold]: every { $per }u opens one more trait slot ({ $slots } of { $max } now). Taken in: { $progress } of { $per }.
+apiary-analyzer-feed-jelly-max = [bold]{ $reagent }[/bold]: she has all { $max } trait slots already.
+apiary-analyzer-feed-payload = Anything else stays in her as payload for the sting, up to { $cap }u (now { $payload }u).
+apiary-analyzer-feed-no-sting = Anything else is wasted: without a sting she keeps no payload.
 apiary-analyzer-section-traits = Traits
 apiary-analyzer-section-colony-traits = Colony traits
 apiary-analyzer-section-stats = Characteristics
@@ -188,6 +196,7 @@ apiary-analyzer-bees-home = Home
 apiary-analyzer-new-bee = Brood
 apiary-analyzer-queen = Queen
 apiary-analyzer-egg = Egg
+apiary-analyzer-egg-swarm = yes, a swarm in about { $minutes } min
 apiary-analyzer-yes = yes
 apiary-analyzer-no = no
 apiary-analyzer-frames-none = No frames.

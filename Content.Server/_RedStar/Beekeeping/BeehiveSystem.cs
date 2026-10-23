@@ -223,7 +223,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         _queen.UpdateEgg(hive, hasQueen);
         _errands.UpdatePendingForagers(hive);
         if (hasQueen && hive.Comp.Pause == BeehivePauseReason.None && hive.Comp.Diet != BeehiveDiet.Meat)
-            _errands.UpdateLoiter(hive);
+            _errands.UpdateLoiter(hive, _swarm.SwarmComing(hive));
         UpdateAmbience(hive);
     }
 
@@ -551,6 +551,9 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
             if (comp.Bees > 0 || comp.OutBees > 0)
                 PushScoutLine(comp, ref args);
+
+            if (_swarm.SwarmComing(ent))
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming"));
 
             if (InCalmingVapor(ent, comp))
                 args.PushMarkup(Loc.GetString("beekeeping-hive-examine-vapor"));

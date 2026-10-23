@@ -57,6 +57,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         var hive = state.Kind == ApiaryScanKind.Hive;
         HiveBox.Visible = hive;
         BeeBox.Visible = !hive;
+        UpdateFeeding(state);
 
         // A hive lists its colony's traits on the left; a queen or a bee has its own lines there and every trait
         // explained on the right.
@@ -200,7 +201,10 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         BeesHome.Text = state.Bees.ToString();
         NewBee.Text = Loc.GetString(state.BroodGoing ? "apiary-analyzer-brood-going" : "apiary-analyzer-brood-stopped");
         Queen.Text = Loc.GetString(state.HasQueen ? "apiary-analyzer-yes" : "apiary-analyzer-no");
-        Egg.Text = Loc.GetString(state.HasEgg ? "apiary-analyzer-yes" : "apiary-analyzer-no");
+        Egg.Text = state.SwarmIn >= 0f
+            ? Loc.GetString("apiary-analyzer-egg-swarm", ("minutes", (int) MathF.Ceiling(state.SwarmIn / 60f)))
+            : Loc.GetString(state.HasEgg ? "apiary-analyzer-yes" : "apiary-analyzer-no");
+        Egg.FontColorOverride = state.SwarmIn >= 0f ? Color.Orange : null;
         Foraging.Text = state.Foraging.ToString();
 
         // A wild hive builds its combs right inside, with no frames; a meat one lists what it holds instead.
@@ -394,6 +398,47 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
                 AddRow(BeeInfo, "apiary-analyzer-row-charges", state.Charges.ToString());
                 break;
         }
+    }
+
+    /// <summary>
+    /// For a scanned queen: what each reagent does when injected, with how far along she is.
+    /// </summary>
+    private void UpdateFeeding(ApiaryAnalyzerState state)
+    {
+        FeedingPanel.Visible = state.Kind == ApiaryScanKind.Queen && state.Feeding != null;
+        if (state.Feeding is not { } feeding)
+            return;
+
+        var mutagen = ReagentName(feeding.Mutagen);
+        var jelly = ReagentName(feeding.Jelly);
+        var lines = new List<string>
+        {
+            Loc.GetString("apiary-analyzer-feed-how"),
+            Loc.GetString("apiary-analyzer-feed-mutagen",
+                ("reagent", mutagen),
+                ("per", $"{feeding.MutagenPerRoll:0.#}"),
+                ("progress", $"{feeding.MutagenProgress:0.#}")),
+            state.Slots >= feeding.MaxSlots
+                ? Loc.GetString("apiary-analyzer-feed-jelly-max", ("reagent", jelly), ("max", feeding.MaxSlots))
+                : Loc.GetString("apiary-analyzer-feed-jelly",
+                    ("reagent", jelly),
+                    ("per", $"{feeding.JellyPerSlot:0.#}"),
+                    ("progress", $"{feeding.JellyProgress:0.#}"),
+                    ("slots", state.Slots),
+                    ("max", feeding.MaxSlots)),
+            state.Totals.Sting
+                ? Loc.GetString("apiary-analyzer-feed-payload",
+                    ("payload", $"{state.Payload:0.#}"),
+                    ("cap", $"{state.PayloadCap:0.#}"))
+                : Loc.GetString("apiary-analyzer-feed-no-sting"),
+        };
+
+        Feeding.SetMessage(FormattedMessage.FromMarkupOrThrow(string.Join("\n", lines)));
+    }
+
+    private string ReagentName(ProtoId<ReagentPrototype> reagent)
+    {
+        return _proto.TryIndex(reagent, out var proto) ? proto.LocalizedName : reagent.Id;
     }
 
     private void AddQueenRows(ApiaryAnalyzerState state)

@@ -77,6 +77,20 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     [Dependency] private SharedEntityStorageSystem _entityStorage = default!;
 
     /// <summary>
+    /// A swarm is coming: an egg lies in the hive, and if nobody collects its jelly before it dies, the old queen leaves
+    /// with part of the colony. Before that the hive is restless, for anyone to see.
+    /// </summary>
+    public bool SwarmComing(Entity<BeehiveComponent> hive)
+    {
+        var comp = hive.Comp;
+        return comp.HasEgg &&
+               !comp.Wild &&
+               comp.Bees >= comp.SwarmMinBees &&
+               _hive.GetQueen(hive) != null &&
+               CountWildHives(Transform(hive).MapUid) < _cfg.GetCVar(BeekeepingCVars.WildHiveLimit);
+    }
+
+    /// <summary>
     /// The egg died with nobody collecting the jelly: the old queen swarms out, if the colony is big enough, a nest
     /// site is in reach and the map has room for one more wild hive. Returns whether a swarm left.
     /// </summary>

@@ -149,22 +149,37 @@
             </PanelContainer>
         </BoxContainer>
 
-        <!-- A queen or a bee: every trait with what it does. -->
-        <PanelContainer Name="BeeBox"
-                        StyleClasses="BackgroundPanelDark"
-                        HorizontalExpand="True"
-                        Visible="False">
-            <BoxContainer Orientation="Vertical" Margin="0 8">
-                <Label Text="{Loc apiary-analyzer-section-traits}"
-                       StyleClasses="LabelKeyText"
-                       Margin="0 0 0 2" />
-                <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
-                    <BoxContainer Name="TraitDetails"
-                                  Orientation="Vertical"
-                                  SeparationOverride="4"
-                                  MaxWidth="340" />
-                </ScrollContainer>
-            </BoxContainer>
-        </PanelContainer>
+        <!-- A queen or a bee: every trait with what it does, and for a queen what a syringe does to her. -->
+        <BoxContainer Name="BeeBox"
+                      Orientation="Vertical"
+                      HorizontalExpand="True"
+                      SeparationOverride="4"
+                      Visible="False">
+            <PanelContainer StyleClasses="BackgroundPanelDark"
+                            VerticalExpand="True">
+                <BoxContainer Orientation="Vertical" Margin="0 8">
+                    <Label Text="{Loc apiary-analyzer-section-traits}"
+                           StyleClasses="LabelKeyText"
+                           Margin="0 0 0 2" />
+                    <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
+                        <BoxContainer Name="TraitDetails"
+                                      Orientation="Vertical"
+                                      SeparationOverride="4"
+                                      MaxWidth="340" />
+                    </ScrollContainer>
+                </BoxContainer>
+            </PanelContainer>
+
+            <PanelContainer Name="FeedingPanel"
+                            StyleClasses="BackgroundPanelDark"
+                            Visible="False">
+                <BoxContainer Orientation="Vertical" Margin="0 8" MaxWidth="340">
+                    <Label Text="{Loc apiary-analyzer-section-feeding}"
+                           StyleClasses="LabelKeyText"
+                           Margin="0 0 0 2" />
+                    <RichTextLabel Name="Feeding" />
+                </BoxContainer>
+            </PanelContainer>
+        </BoxContainer>
     </BoxContainer>
 </controls:FancyWindow>
