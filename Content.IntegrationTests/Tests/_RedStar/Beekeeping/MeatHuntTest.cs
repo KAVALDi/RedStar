@@ -8,12 +8,10 @@ using Content.Shared.Destructible;
 using Content.Shared.Tools.Components;
 using Content.Shared._RedStar.Beekeeping;
 using Content.Shared._RedStar.Beekeeping.Components;
-using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.UI;
 using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using Robust.Shared.Maths;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;
@@ -43,6 +41,15 @@ public sealed class MeatHuntTest : GameTest
                 for (var y = 0; y <= 2; y++)
                     mapSys.SetTile(grid, map.Grid.Comp, new Vector2i(x, y), plating);
             }
+
+            // Breathable air: bees do not dive into vacuum.
+            var air = new Content.Shared.Atmos.GasMixture(Content.Shared.Atmos.Atmospherics.CellVolume)
+            {
+                Temperature = Content.Shared.Atmos.Atmospherics.T20C,
+            };
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Oxygen, Content.Shared.Atmos.Atmospherics.OxygenMolesStandard);
+            air.AdjustMoles(Content.Shared.Atmos.Gas.Nitrogen, Content.Shared.Atmos.Atmospherics.NitrogenMolesStandard);
+            server.System<Content.Server.Atmos.EntitySystems.AtmosphereSystem>().SetMapAtmosphere(map.MapUid, false, air);
 
             EntityCoordinates At(float x, float y) => new(grid, new Vector2(x + 0.5f, y + 0.5f));
 
@@ -135,7 +142,12 @@ public sealed class MeatHuntTest : GameTest
             var bee = comp.Foragers[0];
             Assert.That(server.EntMan.GetComponent<MetaDataComponent>(bee).EntityPrototype!.ID, Is.EqualTo("BeeForagerMeat"));
             server.System<SharedDestructibleSystem>().DestroyEntity(bee);
+        });
+        await RunTicksSync(5);
 
+        await server.WaitAssertion(() =>
+        {
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(_hive);
             Assert.That(comp.Bees, Is.EqualTo(9), "the colony lost a bee");
             Assert.That(server.System<MeatBeehiveSystem>().RageLevel((_hive, comp)), Is.GreaterThanOrEqualTo(server.System<MeatBeehiveSystem>().MeatOf(_hive).RageMin));
 
@@ -175,8 +187,8 @@ public sealed class MeatHuntTest : GameTest
             await RunTicksSync(5);
             await server.WaitPost(() =>
             {
-                inPipe = server.EntMan.TryGetComponent<BeeForagerComponent>(bee, out var flight) &&
-                         flight.VentStage == BeeVentStage.PipeOut;
+                inPipe = server.EntMan.TryGetComponent<BeeErrandComponent>(bee, out var errand) &&
+                         errand.Act == BeeErrandAct.Pipe && !errand.PipedOut;
             });
         }
 
@@ -260,18 +272,15 @@ public sealed class MeatHuntTest : GameTest
             var comp = server.EntMan.GetComponent<BeehiveComponent>(_hive);
             Assert.That(server.System<BeeSwarmSystem>().TrySwarm((_hive, comp)), "the swarm left");
 
-            var swarms = server.EntMan.AllEntityQueryEnumerator<BeeSwarmComponent, BeeForagerComponent>();
-            Assert.That(swarms.MoveNext(out var swarmUid, out var swarm, out var flight));
+            var swarms = server.EntMan.AllEntityQueryEnumerator<BeeSwarmComponent, BeeErrandComponent>();
+            Assert.That(swarms.MoveNext(out _, out var swarm, out var errand));
             Assert.That(swarm, Is.Not.Null);
-            Assert.That(flight, Is.Not.Null);
+            Assert.That(errand, Is.Not.Null);
             if (swarm!.Diet != BeehiveDiet.Meat)
                 Assert.Ignore("the draw gave a plant swarm, nothing to check");
 
             Assert.That(swarm.Storage, Is.Not.Null);
-            var spot = server.System<SharedTransformSystem>().GetMapCoordinates(swarm.Storage!.Value).Position;
-            var gridXform = server.EntMan.GetComponent<TransformComponent>(swarmUid);
-            var target = Vector2.Transform(flight!.Target, server.System<SharedTransformSystem>().GetWorldMatrix(gridXform.GridUid!.Value));
-            Assert.That((target - spot).Length(), Is.LessThan(0.7f), "it flies to the closet it will settle in");
+            Assert.That(errand!.Target, Is.EqualTo(swarm.Storage), "it flies to the closet it will settle in");
         });
     }
 
@@ -370,10 +379,10 @@ public sealed class MeatHuntTest : GameTest
     }
 
     /// <summary>
-    /// A meat forager can be hit, so the server keeps it where the client draws it: on its current leg.
+    /// A meat forager is an NPC: it flies off from the hive by itself, and it can be hit like any small mob.
     /// </summary>
     [Test]
-    public async Task HittableBeeFollowsItsLeg()
+    public async Task ForagerIsAFlyingNpc()
     {
         var map = await Pair.CreateTestMap();
         await Build(map);
@@ -387,19 +396,16 @@ public sealed class MeatHuntTest : GameTest
             comp.VisitBudget = 1f;
             server.System<MeatBeehiveSystem>().Hunt((_hive, comp));
             bee = comp.Foragers[0];
+            Assert.That(server.EntMan.HasComponent<Content.Server.NPC.HTN.HTNComponent>(bee));
+            Assert.That(server.EntMan.HasComponent<Content.Shared.Damage.Components.DamageableComponent>(bee));
         });
 
-        // A second in: out of the hive and on its way to the vent, part of the way along.
-        await RunTicksSync(30);
+        await RunTicksSync(30 * 2);
         await server.WaitAssertion(() =>
         {
-            var forager = server.EntMan.GetComponent<BeeForagerComponent>(bee);
-            var flight = server.EntMan.GetComponent<BeeFlightComponent>(bee);
-            var position = server.EntMan.GetComponent<TransformComponent>(bee).LocalPosition;
-            var drawn = server.System<BeeFlightSystem>().GetLocalPosition((bee, flight), server.Timing.CurTime);
-            Assert.That(forager.Phase, Is.EqualTo(BeeForagerPhase.Outbound));
-            Assert.That(flight.Tracked);
-            Assert.That((position - drawn).Length(), Is.LessThan(0.15f), "the server keeps it on its leg, a tick behind at most");
+            var xforms = server.System<SharedTransformSystem>();
+            var moved = (xforms.GetWorldPosition(bee) - xforms.GetWorldPosition(_hive)).Length();
+            Assert.That(moved, Is.GreaterThan(0.5f), "it flew off on its own");
         });
     }
 

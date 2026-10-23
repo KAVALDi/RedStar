@@ -632,6 +632,12 @@ public sealed partial class BeehiveComponent : Component
     [DataField]
     public float MaxTemperature = 323.15f;
 
+    /// <summary>
+    /// Water vapor on the hive's tile, in moles, from which its bees are calm: no angry bees come out. They keep working.
+    /// </summary>
+    [DataField]
+    public float CalmVaporMoles = 1f;
+
     #endregion
 
     #region Server state
@@ -723,6 +729,25 @@ public sealed partial class BeehiveComponent : Component
     /// </summary>
     [ViewVariables]
     public List<(EntityUid Tray, TimeSpan At)> PendingForagers = new();
+
+    /// <summary>
+    /// While someone is near and a worker is free, one flies a short loop around the hive this often, so a working hive
+    /// looks alive. Purely to look at.
+    /// </summary>
+    [DataField]
+    public TimeSpan LoiterInterval = TimeSpan.FromSeconds(30);
+
+    [ViewVariables]
+    public TimeSpan NextLoiter;
+
+    /// <summary>
+    /// A forager or the scout hit by someone: the hive sends angry bees after them, at most this often.
+    /// </summary>
+    [DataField]
+    public TimeSpan DefenseCooldown = TimeSpan.FromSeconds(5);
+
+    [ViewVariables]
+    public TimeSpan NextDefense;
 
     /// <summary>
     /// Visits made at the same time are shown spread over this long.

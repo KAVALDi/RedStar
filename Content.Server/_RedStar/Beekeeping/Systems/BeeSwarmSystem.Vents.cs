@@ -5,7 +5,6 @@ using Content.Shared.Mobs.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Tools.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
-using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
 
@@ -13,7 +12,7 @@ namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
 /// A swarm can leave through the air vents: it dives into a vent it can see and comes out of another vent of the same
-/// pipe network (a welded vent blocks both ways). Only vent pumps, not scrubbers. From the exit it looks for a place
+/// pipe network (a welded vent blocks both ways); the dive through the pipes is the errand's (<see cref="BeeErrandSystem"/>). Only vent pumps, not scrubbers. From the exit it looks for a place
 /// to nest, as a swarm does anywhere else.
 /// </summary>
 public sealed partial class BeeSwarmSystem
@@ -227,49 +226,26 @@ public sealed partial class BeeSwarmSystem
     }
 
     /// <summary>
-    /// The swarm is hidden in the vent: it comes out of the exit vent, or, if that is gone or welded shut, it is lost
-    /// and its queen falls out where it dived.
-    /// </summary>
-    public void SwarmComeOut(Entity<BeeForagerComponent> bee, BeeSwarmComponent swarm)
-    {
-        if (swarm.VentExit is not { } exit || TerminatingOrDeleted(exit) || _weldable.IsWelded(exit))
-        {
-            QueueDel(bee);
-            return;
-        }
-
-        _transform.SetCoordinates(bee, Transform(exit).Coordinates);
-        _foragers.Shrink(bee, BeeForagerPhase.VentOut, BeeFlightSize.Growing, Transform(bee).LocalPosition);
-    }
-
-    /// <summary>
     /// Out of the vent: look for a locker or crate around the exit, or search on.
     /// </summary>
-    public void SwarmLeftVent(Entity<BeeForagerComponent> bee, BeeSwarmComponent swarm)
+    public void SwarmLeftVent(Entity<BeeSwarmComponent> swarm)
     {
-        _foragers.SetSize(bee, BeeFlightSize.Full);
-        swarm.VentExit = null;
+        swarm.Comp.VentExit = null;
 
-        var xform = Transform(bee);
+        var xform = Transform(swarm);
         if (xform.GridUid is not { } grid)
+            return;
+
+        var origin = _transform.GetMapCoordinates(swarm, xform);
+        if (PickNestStorage(swarm, swarm.Comp.NestRange, grid, origin, swarm.Comp.Diet == BeehiveDiet.Meat ? QuietRadius : 0f) is { } storage)
         {
-            QueueDel(bee);
+            swarm.Comp.Storage = storage;
+            swarm.Comp.Searching = false;
+            _errands.SetTarget(swarm.Owner, storage);
             return;
         }
 
-        var origin = _transform.GetMapCoordinates(bee, xform);
-        var home = xform.LocalPosition;
-        bee.Comp.Home = home;
-        if (PickNestStorage(bee, swarm.NestRange, grid, origin, swarm.Diet == BeehiveDiet.Meat ? QuietRadius : 0f) is { } storage)
-        {
-            swarm.Storage = storage;
-            swarm.Searching = false;
-            var site = _transform.WithEntityId(Transform(storage).Coordinates, grid).Position;
-            _foragers.Fly(bee, BeeForagerPhase.Outbound, home, site);
-            return;
-        }
-
-        swarm.Searching = true;
-        ContinueSearch(bee, swarm);
+        swarm.Comp.Searching = true;
+        ContinueSearch(swarm);
     }
 }

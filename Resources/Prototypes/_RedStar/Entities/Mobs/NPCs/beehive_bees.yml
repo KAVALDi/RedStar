@@ -63,8 +63,6 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: BeehiveAngryBee
-  - type: TimedDespawn
-    lifetime: 60
 
 - type: entity
   parent: BaseMobBeehiveAngry
@@ -75,8 +73,6 @@
   components:
   - type: BeehiveAngryBee
     scout: true
-  - type: TimedDespawn
-    lifetime: 60
   - type: Sprite
     sprite: _RedStar/Objects/Specific/Beekeeping/bees.rsi
     drawdepth: Mobs

@@ -1,6 +1,7 @@
 using Robust.Shared.Player;
 using Robust.Shared.Map.Components;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Events;
 using Content.Shared.Tools.Systems;
 using Content.Shared.Interaction;
 using Content.Shared.Hands.EntitySystems;
@@ -49,9 +50,9 @@ namespace Content.Server._RedStar.Beekeeping.Systems;
 public sealed partial class MeatBeehiveSystem : EntitySystem
 {
     [Dependency] private WeldableSystem _weldable = default!;
-    [Dependency] private MeatBeehiveSystem _meat = default!;
+    [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private DamageableSystem _damageable = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private AngryBeehiveSystem _angry = default!;
     [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private BeehiveSystem _hive = default!;
@@ -243,8 +244,13 @@ public sealed partial class MeatBeehiveSystem : EntitySystem
             return;
 
         var rage = RageLevel(hive);
-        if (!_foragers.TrySpawnForager(hive, xform, target, MaxMeatForagersNow(hive), route))
+        if (_errands.TrySpawnForager(hive, xform, target, MaxMeatForagersNow(hive), meatComp.MeatForagerPrototype, route) is not { } bee)
             return;
+
+        // A meat colony's bees take the color of the blood and, once it is furious, show angry eyes and fly faster.
+        _queen.SetTraitVisuals(bee, MeatLook(hive), rage > 0f);
+        if (rage > 0f)
+            _errands.SetSpeed(bee, 1f + meatComp.RageSpeedBonus * rage);
 
         if (rage > 0f)
             UseRevenge(hive, target);
@@ -304,8 +310,8 @@ public sealed partial class MeatBeehiveSystem : EntitySystem
         _hunted.Clear();
         foreach (var forager in comp.Foragers)
         {
-            if (!TerminatingOrDeleted(forager) && TryComp<BeeForagerComponent>(forager, out var flight) && flight.Tray is { } tray)
-                _hunted.Add(tray);
+            if (!TerminatingOrDeleted(forager) && TryComp<BeeErrandComponent>(forager, out var errand) && errand.Target is { } prey)
+                _hunted.Add(prey);
         }
 
         // Everyone in range, and everyone near a vent of the network: each creature with the vents it could be reached
@@ -378,6 +384,45 @@ public sealed partial class MeatBeehiveSystem : EntitySystem
     }
 
     /// <summary>
+    /// How near a bee must be to a creature to bite it, in tiles.
+    /// </summary>
+    private const float BiteReach = 1.3f;
+
+    /// <summary>
+    /// A meat colony's bee reached its creature. Gone, or out of the hive's reach now: back home empty. Moved off: after
+    /// it. Within reach: a bite, and home; on a corpse it lands for a while like on a flower.
+    /// </summary>
+    [SubscribeLocalEvent]
+    private void OnArrived(Entity<BeeHunterComponent> ent, ref BeeErrandArrivedEvent args)
+    {
+        args.Handled = true;
+        args.Result = BeeErrandArrival.TurnBack;
+        if (!TryComp<BeeErrandComponent>(ent, out var errand) ||
+            args.Target is not { } creature ||
+            TerminatingOrDeleted(errand.Hive) ||
+            !TryComp<BeehiveComponent>(errand.Hive, out var comp))
+        {
+            return;
+        }
+
+        var hive = new Entity<BeehiveComponent>(errand.Hive, comp);
+        var hiveXform = Transform(hive);
+        if (CheckCreature(hive, hiveXform, _transform.GetMapCoordinates(hive, hiveXform), creature) != BeeSourceCheck.Ripe)
+            return;
+
+        var beeMap = _transform.GetMapCoordinates(ent);
+        var creatureMap = _transform.GetMapCoordinates(creature);
+        if (beeMap.MapId != creatureMap.MapId || (beeMap.Position - creatureMap.Position).Length() > BiteReach)
+        {
+            args.Result = BeeErrandArrival.KeepGoing;
+            return;
+        }
+
+        if (BiteCreature(ent, hive, creature))
+            args.Result = BeeErrandArrival.Visit;
+    }
+
+    /// <summary>
     /// How much of a full bite the next one on this creature is worth: each bite within the window halves it, down to
     /// the minimum. A new window starts when the old one has passed.
     /// </summary>
@@ -389,7 +434,7 @@ public sealed partial class MeatBeehiveSystem : EntitySystem
     /// <summary>
     /// The forager reached its creature: it bites and flies off. Blood, a little damage, nectar by the bite's worth.
     /// </summary>
-    public bool BiteCreature(Entity<BeeForagerComponent> bee, Entity<BeehiveComponent> hive, EntityUid target)
+    public bool BiteCreature(EntityUid bee, Entity<BeehiveComponent> hive, EntityUid target)
     {
         var meatComp = MeatOf(hive);
         var comp = hive.Comp;

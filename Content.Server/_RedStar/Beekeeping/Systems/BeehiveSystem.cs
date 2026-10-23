@@ -28,7 +28,7 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     [Dependency] private MeatBeehiveSystem _meat = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private BeeSwarmSystem _swarm = default!;
-    [Dependency] private BeeForagerSystem _foragers = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private BeeQueenSystem _queen = default!;
     [Dependency] private BeeScoutSystem _scout = default!;
@@ -226,7 +226,9 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         }
 
         _queen.UpdateEgg(hive, hasQueen);
-        _foragers.UpdatePendingForagers(hive);
+        _errands.UpdatePendingForagers(hive);
+        if (hasQueen && hive.Comp.Pause == BeehivePauseReason.None && hive.Comp.Diet != BeehiveDiet.Meat)
+            _errands.UpdateLoiter(hive);
         UpdateAmbience(hive);
     }
 
@@ -555,6 +557,9 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             if (comp.Bees > 0 || comp.OutBees > 0)
                 PushScoutLine(comp, ref args);
 
+            if (InCalmingVapor(ent, comp))
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-vapor"));
+
             if (comp.Pause != BeehivePauseReason.None)
             {
                 args.PushMarkup(Loc.GetString("beekeeping-hive-examine-paused",
@@ -596,35 +601,50 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     /// </summary>
     private void UpdatePause(Entity<BeehiveComponent> hive)
     {
-        var comp = hive.Comp;
-        var xform = Transform(hive);
-        var reason = BeehivePauseReason.None;
-
-        if (xform.GridUid is { } grid && xform.ParentUid == grid && TryComp<MapGridComponent>(grid, out var gridComp))
-        {
-            var tile = _map.TileIndicesFor(grid, gridComp, xform.Coordinates);
-            if (_atmos.IsHotspotActive(grid, tile))
-                reason = BeehivePauseReason.Fire;
-        }
-
-        if (reason == BeehivePauseReason.None)
-        {
-            var air = _atmos.GetContainingMixture((hive, xform), true) ?? GasMixture.SpaceGas;
-            if (air.Pressure < comp.MinPressure)
-                reason = BeehivePauseReason.Vacuum;
-            else if (air.Pressure > comp.MaxPressure)
-                reason = BeehivePauseReason.HighPressure;
-            else if (air.Temperature < comp.MinTemperature)
-                reason = BeehivePauseReason.Cold;
-            else if (air.Temperature > comp.MaxTemperature)
-                reason = BeehivePauseReason.Heat;
-        }
-
-        if (comp.Pause == reason)
-            return;
-
-        comp.Pause = reason;
+        hive.Comp.Pause = AirFor(hive.Comp, hive);
     }
+
+    /// <summary>
+    /// Why bees of this hive could not work in the air where <paramref name="uid"/> is: fire, or pressure or temperature
+    /// out of the hive's range. The hive itself pauses on it, and its bees do not fly into such air.
+    /// </summary>
+    public BeehivePauseReason AirFor(BeehiveComponent comp, EntityUid uid)
+    {
+        var xform = Transform(uid);
+        if (xform.GridUid is { } grid && xform.ParentUid == grid && TryComp<MapGridComponent>(grid, out var gridComp) &&
+            _atmos.IsHotspotActive(grid, _map.TileIndicesFor(grid, gridComp, xform.Coordinates)))
+        {
+            return BeehivePauseReason.Fire;
+        }
+
+        var air = _atmos.GetContainingMixture((uid, xform), true) ?? GasMixture.SpaceGas;
+        if (air.Pressure < comp.MinPressure)
+            return BeehivePauseReason.Vacuum;
+        if (air.Pressure > comp.MaxPressure)
+            return BeehivePauseReason.HighPressure;
+        if (air.Temperature < comp.MinTemperature)
+            return BeehivePauseReason.Cold;
+        if (air.Temperature > comp.MaxTemperature)
+            return BeehivePauseReason.Heat;
+
+        return BeehivePauseReason.None;
+    }
+
+    /// <summary>
+    /// Water vapor in the air calms bees: a hive standing in it lets no angry bees out, an angry bee in it calms down and
+    /// a bee in hand does not sting. The colony keeps working; this is how a botanist handles a vicious hive.
+    /// </summary>
+    public bool InCalmingVapor(EntityUid uid, BeehiveComponent? comp = null)
+    {
+        var threshold = comp?.CalmVaporMoles ?? DefaultCalmVaporMoles;
+        var air = _atmos.GetContainingMixture(uid, true);
+        return air != null && air.GetMoles(Gas.WaterVapor) >= threshold;
+    }
+
+    /// <summary>
+    /// Water vapor a bee out of any hive (an angry bee, a bee in hand) needs around it to calm down, in moles on its tile.
+    /// </summary>
+    public const float DefaultCalmVaporMoles = 1f;
 
     /// <summary>
     /// The hive hums while there are bees at home and they are not paused.
