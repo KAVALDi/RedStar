@@ -80,11 +80,6 @@ public sealed partial class BeeErrandSystem : EntitySystem
     /// </summary>
     private const float WatchRange = 15f;
 
-    /// <summary>
-    /// How far around the hive a loop of a bee loitering goes, in tiles.
-    /// </summary>
-    private const float LoiterRange = 2f;
-
     private readonly HashSet<Entity<BeeErrandComponent>> _errandsNear = new();
     private readonly HashSet<Entity<ActorComponent>> _watchers = new();
 

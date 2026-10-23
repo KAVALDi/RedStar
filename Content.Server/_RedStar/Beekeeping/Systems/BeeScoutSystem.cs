@@ -249,7 +249,7 @@ public sealed partial class BeeScoutSystem : EntitySystem
     /// How far a bee flies from <paramref name="from"/> along <paramref name="direction"/> before something solid
     /// stops it, up to <paramref name="maxLength"/>.
     /// </summary>
-    public float FreeFlight(MapCoordinates from, Vector2 direction, float maxLength, EntityUid? ignoreA = null,
+    private float FreeFlight(MapCoordinates from, Vector2 direction, float maxLength, EntityUid? ignoreA = null,
         EntityUid? ignoreB = null)
     {
         // A hive or tray inside a locker: the locker does not block its own bees.

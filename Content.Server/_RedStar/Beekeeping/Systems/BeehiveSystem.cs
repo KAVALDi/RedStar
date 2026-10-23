@@ -222,8 +222,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
         _queen.UpdateEgg(hive, hasQueen);
         _errands.UpdatePendingForagers(hive);
-        if (hasQueen && hive.Comp.Pause == BeehivePauseReason.None)
-            _errands.UpdateLoiter(hive);
         UpdateAmbience(hive);
     }
 
