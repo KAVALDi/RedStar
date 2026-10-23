@@ -1,3 +1,4 @@
+using Content.Server.Audio;
 using Content.Server.NPC.HTN;
 using Content.Server.NPC.Systems;
 using Content.Server._RedStar.Beekeeping.Components;
@@ -33,6 +34,7 @@ namespace Content.Server._RedStar.Beekeeping.Systems;
 /// </summary>
 public sealed partial class BeeErrandSystem : EntitySystem
 {
+    [Dependency] private AmbientSoundSystem _ambient = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private SharedContainerSystem _container = default!;
@@ -425,6 +427,22 @@ public sealed partial class BeeErrandSystem : EntitySystem
     /// </summary>
     private void EnterHive(Entity<BeeErrandComponent> bee)
     {
+        // A bee taken out of the hive comes back like one brought by hand; turned away, it stays outside.
+        if (TryComp<BeeItemComponent>(bee, out var item) && item.CountedOutside)
+        {
+            bee.Comp.Ended = true;
+            if (TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) &&
+                _hive.TryReturnBee((bee.Comp.Hive, hive), (bee, item), null))
+            {
+                return;
+            }
+
+            Hide(bee, false);
+            SetSize(bee, BeeFlightSize.Full);
+            RemComp<BeeErrandComponent>(bee);
+            return;
+        }
+
         if (bee.Comp.Kind == BeeErrandKind.Scout)
             _scout.LandScout(bee);
 
