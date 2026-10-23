@@ -1,8 +1,8 @@
 #nullable enable
 using System.Linq;
 using Content.IntegrationTests.Fixtures;
-using Content.Shared._RedStar.Beekeeping;
 using Content.Shared.Stacks;
+using Content.Shared._RedStar.Beekeeping.Components;
 using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;
