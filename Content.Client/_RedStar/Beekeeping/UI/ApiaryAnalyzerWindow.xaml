@@ -164,7 +164,6 @@
                     <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
                         <BoxContainer Name="TraitDetails"
                                       Orientation="Vertical"
-                                      SeparationOverride="4"
                                       MaxWidth="340" />
                     </ScrollContainer>
                 </BoxContainer>

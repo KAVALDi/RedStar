@@ -389,14 +389,15 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         for (var i = 0; i < state.HiddenTraits; i++)
         {
             TraitDetails.AddChild(TraitEntry($"hidden-{i}", Loc.GetString("beekeeping-trait-hidden"), Color.Gray,
-                Loc.GetString("beekeeping-trait-hidden-desc")));
+                Loc.GetString("beekeeping-trait-hidden-desc"), TraitDetails.ChildCount));
         }
 
         foreach (var id in state.Traits)
         {
             TraitDetails.AddChild(_proto.Resolve(id, out var trait)
-                ? TraitEntry(id, Loc.GetString(trait.Name), trait.Color, Loc.GetString(trait.Description))
-                : TraitEntry(id, id.Id, Color.White, string.Empty));
+                ? TraitEntry(id, Loc.GetString(trait.Name), trait.Color, Loc.GetString(trait.Description),
+                    TraitDetails.ChildCount)
+                : TraitEntry(id, id.Id, Color.White, string.Empty, TraitDetails.ChildCount));
         }
 
         BeeInfo.RemoveAllChildren();
@@ -475,17 +476,23 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
     }
 
     /// <summary>
-    /// A trait's name in its colour that folds and unfolds what it does.
+    /// A trait as a row like the known trays: alternating background, a bar in the trait's colour, and its name that
+    /// folds and unfolds what it does when clicked.
     /// </summary>
-    private Collapsible TraitEntry(string key, string name, Color color, string description)
+    private Control TraitEntry(string key, string name, Color color, string description, int index)
     {
-        var heading = new CollapsibleHeading(name);
+        var heading = new CollapsibleHeading(name)
+        {
+            ChevronVisible = false,
+            ToolTip = Loc.GetString("apiary-analyzer-trait-fold"),
+        };
         heading.Label.FontColorOverride = color;
-        var text = new RichTextLabel { Margin = new Thickness(16, 0, 0, 2) };
+        var text = new RichTextLabel();
         text.SetMessage(FormattedMessage.FromUnformatted(description));
         var entry = new Collapsible(heading, new CollapsibleBody { Children = { text } })
         {
             BodyVisible = !_foldedTraits.Contains(key),
+            HorizontalExpand = true,
         };
 
         heading.OnToggled += args =>
@@ -495,7 +502,30 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             else
                 _foldedTraits.Add(key);
         };
-        return entry;
+
+        return new PanelContainer
+        {
+            StyleClasses = { index % 2 == 0 ? StyleClass.Panel : StyleClass.PanelDark },
+            Children =
+            {
+                new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    SeparationOverride = 8,
+                    Margin = new Thickness(4, 2),
+                    Children =
+                    {
+                        new PanelContainer
+                        {
+                            PanelOverride = new StyleBoxFlat { BackgroundColor = color },
+                            SetWidth = 3,
+                            VerticalExpand = true,
+                        },
+                        entry,
+                    },
+                },
+            },
+        };
     }
 
     private static Label WeakLabel(string loc)

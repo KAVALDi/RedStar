@@ -215,6 +215,7 @@ apiary-analyzer-row-memory = Trays remembered
 apiary-analyzer-row-charges = Pollinations left
 beekeeping-take-queen-done = You carefully take the queen out.
 apiary-analyzer-trait-separator = {": "}
+apiary-analyzer-trait-fold = Click to fold or unfold what it does
 beekeeping-queen-examine-dying = [color=red]Away from a hive the queen weakens and will die soon.[/color]
 beekeeping-queen-died = The queen died away from a hive.
 beekeeping-frame-upgraded = You build the frame up with wax. It now holds { $max } combs.

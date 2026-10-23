@@ -216,6 +216,7 @@ apiary-analyzer-row-memory = Помнит лотков
 apiary-analyzer-row-charges = Опылений осталось
 beekeeping-take-queen-done = Вы осторожно достаёте матку.
 apiary-analyzer-trait-separator = {": "}
+apiary-analyzer-trait-fold = Нажмите, чтобы свернуть или развернуть описание
 beekeeping-queen-examine-dying = [color=red]Без улья матка слабеет и скоро погибнет.[/color]
 beekeeping-queen-died = Матка погибла без улья.
 beekeeping-frame-upgraded = Вы укрепляете рамку воском. Теперь она вмещает { $max } сот.
