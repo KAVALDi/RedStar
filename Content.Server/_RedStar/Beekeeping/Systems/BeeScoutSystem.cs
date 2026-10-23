@@ -1,5 +1,6 @@
 using System.Numerics;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Data;
 using Content.Shared.Botany.Components;
 using Content.Shared.Physics;
 using Content.Shared.Storage.Components;
