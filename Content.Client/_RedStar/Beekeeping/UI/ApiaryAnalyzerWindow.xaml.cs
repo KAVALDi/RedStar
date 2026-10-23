@@ -82,16 +82,24 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             return msg;
         }
 
-        if (state.Traits.Count == 0)
+        if (state.Traits.Count == 0 && state.HiddenTraits == 0)
         {
             msg.AddText(Loc.GetString("beekeeping-traits-none"));
             return msg;
         }
 
-        for (var i = 0; i < state.Traits.Count; i++)
+        for (var i = 0; i < state.Traits.Count + state.HiddenTraits; i++)
         {
             if (i > 0)
                 msg.AddText(", ");
+
+            if (i >= state.Traits.Count)
+            {
+                msg.PushColor(Color.Gray);
+                msg.AddText(Loc.GetString("beekeeping-trait-hidden"));
+                msg.Pop();
+                continue;
+            }
 
             if (_proto.Resolve(state.Traits[i], out var trait))
             {
@@ -126,11 +134,27 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         AddRow(Stats, "apiary-analyzer-stat-mutation",
             Loc.GetString("apiary-analyzer-units", ("amount", $"{totals.PollinationMutation:0.#}")),
             totals.PollinationMutation > 0f ? Color.Gold : Color.DimGray);
+        AddRow(Stats, "apiary-analyzer-stat-flight-pollination", $"{totals.FlightPollination * 100f:0}%",
+            DeltaColor(totals.FlightPollination, true));
+        AddFactor("apiary-analyzer-stat-comb-yield", totals.CombYield, higherIsBetter: true);
+        AddBonus("apiary-analyzer-stat-cap-wax", totals.CapWax);
+        AddShift("apiary-analyzer-stat-cold", totals.ColdTolerance, "K");
+        AddShift("apiary-analyzer-stat-heat", totals.HeatTolerance, "K");
+        AddShift("apiary-analyzer-stat-pressure", totals.PressureTolerance, Loc.GetString("apiary-analyzer-kpa"));
     }
 
     private void AddFactor(string name, float factor, bool higherIsBetter)
     {
         AddRow(Stats, name, $"×{factor:0.##}", DeltaColor(factor - 1f, higherIsBetter));
+    }
+
+    /// <summary>
+    /// How far the colony's traits widen (+) or narrow (−) the air it works in.
+    /// </summary>
+    private void AddShift(string name, float shift, string unit)
+    {
+        var value = shift > 0f ? $"+{shift:0} {unit}" : $"{shift:0} {unit}";
+        AddRow(Stats, name, value, DeltaColor(shift, true));
     }
 
     private void AddBonus(string name, int bonus)
@@ -356,8 +380,19 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
     private void UpdateBee(ApiaryAnalyzerState state)
     {
         TraitDetails.RemoveAllChildren();
-        if (state.Traits.Count == 0)
+        if (state.Traits.Count == 0 && state.HiddenTraits == 0)
             TraitDetails.AddChild(WeakLabel("beekeeping-traits-none"));
+        for (var i = 0; i < state.HiddenTraits; i++)
+        {
+            var hidden = new FormattedMessage();
+            hidden.PushColor(Color.Gray);
+            hidden.AddText(Loc.GetString("beekeeping-trait-hidden"));
+            hidden.Pop();
+            hidden.AddText(Loc.GetString("apiary-analyzer-trait-separator") + Loc.GetString("beekeeping-trait-hidden-desc"));
+            var hiddenLabel = new RichTextLabel();
+            hiddenLabel.SetMessage(hidden);
+            TraitDetails.AddChild(hiddenLabel);
+        }
         foreach (var id in state.Traits)
         {
             var line = new FormattedMessage();

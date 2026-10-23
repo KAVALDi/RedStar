@@ -211,7 +211,10 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             _scout.UpdateScouting(hive);
             _scout.UpdateVisits(hive, seconds);
             if (hasQueen)
+            {
                 Produce(hive, seconds);
+                _queen.UpdateObservation(hive, seconds);
+            }
         }
         else
         {
@@ -461,6 +464,10 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
             // New honey on a frame whose caps were cut: it is filling again and caps when full.
             frame.Comp.Uncapped = false;
             _queen.TakeCombPayload(hive, frame.Comp);
+            // The frame keeps what the colony that built its combs gives when they are cut.
+            var totals = GetHiveTotals(hive);
+            frame.Comp.ColonyCapWax = totals.CapWax;
+            frame.Comp.ColonyCombYield = totals.CombYield;
             Dirty(frame);
             UpdateFrameAppearance(frame);
             return true;
@@ -599,14 +606,29 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     /// </summary>
     private void UpdatePause(Entity<BeehiveComponent> hive)
     {
-        hive.Comp.Pause = AirFor(hive.Comp, hive);
+        var totals = GetHiveTotals(hive);
+        hive.Comp.Pause = AirFor(hive.Comp, hive, totals);
+
+        // The colony's air traits show when they make a difference: working where a plain colony would stop, or the other
+        // way round.
+        var plain = AirFor(hive.Comp, hive, new BeeTraitTotals());
+        if (plain != BeehivePauseReason.None && hive.Comp.Pause == BeehivePauseReason.None)
+            _queen.Reveal(hive, BeeTraitReveal.HardAir);
+        else if (plain == BeehivePauseReason.None && hive.Comp.Pause != BeehivePauseReason.None)
+            _queen.Reveal(hive, BeeTraitReveal.SoftAir);
     }
 
     /// <summary>
     /// Why bees of this hive could not work in the air where <paramref name="uid"/> is: fire, or pressure or temperature
-    /// out of the hive's range. The hive itself pauses on it, and its bees do not fly into such air.
+    /// out of the hive's range as its queen's traits widen or narrow it. The hive itself pauses on it, and its bees do
+    /// not fly into such air.
     /// </summary>
-    public BeehivePauseReason AirFor(BeehiveComponent comp, EntityUid uid)
+    public BeehivePauseReason AirFor(Entity<BeehiveComponent> hive, EntityUid uid)
+    {
+        return AirFor(hive.Comp, uid, GetHiveTotals(hive));
+    }
+
+    private BeehivePauseReason AirFor(BeehiveComponent comp, EntityUid uid, BeeTraitTotals totals)
     {
         var xform = Transform(uid);
         if (xform.GridUid is { } grid && xform.ParentUid == grid && TryComp<MapGridComponent>(grid, out var gridComp) &&
@@ -616,13 +638,13 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
         }
 
         var air = _atmos.GetContainingMixture((uid, xform), true) ?? GasMixture.SpaceGas;
-        if (air.Pressure < comp.MinPressure)
+        if (air.Pressure < comp.MinPressure - totals.PressureTolerance)
             return BeehivePauseReason.Vacuum;
-        if (air.Pressure > comp.MaxPressure)
+        if (air.Pressure > comp.MaxPressure + totals.PressureTolerance)
             return BeehivePauseReason.HighPressure;
-        if (air.Temperature < comp.MinTemperature)
+        if (air.Temperature < comp.MinTemperature - totals.ColdTolerance)
             return BeehivePauseReason.Cold;
-        if (air.Temperature > comp.MaxTemperature)
+        if (air.Temperature > comp.MaxTemperature + totals.HeatTolerance)
             return BeehivePauseReason.Heat;
 
         return BeehivePauseReason.None;

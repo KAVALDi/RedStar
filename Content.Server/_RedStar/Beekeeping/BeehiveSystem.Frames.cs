@@ -1,3 +1,4 @@
+using Robust.Shared.Random;
 using Content.Shared.Destructible;
 using Content.Server.Construction;
 using Content.Server.Stack;
@@ -20,6 +21,7 @@ public sealed partial class BeehiveSystem
     [Dependency] private SharedDoAfterSystem _doAfter = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
     [Dependency] private StackSystem _stack = default!;
+    [Dependency] private IRobustRandom _random = default!;
     [Dependency] private SharedContainerSystem _container = default!;
 
     protected override Type[] FrameInteractBefore => new[] { typeof(ConstructionSystem) };
@@ -42,11 +44,11 @@ public sealed partial class BeehiveSystem
             ent.Comp.Uncapped = true;
             Dirty(ent);
             UpdateFrameAppearance(ent);
+            var wax = ent.Comp.WaxPerCappedFrame + ent.Comp.ColonyCapWax;
             var waxEnt = SpawnNextToOrDrop(ent.Comp.WaxPrototype, ent);
             if (TryComp<StackComponent>(waxEnt, out var waxStack))
-                _stack.SetCount((waxEnt, waxStack), ent.Comp.WaxPerCappedFrame);
-            _popup.PopupEntity(Loc.GetString("beekeeping-frame-cut-caps", ("wax", ent.Comp.WaxPerCappedFrame)),
-                ent, args.User);
+                _stack.SetCount((waxEnt, waxStack), wax);
+            _popup.PopupEntity(Loc.GetString("beekeeping-frame-cut-caps", ("wax", wax)), ent, args.User);
             UpdateFrameHive(ent);
             return;
         }
@@ -55,11 +57,22 @@ public sealed partial class BeehiveSystem
         ent.Comp.Uncapped = false;
         Dirty(ent);
         UpdateFrameAppearance(ent);
+        combs = YieldedCombs(combs, ent.Comp.ColonyCombYield);
         DropCombs(ent, combs, ent);
 
         _popup.PopupEntity(Loc.GetString("beekeeping-frame-cut-combs", ("combs", combs)), ent, args.User);
 
         UpdateFrameHive(ent);
+    }
+
+    /// <summary>
+    /// The combs a cut gives: the frame's combs times the colony's factor, the fraction rounded up by chance.
+    /// </summary>
+    private int YieldedCombs(int combs, float factor)
+    {
+        var exact = combs * Math.Max(0f, factor);
+        var whole = (int) exact;
+        return Math.Max(1, whole + (_random.Prob(exact - whole) ? 1 : 0));
     }
 
     /// <summary>

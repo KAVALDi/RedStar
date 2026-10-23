@@ -285,7 +285,8 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     }
 
     /// <summary>
-    /// The young queen has her mother's traits, as many as her slots hold. Innate traits always pass on.
+    /// The young queen has her mother's traits, as many as her slots hold. Innate traits always pass on, and of them only
+    /// what was known of her mother's stays known.
     /// </summary>
     private void InheritTraits(BeeQueenComponent mother, BeeQueenComponent daughter)
     {
@@ -306,6 +307,9 @@ public sealed partial class BeeSwarmSystem : EntitySystem
 
             daughter.Traits.Add(id);
         }
+
+        // She knows of her traits only what was known of her mother's; the rest is hidden again.
+        daughter.Known = SharedBeehiveSystem.KnownOf(daughter.Traits, mother.Known);
     }
 
     /// <summary>

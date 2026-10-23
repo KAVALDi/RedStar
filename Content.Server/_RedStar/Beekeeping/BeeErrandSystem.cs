@@ -281,7 +281,7 @@ public sealed partial class BeeErrandSystem : EntitySystem
         if (bee.Comp.Target is { } target &&
             !TerminatingOrDeleted(target) &&
             TryComp<BeehiveComponent>(bee.Comp.Hive, out var hive) &&
-            _hive.AirFor(hive, target) != BeehivePauseReason.None)
+            _hive.AirFor((bee.Comp.Hive, hive), target) != BeehivePauseReason.None)
         {
             bee.Comp.Stage = BeeErrandStage.Back;
             return;

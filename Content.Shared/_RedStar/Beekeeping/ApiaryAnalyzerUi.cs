@@ -65,6 +65,11 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
     /// </summary>
     public List<ProtoId<BeeTraitPrototype>> Traits = new();
 
+    /// <summary>
+    /// Traits nobody has seen at work yet: only how many. They are not in <see cref="Traits"/> or <see cref="Totals"/>.
+    /// </summary>
+    public int HiddenTraits;
+
     public BeeTraitTotals Totals = new();
 
     /// <summary>

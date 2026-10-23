@@ -17,6 +17,8 @@ public sealed partial class BeeScoutSystem
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private EntityWhitelistSystem _whitelist = default!;
     [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private BeeItemSystem _items = default!;
+    [Dependency] private BeeQueenSystem _queen = default!;
 
     [Dependency] private EntityQuery<PlantHolderComponent> _holderQuery;
     [Dependency] private EntityQuery<PlantComponent> _plantQuery;
@@ -223,7 +225,15 @@ public sealed partial class BeeScoutSystem
                     source.LastSeen = now;
                     source.NextVisit = now + plant!.CycleDelay;
                     comp.VisitBudget -= 1f;
-                    _hive.AddNectar(hive, comp.NectarPerVisit * _hive.GetHiveTotals(hive).NectarPerVisit);
+                    var totals = _hive.GetHiveTotals(hive);
+                    _hive.AddNectar(hive, comp.NectarPerVisit * totals.NectarPerVisit);
+                    // A generous colony's worker sometimes leaves the plant pollinated, as a bee in hand does.
+                    if (totals.FlightPollination > 0f && _random.Prob(Math.Min(1f, totals.FlightPollination)) &&
+                        GetLivingPlant(_trayQuery.Comp(source.Tray)) is { } pollinated &&
+                        _items.FlightPollinate(pollinated))
+                    {
+                        _queen.Reveal(hive, BeeTraitReveal.FlightPollination);
+                    }
                     // Visits made in the same update are shown over the next while, not as one swarm.
                     comp.PendingForagers.Add((source.Tray,
                         now + TimeSpan.FromSeconds(_random.NextFloat() * (float) comp.ForagerSpread.TotalSeconds)));

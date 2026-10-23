@@ -54,7 +54,7 @@ public sealed partial class BeeErrandSystem
             comp.PendingForagers.RemoveAt(i);
 
             // No bee flies off into fire or bad air; the visit is counted all the same.
-            if (!TerminatingOrDeleted(tray) && _hive.AirFor(comp, tray) == BeehivePauseReason.None)
+            if (!TerminatingOrDeleted(tray) && _hive.AirFor(hive, tray) == BeehivePauseReason.None)
                 TrySpawnForager(hive, xform, tray);
         }
     }

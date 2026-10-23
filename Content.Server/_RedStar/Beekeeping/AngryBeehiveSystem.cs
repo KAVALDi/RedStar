@@ -208,6 +208,7 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
         if (released > 0)
         {
             _hive.UpdateAmbience(hive);
+            _queen.Reveal(hive, BeeTraitReveal.Anger);
         }
 
         return released;
@@ -371,6 +372,10 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
                 args.BonusDamage = -args.BaseDamage;
                 continue;
             }
+
+            // A sting that got through shows whether the colony has one.
+            if (ent.Comp.Hive is { } hive && TryComp<BeehiveComponent>(hive, out var hiveComp))
+                _queen.Reveal((hive, hiveComp), BeeTraitReveal.Sting);
 
             if (ent.Comp.Payload.Volume <= 0)
                 continue;

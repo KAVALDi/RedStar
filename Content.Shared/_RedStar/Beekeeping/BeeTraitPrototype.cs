@@ -174,4 +174,98 @@ public sealed partial class BeeTraitPrototype : IPrototype
     /// </summary>
     [DataField]
     public bool GuardedScout;
+
+    /// <summary>
+    /// The hive keeps working this many kelvin below its usual coldest air (negative: it stops sooner).
+    /// </summary>
+    [DataField]
+    public float ColdTolerance;
+
+    /// <summary>
+    /// The hive keeps working this many kelvin above its usual hottest air (negative: it stops sooner).
+    /// </summary>
+    [DataField]
+    public float HeatTolerance;
+
+    /// <summary>
+    /// The hive keeps working this many kPa past its usual pressure range on both sides (negative: it stops sooner).
+    /// </summary>
+    [DataField]
+    public float PressureTolerance;
+
+    /// <summary>
+    /// Extra wax cutting the caps off one of this colony's full frames gives.
+    /// </summary>
+    [DataField]
+    public int CapWax;
+
+    /// <summary>
+    /// Combs one cut comb of this colony gives, as a factor: 1.5 gives three combs for two, on average.
+    /// </summary>
+    [DataField]
+    public float CombYield = 1f;
+
+    /// <summary>
+    /// Chance that a worker's visit to a ripe plant also raises its next harvest, like a bee in hand does.
+    /// </summary>
+    [DataField]
+    public float FlightPollination;
+
+    /// <summary>
+    /// What shows the trait to someone watching the colony. Until then the analyzer lists it only as a hidden trait.
+    /// </summary>
+    [DataField]
+    public BeeTraitReveal Reveal = BeeTraitReveal.Observe;
+}
+
+/// <summary>
+/// What shows a bee trait. A trait that shows in nothing a colony does is learned by watching: it reveals itself after
+/// the queen has worked in a hive for a while.
+/// </summary>
+public enum BeeTraitReveal : byte
+{
+    /// <summary>
+    /// After the queen has worked in a hive for <c>BeeQueenComponent.ObserveTime</c>.
+    /// </summary>
+    Observe,
+
+    /// <summary>
+    /// A bee of the colony stings someone.
+    /// </summary>
+    Sting,
+
+    /// <summary>
+    /// A bee of the colony bites or stings someone holding it.
+    /// </summary>
+    Aggression,
+
+    /// <summary>
+    /// The hive lets angry bees out.
+    /// </summary>
+    Anger,
+
+    /// <summary>
+    /// A bee of the colony pollinates a plant by hand.
+    /// </summary>
+    Pollination,
+
+    /// <summary>
+    /// A worker's visit raises a plant's harvest.
+    /// </summary>
+    FlightPollination,
+
+    /// <summary>
+    /// The queen lays an egg.
+    /// </summary>
+    Egg,
+
+    /// <summary>
+    /// The hive keeps working in air it would otherwise stop in.
+    /// </summary>
+    HardAir,
+
+    /// <summary>
+    /// The hive stops in air it would otherwise work in.
+    /// </summary>
+    SoftAir,
 }

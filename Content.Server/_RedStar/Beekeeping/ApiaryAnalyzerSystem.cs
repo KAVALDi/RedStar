@@ -83,8 +83,10 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         else if (TryComp<BeeItemComponent>(target, out var bee))
         {
             state.Kind = bee.Role == BeeRole.Scout ? ApiaryScanKind.Scout : ApiaryScanKind.Pollinator;
-            state.Traits.AddRange(bee.Traits);
-            state.Totals = _beehive.GetTotals(bee.Traits);
+            var known = SharedBeehiveSystem.KnownOf(bee.Traits, bee.Known);
+            state.Traits.AddRange(known);
+            state.HiddenTraits = bee.Traits.Count - known.Count;
+            state.Totals = _beehive.GetTotals(known);
             state.Charges = bee.Charges;
             state.HiveKnown = bee.SourceHive is { } home && !TerminatingOrDeleted(home);
             state.Memory = bee.MemoryCount;
@@ -101,8 +103,10 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
     private void FillQueen(Entity<BeeQueenComponent> queen, ApiaryAnalyzerState state)
     {
         state.HasQueen = true;
-        state.Traits.AddRange(queen.Comp.Traits);
-        state.Totals = _beehive.GetTotals(queen.Comp.Traits);
+        var known = SharedBeehiveSystem.KnownOf(queen.Comp.Traits, queen.Comp.Known);
+        state.Traits.AddRange(known);
+        state.HiddenTraits = queen.Comp.Traits.Count - known.Count;
+        state.Totals = _beehive.GetTotals(known);
         state.UsedSlots = _beehive.SlottedTraits(queen.Comp);
         state.Instability = queen.Comp.Instability;
         state.Slots = queen.Comp.Slots;
