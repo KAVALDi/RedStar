@@ -58,6 +58,7 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     [Dependency] private BeeScoutSystem _scout = default!;
     [Dependency] private ISharedAdminLogManager _adminLog = default!;
     [Dependency] private BeehiveSystem _hive = default!;
+    [Dependency] private BeeErrandSystem _errands = default!;
     [Dependency] private IConfigurationManager _cfg = default!;
     [Dependency] private InventorySystem _inventory = default!;
     [Dependency] private MobStateSystem _mobState = default!;
@@ -73,6 +74,7 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
         base.Update(frameTime);
 
         UpdateAngryQueens();
+        UpdateReturningBees();
         UpdateCalmedBees();
         UpdateProofTargets();
     }
@@ -154,8 +156,9 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
                 break;
             }
 
-            if (SwarmModifierOf(comp) is { AngryLifetime: > 0f } fierce)
-                EnsureComp<TimedDespawnComponent>(bee).Lifetime = fierce.AngryLifetime;
+            angry.ReturnAt = _timing.CurTime + (SwarmModifierOf(comp) is { AngryLifetime: > 0f } fierce
+                ? TimeSpan.FromSeconds(fierce.AngryLifetime)
+                : angry.Lifetime);
 
             angry.Hive = hive;
             angry.Scout = scout;
@@ -229,10 +232,44 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
     #region Angry bees
 
     /// <summary>
-    /// Time is up: the bee flies back into its hive, if the hive is still there.
+    /// Time is up: the bee flies back into its hive like any bee coming home, if the hive is still there. One that does
+    /// not make it in time is lost.
+    /// </summary>
+    private void UpdateReturningBees()
+    {
+        var now = _timing.CurTime;
+        var bees = EntityQueryEnumerator<BeehiveAngryBeeComponent>();
+        while (bees.MoveNext(out var uid, out var angry))
+        {
+            if (angry.GiveUpAt is { } giveUp)
+            {
+                if (now >= giveUp)
+                    QueueDel(uid);
+                continue;
+            }
+
+            if (now < angry.ReturnAt)
+                continue;
+
+            angry.GiveUpAt = now + angry.ReturnTime;
+            if (angry.Hive is { } hive && !TerminatingOrDeleted(hive))
+                _errands.SendHome(uid, hive);
+            else
+                QueueDel(uid);
+        }
+    }
+
+    [SubscribeLocalEvent]
+    private void OnAngryBeeMapInit(Entity<BeehiveAngryBeeComponent> ent, ref MapInitEvent args)
+    {
+        ent.Comp.ReturnAt = _timing.CurTime + ent.Comp.Lifetime;
+    }
+
+    /// <summary>
+    /// The bee made it into its hive: the colony has it back.
     /// </summary>
     [SubscribeLocalEvent]
-    private void OnAngryBeeExpired(Entity<BeehiveAngryBeeComponent> ent, ref TimedDespawnEvent args)
+    private void OnAngryBeeHome(Entity<BeehiveAngryBeeComponent> ent, ref BeeErrandHomeEvent args)
     {
         EndAngryBee(ent, true);
     }

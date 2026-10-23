@@ -1,4 +1,5 @@
 using Content.Server.NPC.HTN;
+using Content.Server.NPC.Systems;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Mobs;
@@ -29,6 +30,8 @@ public sealed partial class BeeErrandSystem : EntitySystem
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private SharedHandsSystem _hands = default!;
     [Dependency] private BeehiveSystem _hive = default!;
+    [Dependency] private HTNSystem _htn = default!;
+    [Dependency] private NPCSystem _npc = default!;
     [Dependency] private EntityLookupSystem _lookup = default!;
     [Dependency] private SharedPhysicsSystem _physics = default!;
     [Dependency] private SharedPopupSystem _popup = default!;
@@ -56,7 +59,32 @@ public sealed partial class BeeErrandSystem : EntitySystem
     /// </summary>
     private const int MaxRetargets = 6;
 
+    /// <summary>
+    /// The HTN task of a bee on an errand.
+    /// </summary>
+    private static readonly ProtoId<HTNCompoundPrototype> ErrandTask = "BeeErrandCompound";
+
     private readonly HashSet<Entity<BeeErrandComponent>> _errandsNear = new();
+
+    public override void Update(float frameTime)
+    {
+        base.Update(frameTime);
+
+        // Only the bees diving into something right now, for the fraction of a second it takes.
+        var now = _timing.CurTime;
+        var query = EntityQueryEnumerator<BeeErrandComponent>();
+        while (query.MoveNext(out var uid, out var errand))
+        {
+            if (errand.GlideFrom is not { } from)
+                continue;
+
+            var total = (errand.GlideEnd - errand.GlideStart).TotalSeconds;
+            var progress = total > 0 ? (float) Math.Clamp((now - errand.GlideStart).TotalSeconds / total, 0, 1) : 1f;
+            _transform.SetWorldPosition(uid, System.Numerics.Vector2.Lerp(from, errand.GlideTo, progress));
+            if (progress >= 1f)
+                errand.GlideFrom = null;
+        }
+    }
     private readonly HashSet<Entity<BeehiveAngryBeeComponent>> _angryNear = new();
 
     #region Letting bees out
@@ -149,6 +177,24 @@ public sealed partial class BeeErrandSystem : EntitySystem
         // It grows out of the hive as it sets off.
         SetSize(bee, BeeFlightSize.Growing);
         return bee;
+    }
+
+    /// <summary>
+    /// A bee that is already out (an angry bee whose time is up) flies home on a return errand: its task becomes the
+    /// errand's, it goes into the hive and the hive gets it back (<see cref="BeeErrandHomeEvent"/>).
+    /// </summary>
+    public void SendHome(EntityUid bee, EntityUid hive)
+    {
+        var errand = EnsureComp<BeeErrandComponent>(bee);
+        errand.Kind = BeeErrandKind.Return;
+        errand.Hive = hive;
+        errand.Stage = BeeErrandStage.Back;
+        if (!TryComp<HTNComponent>(bee, out var htn))
+            return;
+
+        htn.RootTask = new HTNCompoundTask { Task = ErrandTask };
+        _npc.WakeNPC(bee, htn);
+        _htn.Replan(htn);
     }
 
     /// <summary>
@@ -302,7 +348,7 @@ public sealed partial class BeeErrandSystem : EntitySystem
         {
             if (errand.VentEntry != null && !errand.PipedOut)
             {
-                StartStep(bee, BeeErrandAct.Pipe, BeeFlightSize.Shrinking, ShrinkTime(uid));
+                DiveInto(bee, BeeErrandAct.Pipe, errand.VentEntry.Value);
                 return;
             }
 
@@ -312,11 +358,29 @@ public sealed partial class BeeErrandSystem : EntitySystem
 
         if (errand.VentExit != null && errand.PipedOut && !errand.PipedBack)
         {
-            StartStep(bee, BeeErrandAct.Pipe, BeeFlightSize.Shrinking, ShrinkTime(uid));
+            DiveInto(bee, BeeErrandAct.Pipe, errand.VentExit.Value);
             return;
         }
 
-        StartStep(bee, BeeErrandAct.Enter, BeeFlightSize.Shrinking, ShrinkTime(uid));
+        DiveInto(bee, BeeErrandAct.Enter, _scout.StorageOf(errand.Hive) ?? errand.Hive);
+    }
+
+    /// <summary>
+    /// The bee stopped next to what it dives into (it cannot fly into a solid hive or tray), so it glides the last bit
+    /// to the middle while it shrinks, with its body out of the way.
+    /// </summary>
+    private void DiveInto(Entity<BeeErrandComponent> bee, BeeErrandAct act, EntityUid into)
+    {
+        var length = ShrinkTime(bee);
+        StartStep(bee, act, BeeFlightSize.Shrinking, length);
+        Hide(bee, true);
+        if (TerminatingOrDeleted(into))
+            return;
+
+        bee.Comp.GlideFrom = _transform.GetWorldPosition(bee);
+        bee.Comp.GlideTo = _transform.GetWorldPosition(into);
+        bee.Comp.GlideStart = _timing.CurTime;
+        bee.Comp.GlideEnd = _timing.CurTime + length;
     }
 
     /// <summary>
@@ -336,7 +400,10 @@ public sealed partial class BeeErrandSystem : EntitySystem
         switch (result)
         {
             case BeeErrandArrival.Visit:
-                StartStep(bee, BeeErrandAct.Visit, BeeFlightSize.Shrinking, ShrinkTime(bee));
+                if (bee.Comp.Target is { } target)
+                    DiveInto(bee, BeeErrandAct.Visit, target);
+                else
+                    StartStep(bee, BeeErrandAct.Visit, BeeFlightSize.Shrinking, ShrinkTime(bee));
                 break;
             case BeeErrandArrival.TurnBack:
                 bee.Comp.Stage = BeeErrandStage.Back;
@@ -386,7 +453,6 @@ public sealed partial class BeeErrandSystem : EntitySystem
         switch (bee.Comp.ActStep)
         {
             case 0:
-                Hide(bee, true);
                 StartStep(bee, BeeErrandAct.Visit, BeeFlightSize.Hidden, bee.Comp.VisitTime, 1);
                 return HTNOperatorStatus.Continuing;
             case 1:
@@ -412,7 +478,6 @@ public sealed partial class BeeErrandSystem : EntitySystem
         switch (comp.ActStep)
         {
             case 0:
-                Hide(bee, true);
                 StartStep(bee, BeeErrandAct.Pipe, BeeFlightSize.Hidden, PipeTime(comp), 1);
                 return HTNOperatorStatus.Continuing;
             case 1:
@@ -460,6 +525,8 @@ public sealed partial class BeeErrandSystem : EntitySystem
         if (bee.Comp.Kind == BeeErrandKind.Scout)
             _scout.LandScout(bee);
 
+        var ev = new BeeErrandHomeEvent(bee.Comp.Hive);
+        RaiseLocalEvent(bee, ref ev);
         End(bee);
     }
 

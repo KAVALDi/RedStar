@@ -124,4 +124,50 @@ public sealed class AngryBeehiveTest : GameTest
             Assert.That(faction.IsIgnored(bee, human), Is.False, "no longer ignored without the helmet");
         });
     }
+
+    /// <summary>
+    /// When its time is up an angry bee flies back into the hive by itself, and the colony has it back.
+    /// </summary>
+    [Test]
+    public async Task AngryBeeFliesHome()
+    {
+        var server = Server;
+        var map = await Pair.CreateTestMap();
+        var slots = server.System<ItemSlotsSystem>();
+        EntityUid hive = default;
+
+        await server.WaitPost(() =>
+        {
+            var mapSystem = server.System<SharedMapSystem>();
+            for (var x = -3; x <= 3; x++)
+            {
+                for (var y = -3; y <= 3; y++)
+                    mapSystem.SetTile(map.Grid.Owner, map.Grid.Comp, new Robust.Shared.Maths.Vector2i(x, y), map.Tile.Tile);
+            }
+
+            hive = server.EntMan.SpawnEntity("Beehive", map.GridCoords);
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(hive);
+            Assert.That(slots.TryInsert(hive, comp.FrameSlots[0], server.EntMan.SpawnEntity("BeeFrame", map.GridCoords), null));
+            Assert.That(slots.TryInsert(hive, comp.QueenSlot, server.EntMan.SpawnEntity("BeeQueen", map.GridCoords), null));
+            comp.Bees = 5;
+            // As in the test above: three bees fly out, the scout among them.
+            server.System<DamageableSystem>().TryChangeDamage(hive, new DamageSpecifier { DamageDict = { ["Blunt"] = 25 } });
+            Assert.That(comp.AngryOut, Is.EqualTo(3));
+            Assert.That(comp.Bees, Is.EqualTo(2));
+
+            // Time is up at once.
+            var bees = server.EntMan.EntityQueryEnumerator<BeehiveAngryBeeComponent>();
+            while (bees.MoveNext(out _, out var angry))
+                angry.ReturnAt = server.Timing.CurTime;
+        });
+
+        await RunSeconds(15);
+        await server.WaitAssertion(() =>
+        {
+            var comp = server.EntMan.GetComponent<BeehiveComponent>(hive);
+            Assert.That(comp.AngryOut, Is.Zero, "no bee is out any more");
+            Assert.That(comp.Bees, Is.EqualTo(5), "they flew home");
+            Assert.That(comp.ScoutState, Is.EqualTo(BeeScoutState.Home), "the scout is home too");
+        });
+    }
 }

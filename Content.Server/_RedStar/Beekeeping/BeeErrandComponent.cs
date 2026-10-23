@@ -86,6 +86,22 @@ public sealed partial class BeeErrandComponent : Component
     public TimeSpan ActStepEnd;
 
     /// <summary>
+    /// While it dives into something (the flower, a vent, the hive) the bee glides from where it stopped to the middle
+    /// of it: its world positions at both ends, and when the glide is over.
+    /// </summary>
+    [ViewVariables]
+    public System.Numerics.Vector2? GlideFrom;
+
+    [ViewVariables]
+    public System.Numerics.Vector2 GlideTo;
+
+    [ViewVariables]
+    public TimeSpan GlideStart;
+
+    [ViewVariables]
+    public TimeSpan GlideEnd;
+
+    /// <summary>
     /// Times the bee flew on to a target that had moved; past a few it gives up and goes home.
     /// </summary>
     [ViewVariables]
@@ -120,6 +136,11 @@ public enum BeeErrandKind : byte
     /// A swarm or a lone queen on the way to a new home. It does not come back.
     /// </summary>
     Swarm,
+
+    /// <summary>
+    /// An angry bee whose time is up, flying back into its hive. Its count is the angry hive's.
+    /// </summary>
+    Return,
 }
 
 public enum BeeErrandStage : byte
