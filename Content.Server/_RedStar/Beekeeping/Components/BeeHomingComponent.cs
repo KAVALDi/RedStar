@@ -1,5 +1,5 @@
-using Robust.Shared.Audio;
 using Content.Server._RedStar.Beekeeping.Data;
+using Robust.Shared.Audio;
 
 namespace Content.Server._RedStar.Beekeeping.Components;
 

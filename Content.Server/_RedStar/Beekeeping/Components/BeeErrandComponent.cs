@@ -1,6 +1,6 @@
-using Robust.Shared.Map;
 using Content.Server._RedStar.Beekeeping.Data;
 using Content.Server._RedStar.Beekeeping.Systems;
+using Robust.Shared.Map;
 
 namespace Content.Server._RedStar.Beekeeping.Components;
 
