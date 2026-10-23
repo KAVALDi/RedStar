@@ -3,15 +3,18 @@ using Content.Server.NPC.Systems;
 using Content.Server._RedStar.Beekeeping.Components;
 using Content.Server._RedStar.Beekeeping.Data;
 using Content.Server._RedStar.Beekeeping.Events;
+using Content.Shared.Audio;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
+using Content.Shared.Item;
 using Content.Shared.Mobs;
 using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Tools.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
@@ -29,39 +32,94 @@ namespace Content.Server._RedStar.Beekeeping.Systems;
 public sealed partial class BeeErrandSystem
 {
     /// <summary>
-    /// A forager caught by hand becomes a bee in hand, like one taken from the hive, and can be brought back.
+    /// A bee in the air is picked up like any small creature: a worker on its way to a flower, or a bee flying home. Not
+    /// while it is inside a flower, a vent or the hive, and not the scout on its trip or a bee on any other errand.
     /// </summary>
     [SubscribeLocalEvent]
-    private void OnInteractHand(Entity<BeeErrandComponent> ent, ref InteractHandEvent args)
+    private void OnPickupAttempt(Entity<BeeErrandComponent> ent, ref GettingPickedUpAttemptEvent args)
     {
-        if (args.Handled || ent.Comp.Kind != BeeErrandKind.Forage || ent.Comp.Act != BeeErrandAct.None)
+        if (ent.Comp.Act != BeeErrandAct.None || ent.Comp.Kind is not (BeeErrandKind.Forage or BeeErrandKind.Return))
+            args.Cancel();
+    }
+
+    /// <summary>
+    /// Held or packed away, a bee leaves its errand, keeps still and buzzes quietly.
+    /// </summary>
+    [SubscribeLocalEvent]
+    private void OnBeeContained(Entity<BeeItemComponent> ent, ref EntGotInsertedIntoContainerMessage args)
+    {
+        if (TryComp<BeeErrandComponent>(ent, out var errand))
+            Catch(ent, (ent, errand), args.Container.Owner);
+
+        _npc.SleepNPC(ent);
+        SetHeldSound(ent, true);
+    }
+
+    /// <summary>
+    /// Let go, a bee flies home by itself.
+    /// </summary>
+    [SubscribeLocalEvent]
+    private void OnBeeLetGo(Entity<BeeItemComponent> ent, ref EntGotRemovedFromContainerMessage args)
+    {
+        if (TerminatingOrDeleted(ent) || _container.IsEntityInContainer(ent))
             return;
 
-        args.Handled = true;
-        if (!TryComp<BeehiveComponent>(ent.Comp.Hive, out var comp) || TerminatingOrDeleted(ent.Comp.Hive))
-            return;
+        SetHeldSound(ent, false);
+        FlyHome(ent);
+    }
 
-        var hive = new Entity<BeehiveComponent>(ent.Comp.Hive, comp);
-        var item = Spawn(comp.PollinatorPrototype, Transform(args.User).Coordinates);
-        if (!TryComp<BeeItemComponent>(item, out var bee))
+    /// <summary>
+    /// A free bee taken out of a hive flies back into it; one with no hive to go to flies about until its time is up.
+    /// </summary>
+    public void FlyHome(Entity<BeeItemComponent> bee)
+    {
+        if (bee.Comp.CountedOutside && bee.Comp.SourceHive is { } hive && !TerminatingOrDeleted(hive))
         {
-            Del(item);
+            SendHome(bee, hive);
             return;
         }
 
-        // The worker it showed now really is outside the hive.
-        if (comp.Bees > 0)
+        if (TryComp<HTNComponent>(bee, out var htn))
+            _npc.WakeNPC(bee, htn);
+    }
+
+    /// <summary>
+    /// The bee leaves its errand without being lost. A worker caught on its way is counted outside its hive, like one
+    /// taken out.
+    /// </summary>
+    private void Catch(Entity<BeeItemComponent> bee, Entity<BeeErrandComponent> errand, EntityUid holder)
+    {
+        var hiveUid = errand.Comp.Hive;
+        if (!TerminatingOrDeleted(hiveUid) && TryComp<BeehiveComponent>(hiveUid, out var comp))
         {
-            comp.Bees--;
-            comp.OutBees++;
-            bee.SourceHive = hive;
-            bee.CountedOutside = true;
+            comp.Foragers.Remove(bee);
+            if (errand.Comp.Kind == BeeErrandKind.Forage && !bee.Comp.CountedOutside && comp.Bees > 0)
+            {
+                var hive = new Entity<BeehiveComponent>(hiveUid, comp);
+                comp.Bees--;
+                comp.OutBees++;
+                bee.Comp.SourceHive = hive;
+                bee.Comp.CountedOutside = true;
+                _queen.GiveTraits(hive, bee);
+                _popup.PopupEntity(Loc.GetString("beekeeping-forager-caught"), holder, holder);
+            }
         }
 
-        _queen.GiveTraits(hive, (item, bee));
-        _hands.PickupOrDrop(args.User, item);
-        _popup.PopupEntity(Loc.GetString("beekeeping-forager-caught"), args.User, args.User);
-        End(ent);
+        errand.Comp.Ended = true;
+        Hide(bee, false);
+        SetSize(bee, BeeFlightSize.Full);
+        RemComp<BeeErrandComponent>(bee);
+    }
+
+    private void SetHeldSound(Entity<BeeItemComponent> bee, bool held)
+    {
+        if (!TryComp<AmbientSoundComponent>(bee, out var ambient))
+            return;
+
+        bee.Comp.FreeSound ??= ambient.Sound;
+        var sound = held ? bee.Comp.HeldSound : bee.Comp.FreeSound;
+        if (ambient.Sound != sound)
+            _ambient.SetSound(bee, sound, ambient);
     }
 
     /// <summary>

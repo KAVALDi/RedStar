@@ -4,21 +4,34 @@ using Content.Shared.FixedPoint;
 using Content.Shared.Guidebook;
 using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
 namespace Content.Shared._RedStar.Beekeeping.Components;
 
 /// <summary>
-/// A bee taken out of a hive as an item. The role is chosen when it is taken and never changes: a scout
-/// remembers trays for its hive, a pollinator pollinates plants. The bee lives for its
-/// <c>TimedDespawn</c> lifetime unless it is brought back to its own hive.
+/// A bee of a hive that can be held: the same creature flies errands and sits in a hand. The role never changes: a
+/// scout remembers trays for its hive, a pollinator pollinates plants. The bee lives for its <c>TimedDespawn</c>
+/// lifetime unless it is brought back to its own hive.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState, AutoGenerateComponentPause]
 public sealed partial class BeeItemComponent : Component
 {
     [DataField]
     public BeeRole Role = BeeRole.Pollinator;
+
+    /// <summary>
+    /// The quiet buzz while it is held or packed away; free, it buzzes with the ambient sound of its prototype.
+    /// </summary>
+    [DataField]
+    public SoundSpecifier HeldSound = new SoundPathSpecifier("/Audio/_RedStar/Ambience/Beekeeping/bee_in_hand.ogg");
+
+    /// <summary>
+    /// The ambient sound of the prototype, kept while the held buzz plays.
+    /// </summary>
+    [ViewVariables]
+    public SoundSpecifier? FreeSound;
 
     /// <summary>
     /// The colony's traits, copied from the queen when the bee is taken out.

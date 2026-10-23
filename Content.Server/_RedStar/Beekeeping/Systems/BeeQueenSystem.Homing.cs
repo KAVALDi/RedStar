@@ -15,9 +15,9 @@ using Robust.Shared.Physics.Systems;
 namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
-/// Bees and queens left on the floor fly home on their own (<see cref="BeeHomingComponent"/>). A bee item is
-/// returned exactly like one brought back by hand, with the same checks; a queen goes into the queen slot if it
-/// is free. Only a clear straight line counts, like for visits: no flying through walls.
+/// A queen left on the floor flies home on her own (<see cref="BeeHomingComponent"/>) into the queen slot of her hive,
+/// if it is free. Only a clear straight line counts, like for visits: no flying through walls. Worker bees and the scout
+/// fly home as NPCs (<see cref="BeeErrandSystem.FlyHome"/>).
 /// </summary>
 public sealed partial class BeeQueenSystem
 {
@@ -163,21 +163,14 @@ public sealed partial class BeeQueenSystem
     }
 
     /// <summary>
-    /// The hive this bee or queen would fly to, or null if there is none to go back to.
+    /// The hive this queen would fly to, or null if there is none to go back to.
     /// </summary>
     private Entity<BeehiveComponent>? GetHomingHive(EntityUid uid)
     {
         EntityUid? hive = null;
 
-        if (TryComp<BeeItemComponent>(uid, out var bee))
-        {
-            if (bee.CountedOutside)
-                hive = bee.SourceHive;
-        }
-        else if (TryComp<BeeQueenComponent>(uid, out var queen))
-        {
+        if (TryComp<BeeQueenComponent>(uid, out var queen))
             hive = queen.LastHive;
-        }
 
         if (hive is not { } hiveUid ||
             TerminatingOrDeleted(hiveUid) ||
@@ -240,12 +233,6 @@ public sealed partial class BeeQueenSystem
 
     private void ArriveHome(EntityUid uid, Entity<BeehiveComponent> hive)
     {
-        if (TryComp<BeeItemComponent>(uid, out var bee))
-        {
-            _hive.TryReturnBee(hive, (uid, bee), null);
-            return;
-        }
-
         if (HasComp<BeeQueenComponent>(uid))
             _itemSlots.TryInsert(hive.Owner, hive.Comp.QueenSlot, uid, null);
     }
