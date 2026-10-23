@@ -10,7 +10,8 @@ namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;
 
 /// <summary>
 /// A visible forager is an NPC on an errand: it flies to the tray by itself, visits it and comes home, and the colony
-/// keeps its bee. A forager that is killed on the way is a bee the colony loses.
+/// keeps its bee. A forager that is killed on the way is a bee the colony loses. Caught by hand it is the same bee,
+/// counted outside its hive, and let go it flies back in.
 /// </summary>
 [TestOf(typeof(BeeErrandSystem))]
 public sealed class BeeErrandTest : GameTest
@@ -101,6 +102,53 @@ public sealed class BeeErrandTest : GameTest
             Assert.That(bee, Is.Not.Null);
             server.EntMan.DeleteEntity(bee!.Value);
             Assert.That(hive.Comp.Bees, Is.EqualTo(4), "the colony lost the bee");
+        });
+    }
+
+    [Test]
+    public async Task CaughtForagerStaysTheSameBee()
+    {
+        var map = await Pair.CreateTestMap();
+        await Build(map);
+        var server = Server;
+        var hands = server.System<Content.Shared.Hands.EntitySystems.SharedHandsSystem>();
+        EntityUid bee = default;
+        EntityUid user = default;
+
+        await server.WaitAssertion(() =>
+        {
+            var hive = new Entity<BeehiveComponent>(_hive, server.EntMan.GetComponent<BeehiveComponent>(_hive));
+            bee = server.System<BeeErrandSystem>().TrySpawnForager(hive, server.EntMan.GetComponent<TransformComponent>(_hive), _tray)
+                  ?? EntityUid.Invalid;
+            Assert.That(bee.IsValid(), "the forager flew out");
+
+            user = server.EntMan.SpawnEntity("MobHuman", new EntityCoordinates(map.Grid, 1.5f, 0.5f));
+            Assert.That(hands.TryPickupAnyHand(user, bee, checkActionBlocker: false), "the forager was caught");
+
+            var item = server.EntMan.GetComponent<BeeItemComponent>(bee);
+            Assert.Multiple(() =>
+            {
+                Assert.That(server.EntMan.HasComponent<Content.Server._RedStar.Beekeeping.Components.BeeErrandComponent>(bee), Is.False,
+                    "the caught bee left its errand");
+                Assert.That(item.CountedOutside, "it is counted outside its hive");
+                Assert.That(item.SourceHive, Is.EqualTo(_hive));
+                Assert.That(hive.Comp.Bees, Is.EqualTo(4));
+                Assert.That(hive.Comp.OutBees, Is.EqualTo(1));
+            });
+
+            Assert.That(hands.TryDrop(user, bee, checkActionBlocker: false), "the bee was let go");
+        });
+
+        await RunSeconds(20);
+        await server.WaitAssertion(() =>
+        {
+            var hive = server.EntMan.GetComponent<BeehiveComponent>(_hive);
+            Assert.Multiple(() =>
+            {
+                Assert.That(server.EntMan.Deleted(bee), "the bee flew back into its hive");
+                Assert.That(hive.Bees, Is.EqualTo(5));
+                Assert.That(hive.OutBees, Is.Zero);
+            });
         });
     }
 }

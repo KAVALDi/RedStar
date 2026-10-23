@@ -81,7 +81,7 @@ public sealed partial class BeeErrandSystem
         if (comp.Foragers.Count >= (limit ?? comp.MaxForagers) || !AreaHasRoom(hiveXform.Coordinates))
             return null;
 
-        if (Release(hive, hiveXform, prototype ?? comp.ForagerPrototype, target, route) is not { } bee)
+        if (Release(hive, hiveXform, prototype ?? comp.PollinatorPrototype, target, route) is not { } bee)
             return null;
 
         comp.Foragers.Add(bee);
@@ -95,7 +95,7 @@ public sealed partial class BeeErrandSystem
     {
         if (found.Count == 0 ||
             !AreaHasRoom(hiveXform.Coordinates) ||
-            Release(hive, hiveXform, hive.Comp.ScoutFlyerPrototype, found[0], null) is not { } bee)
+            Release(hive, hiveXform, hive.Comp.ScoutPrototype, found[0], null, kind: BeeErrandKind.Scout) is not { } bee)
         {
             return false;
         }
@@ -106,20 +106,29 @@ public sealed partial class BeeErrandSystem
     }
 
     /// <summary>
-    /// A bee of <paramref name="prototype"/> comes out of the hive on its errand.
+    /// A bee of <paramref name="prototype"/> comes out of the hive on its errand. A prototype that names its own kind of
+    /// errand keeps it; any other bee goes on a <paramref name="kind"/> errand.
     /// </summary>
     public EntityUid? Release(EntityUid hive,
         TransformComponent hiveXform,
         string prototype,
         EntityUid? target,
         (EntityUid Entry, EntityUid Exit)? route,
-        EntityCoordinates? spot = null)
+        EntityCoordinates? spot = null,
+        BeeErrandKind kind = BeeErrandKind.Forage)
     {
         var bee = Spawn(prototype, hiveXform.Coordinates);
-        if (!TryComp<BeeErrandComponent>(bee, out var errand))
+        if (!HasComp<HTNComponent>(bee))
         {
+            Log.Error($"{prototype} has no {nameof(HTNComponent)} and cannot fly an errand");
             Del(bee);
             return null;
+        }
+
+        if (!TryComp<BeeErrandComponent>(bee, out var errand))
+        {
+            errand = AddComp<BeeErrandComponent>(bee);
+            errand.Kind = kind;
         }
 
         errand.Hive = hive;
@@ -175,7 +184,7 @@ public sealed partial class BeeErrandSystem
             return;
 
         var spot = _transform.ToCoordinates(grid, new MapCoordinates(hiveMap.Position + direction * distance, hiveMap.MapId));
-        if (Release(hive, xform, comp.ForagerPrototype, null, null, spot) is { } bee)
+        if (Release(hive, xform, comp.PollinatorPrototype, null, null, spot) is { } bee)
             comp.Foragers.Add(bee);
     }
 
