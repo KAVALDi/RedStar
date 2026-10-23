@@ -485,10 +485,10 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         var help = new List<string>
         {
             Loc.GetString("apiary-analyzer-feed-help-how"),
-            Loc.GetString("apiary-analyzer-feed-help-mutagen",
-                ("reagent", mutagen), ("per", $"{feeding.MutagenPerRoll:0.#}")),
-            Loc.GetString("apiary-analyzer-feed-help-jelly",
-                ("reagent", jelly), ("per", $"{feeding.JellyPerSlot:0.#}"), ("max", feeding.MaxSlots)),
+            Loc.GetString("apiary-analyzer-feed-help-mutagen", ("reagent", mutagen), ("color", ReagentColor(feeding.Mutagen)),
+                ("per", $"{feeding.MutagenPerRoll:0.#}")),
+            Loc.GetString("apiary-analyzer-feed-help-jelly", ("reagent", jelly), ("color", Color.White.ToHex()),
+                ("per", $"{feeding.JellyPerSlot:0.#}"), ("max", feeding.MaxSlots)),
             Loc.GetString(state.Totals.Sting ? "apiary-analyzer-feed-help-sting" : "apiary-analyzer-feed-help-no-sting",
                 ("cap", $"{state.PayloadCap:0.#}")),
         };
@@ -505,6 +505,14 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             HorizontalAlignment = Control.HAlignment.Right,
             StyleClasses = { StyleClass.LabelWeak },
         });
+    }
+
+    /// <summary>
+    /// The reagent's own colour, so its name in the help looks like it does in a beaker.
+    /// </summary>
+    private string ReagentColor(ProtoId<ReagentPrototype> reagent)
+    {
+        return (_proto.TryIndex(reagent, out var proto) ? proto.SubstanceColor : Color.White).ToHex();
     }
 
     private string ReagentName(ProtoId<ReagentPrototype> reagent)

@@ -42,18 +42,17 @@
                                 HorizontalExpand="True"
                                 Visible="False">
                     <BoxContainer Orientation="Vertical" Margin="0 8">
-                        <Control>
+                        <!-- The info mark sits right after the heading, so it reads as part of it. -->
+                        <BoxContainer Orientation="Horizontal" SeparationOverride="4">
                             <Label Text="{Loc apiary-analyzer-section-feeding}"
                                    StyleClasses="LabelKeyText" />
                             <TextureRect Name="FeedingHelp"
                                          TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
                                          Stretch="KeepAspectCentered"
-                                         SetSize="16 16"
-                                         HorizontalAlignment="Right"
+                                         SetSize="14 14"
                                          VerticalAlignment="Center"
-                                         Margin="0 0 6 0"
                                          MouseFilter="Stop" />
-                        </Control>
+                        </BoxContainer>
                         <GridContainer Name="Feeding"
                                        Columns="2"
                                        HorizontalExpand="True" />

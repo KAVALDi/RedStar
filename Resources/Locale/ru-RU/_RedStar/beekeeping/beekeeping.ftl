@@ -168,11 +168,11 @@ apiary-analyzer-feed-progress = { $progress } из { $per } ед.
 apiary-analyzer-feed-jelly-full = все слоты
 apiary-analyzer-feed-other = Другие реагенты
 apiary-analyzer-feed-other-no-sting = нужно жало
-apiary-analyzer-feed-help-how = [bold]Вводите шприцем в матку, которую держите в руке.[/bold]
-apiary-analyzer-feed-help-mutagen = [bold]{ CAPITALIZE($reagent) }[/bold]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
-apiary-analyzer-feed-help-jelly = [bold]{ CAPITALIZE($reagent) }[/bold]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
-apiary-analyzer-feed-help-sting = [bold]Другие реагенты[/bold]: матка с жалом вмещает до { $cap } ед. Пчёлы несут их в жале и добавляют в соты.
-apiary-analyzer-feed-help-no-sting = [bold]Другие реагенты[/bold]: их принимает только матка с жалом, до { $cap } ед.
+apiary-analyzer-feed-help-how = [color=#A88B5E]Достаньте матку из улья и вводите шприцем:[/color]
+apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
+apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
+apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: матка с жалом вмещает до { $cap } ед. Пчёлы несут их в жале и добавляют в соты.
+apiary-analyzer-feed-help-no-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: их принимает только матка с жалом, до { $cap } ед.
 apiary-analyzer-stats-plain = как у обычных пчёл
 apiary-analyzer-section-traits = Признаки
 apiary-analyzer-section-colony-traits = Признаки колонии
