@@ -1,7 +1,7 @@
 #nullable enable
 using Content.IntegrationTests.Fixtures;
-using Content.Server._RedStar.Beekeeping;
-using Content.Shared._RedStar.Beekeeping;
+using Content.Server._RedStar.Beekeeping.Systems;
+using Content.Shared._RedStar.Beekeeping.Components;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Maths;

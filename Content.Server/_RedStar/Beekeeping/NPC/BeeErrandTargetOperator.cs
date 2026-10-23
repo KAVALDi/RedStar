@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Content.Server.NPC;
 using Content.Server.NPC.HTN.PrimitiveTasks;
+using Content.Server._RedStar.Beekeeping.Systems;
 
 namespace Content.Server._RedStar.Beekeeping.NPC;
 
