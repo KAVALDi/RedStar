@@ -131,6 +131,15 @@ public sealed partial class BeeErrandSystem
         }
 
         errand.Hive = hive;
+
+        // A bee that can be held already is its colony's bee in the air: it carries the traits and knows its hive, so
+        // the analyzer reads it like one in a hand.
+        if (TryComp<BeeItemComponent>(bee, out var item) && TryComp<BeehiveComponent>(hive, out var hiveComp))
+        {
+            item.SourceHive = hive;
+            _queen.GiveTraits((hive, hiveComp), (bee, item));
+        }
+
         errand.Target = target;
         errand.Spot = spot;
         errand.VentEntry = route?.Entry;
