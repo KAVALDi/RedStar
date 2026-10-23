@@ -1,6 +1,6 @@
-using Robust.Client.GameObjects;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Visuals;
+using Robust.Client.GameObjects;
 
 namespace Content.Client._RedStar.Beekeeping.Visuals;
 

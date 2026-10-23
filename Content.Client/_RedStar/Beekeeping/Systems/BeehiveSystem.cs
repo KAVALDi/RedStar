@@ -1,5 +1,5 @@
-using Robust.Client.GameObjects;
 using Content.Shared._RedStar.Beekeeping.Systems;
+using Robust.Client.GameObjects;
 
 namespace Content.Client._RedStar.Beekeeping.Systems;
 

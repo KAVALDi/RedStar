@@ -1,7 +1,7 @@
-using Robust.Shared.Prototypes;
-using Robust.Shared.Serialization;
 using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Robust.Shared.Prototypes;
+using Robust.Shared.Serialization;
 
 namespace Content.Shared._RedStar.Beekeeping.UI;
 
