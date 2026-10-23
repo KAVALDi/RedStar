@@ -1,6 +1,6 @@
+using Content.Shared._RedStar.Beekeeping.Systems;
 using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
-using Content.Shared._RedStar.Beekeeping.Systems;
 
 namespace Content.Shared._RedStar.Beekeeping.Components;
 

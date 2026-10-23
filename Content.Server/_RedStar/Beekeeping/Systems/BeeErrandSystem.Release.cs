@@ -1,6 +1,7 @@
 using Content.Server.NPC.HTN;
 using Content.Server.NPC.Systems;
 using Content.Server._RedStar.Beekeeping.Components;
+using Content.Server._RedStar.Beekeeping.Data;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
@@ -11,6 +12,7 @@ using Content.Shared.Popups;
 using Content.Shared.Tools.Systems;
 using Content.Shared._RedStar.Beekeeping;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Configuration;

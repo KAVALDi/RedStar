@@ -2,6 +2,7 @@ using Content.Shared.DoAfter;
 using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Events;
 using Content.Shared._RedStar.Beekeeping.UI;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Containers;

@@ -1,3 +1,6 @@
+using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Events;
+using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Random;
 using Content.Shared.Destructible;
 using Content.Server.Construction;
@@ -6,9 +9,6 @@ using Content.Shared.Chemistry.Components;
 using Content.Shared.DoAfter;
 using Content.Shared.Popups;
 using Content.Shared.Stacks;
-using Content.Shared._RedStar.Beekeeping.Components;
-using Content.Shared._RedStar.Beekeeping.Events;
-using Content.Shared._RedStar.Beekeeping.Visuals;
 using Robust.Shared.Containers;
 
 namespace Content.Server._RedStar.Beekeeping.Systems;

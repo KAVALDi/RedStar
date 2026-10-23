@@ -9,6 +9,7 @@ using Content.Shared.Damage.Systems;
 using Content.Shared.Inventory;
 using Content.Shared.NPC.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Robust.Shared.GameObjects;
 
 namespace Content.IntegrationTests.Tests._RedStar.Beekeeping;

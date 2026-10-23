@@ -7,6 +7,7 @@ using Content.Shared.Damage.Components;
 using Content.Shared.Humanoid;
 using Content.Shared.Damage.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.UI;

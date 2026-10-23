@@ -4,7 +4,7 @@ using Content.Server.Atmos.Piping.Unary.Components;
 using Content.Shared.Mobs.Components;
 using Content.Shared.NodeContainer;
 using Content.Shared.Tools.Systems;
-using Content.Shared._RedStar.Beekeeping.Components;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
 

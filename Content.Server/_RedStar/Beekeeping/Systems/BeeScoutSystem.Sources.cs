@@ -1,9 +1,9 @@
+using Content.Server._RedStar.Beekeeping.Data;
 using Content.Shared.Botany.Components;
 using Content.Shared.Whitelist;
 using Content.Shared._RedStar.Beekeeping.Components;
-using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Systems;
-using Content.Shared._RedStar.Beekeeping.UI;
 using Robust.Shared.Map;
 using Robust.Shared.Random;
 
@@ -28,7 +28,6 @@ public sealed partial class BeeScoutSystem
     [Dependency] private EntityQuery<PlantTrayComponent> _trayQuery;
 
     private readonly HashSet<Entity<PlantTrayComponent>> _foundTrays = new();
-
 
     #region Known places
 
@@ -250,27 +249,4 @@ public sealed partial class BeeScoutSystem
     }
 
     #endregion
-}
-
-public enum BeeSourceCheck : byte
-{
-    /// <summary>
-    /// The tray is gone. The record is deleted.
-    /// </summary>
-    Invalid,
-
-    /// <summary>
-    /// No living plant in the tray, the tray is too far, out of sight, inside something or on another grid.
-    /// </summary>
-    Inactive,
-
-    /// <summary>
-    /// A living plant that does not give nectar yet.
-    /// </summary>
-    Unripe,
-
-    /// <summary>
-    /// A ripe plant: a visit brings nectar.
-    /// </summary>
-    Ripe,
 }
