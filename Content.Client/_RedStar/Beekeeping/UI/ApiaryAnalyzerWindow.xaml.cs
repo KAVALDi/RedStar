@@ -166,9 +166,11 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         BeeInfo.RemoveAllChildren();
         if (state.HasQueen)
             AddQueenRows(state);
+        // The bees at home, with the ones out (foragers, angry bees) in brackets: those out still belong to the colony
+        // until they are lost, but a hive that just let its bees out should not look full.
         Bees.Update(Loc.GetString("apiary-analyzer-bees"),
-            $"{state.Bees + state.OutBees} / {state.MaxBees}",
-            progress: state.MaxBees > 0 ? (float) (state.Bees + state.OutBees) / state.MaxBees : 0f);
+            (state.OutBees > 0 ? $"{state.Bees} (+{state.OutBees})" : $"{state.Bees}") + $" / {state.MaxBees}",
+            progress: state.MaxBees > 0 ? (float) state.Bees / state.MaxBees : 0f);
         Nectar.Update(Loc.GetString("apiary-analyzer-nectar"),
             $"{state.Nectar:0.#} / {state.MaxNectar:0.#}",
             progress: state.MaxNectar > 0f ? state.Nectar / state.MaxNectar : 0f);
