@@ -27,8 +27,7 @@ using Robust.Shared.Timing;
 namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
-/// Letting bees out: the hive's foragers and scout, a loitering bee, an angry bee sent home, and the limits on how many
-/// are out.
+/// Letting bees out: the hive's foragers and scout, an angry bee sent home, and the limits on how many are out.
 /// </summary>
 public sealed partial class BeeErrandSystem
 {
@@ -150,53 +149,6 @@ public sealed partial class BeeErrandSystem
         _watchers.Clear();
         _lookup.GetEntitiesInRange(coordinates, WatchRange, _watchers);
         return _watchers.Count > 0;
-    }
-
-    /// <summary>
-    /// Now and then, while someone is near and a worker is free, one flies a short loop around the hive and back in;
-    /// much more often when a swarm is coming. It is only something to look at: the colony loses nothing by it, unless
-    /// the bee is killed.
-    /// </summary>
-    public void UpdateLoiter(Entity<BeehiveComponent> hive, bool restless)
-    {
-        var comp = hive.Comp;
-        var now = _timing.CurTime;
-
-        // A colony that has just got its queen settles in first: no bee circles the hive the moment she goes in.
-        if (comp.NextLoiter == TimeSpan.Zero)
-        {
-            comp.NextLoiter = now + comp.LoiterInterval * (0.5 + _random.NextDouble());
-            return;
-        }
-
-        if (now < comp.NextLoiter)
-            return;
-
-        // Before a swarm the bees are restless and circle the hive much more often.
-        var interval = comp.LoiterInterval * (0.5 + _random.NextDouble());
-        comp.NextLoiter = now + (restless ? interval / Math.Max(1f, comp.RestlessLoiter) : interval);
-        var xform = Transform(hive);
-        comp.Foragers.RemoveAll(f => TerminatingOrDeleted(f));
-        if (SharedBeehiveSystem.WorkersAtHome(comp) <= 0 ||
-            comp.Foragers.Count >= comp.MaxForagers ||
-            xform.GridUid is not { } grid ||
-            !SomeoneWatching(xform.Coordinates) ||
-            !AreaHasRoom(xform.Coordinates))
-        {
-            return;
-        }
-
-        // A spot a little way off in a random direction that the bee can fly to in a straight line.
-        var hiveMap = _transform.GetMapCoordinates(hive, xform);
-        var angle = _random.NextFloat() * MathF.Tau;
-        var direction = new System.Numerics.Vector2(MathF.Cos(angle), MathF.Sin(angle));
-        var distance = Math.Min(LoiterRange, _scout.FreeFlight(hiveMap, direction, LoiterRange, hive) - 0.3f);
-        if (distance < 0.8f)
-            return;
-
-        var spot = _transform.ToCoordinates(grid, new MapCoordinates(hiveMap.Position + direction * distance, hiveMap.MapId));
-        if (Release(hive, xform, comp.PollinatorPrototype, null, null, spot) is { } bee)
-            comp.Foragers.Add(bee);
     }
 
     /// <summary>

@@ -48,14 +48,14 @@
                                        Columns="2"
                                        HorizontalExpand="True" />
                     </BoxContainer>
-                    <!-- In the corner of the panel, like the info mark of the nectar bar. -->
+                    <!-- In the very corner of the panel: the negative margin reaches past its padding. -->
                     <TextureRect Name="FeedingHelp"
                                  TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
                                  Stretch="KeepAspectCentered"
                                  SetSize="16 16"
                                  HorizontalAlignment="Right"
                                  VerticalAlignment="Top"
-                                 Margin="0 6 6 0"
+                                 Margin="0 5 -7 0"
                                  MouseFilter="Stop" />
                 </PanelContainer>
 

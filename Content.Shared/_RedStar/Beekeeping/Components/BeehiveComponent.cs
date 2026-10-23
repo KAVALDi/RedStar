@@ -716,22 +716,6 @@ public sealed partial class BeehiveComponent : Component
     public List<(EntityUid Tray, TimeSpan At)> PendingForagers = new();
 
     /// <summary>
-    /// While someone is near and a worker is free, one flies a short loop around the hive this often, so a working hive
-    /// looks alive. Purely to look at.
-    /// </summary>
-    [DataField]
-    public TimeSpan LoiterInterval = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// Before a swarm the hive is restless: bees loiter around it this much more often.
-    /// </summary>
-    [DataField]
-    public float RestlessLoiter = 4f;
-
-    [ViewVariables]
-    public TimeSpan NextLoiter;
-
-    /// <summary>
     /// A forager or the scout hit by someone: the hive sends angry bees after them, at most this often.
     /// </summary>
     [DataField]
