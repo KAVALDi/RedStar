@@ -227,7 +227,7 @@ public sealed partial class BeeScoutSystem
                     comp.VisitBudget -= 1f;
                     var totals = _hive.GetHiveTotals(hive);
                     _hive.AddNectar(hive, comp.NectarPerVisit * totals.NectarPerVisit);
-                    // A generous colony's worker sometimes leaves the plant pollinated, as a bee in hand does.
+                    // A bountiful colony's worker sometimes leaves the plant pollinated, as a bee in hand does.
                     if (totals.FlightPollination > 0f && _random.Prob(Math.Min(1f, totals.FlightPollination)) &&
                         GetLivingPlant(_trayQuery.Comp(source.Tray)) is { } pollinated &&
                         _items.FlightPollinate(pollinated))

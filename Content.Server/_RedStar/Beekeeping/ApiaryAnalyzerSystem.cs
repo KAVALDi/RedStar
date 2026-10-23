@@ -139,8 +139,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         state.Nectar = comp.Nectar;
         state.MaxNectar = comp.MaxNectar;
         state.HasEgg = comp.HasEgg;
-        if (_swarm.SwarmComing(hive))
-            state.SwarmIn = (float) Math.Max(0, (comp.EggDiesAt - _timing.CurTime).TotalSeconds);
+        state.SwarmComing = _swarm.SwarmComing(hive);
         state.NectarUse = _beehive.GetNectarUse(hive);
         state.BroodGoing = _beehive.IsBroodGoing(hive);
         // Bees back home are gone from the world but stay in the list until the next take-off clears it.

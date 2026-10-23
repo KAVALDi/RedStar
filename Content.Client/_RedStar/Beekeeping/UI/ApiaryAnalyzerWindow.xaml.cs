@@ -225,10 +225,8 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         BeesHome.Text = state.Bees.ToString();
         NewBee.Text = Loc.GetString(state.BroodGoing ? "apiary-analyzer-brood-going" : "apiary-analyzer-brood-stopped");
         Queen.Text = Loc.GetString(state.HasQueen ? "apiary-analyzer-yes" : "apiary-analyzer-no");
-        Egg.Text = state.SwarmIn >= 0f
-            ? Loc.GetString("apiary-analyzer-egg-swarm", ("minutes", (int) MathF.Ceiling(state.SwarmIn / 60f)))
-            : Loc.GetString(state.HasEgg ? "apiary-analyzer-yes" : "apiary-analyzer-no");
-        Egg.FontColorOverride = state.SwarmIn >= 0f ? Color.Orange : null;
+        Egg.Text = Loc.GetString(state.HasEgg ? "apiary-analyzer-yes" : "apiary-analyzer-no");
+        Egg.FontColorOverride = state.SwarmComing ? Color.Orange : null;
         Foraging.Text = state.Foraging.ToString();
 
         // A wild hive builds its combs right inside, with no frames; a meat one lists what it holds instead.

@@ -105,12 +105,12 @@ public sealed class ApiaryAnalyzerTest : GameTest
             Assert.That(slots.TryInsert(hive, comp.FrameSlots[0], server.EntMan.SpawnEntity("BeeFrame", map.GridCoords), null));
             Assert.That(slots.TryInsert(hive, comp.QueenSlot, queen, null));
             comp.Bees = comp.SwarmMinBees;
-            Assert.That(analyzer.BuildState(hive)!.SwarmIn, Is.LessThan(0f), "no egg, no swarm");
+            Assert.That(analyzer.BuildState(hive)!.SwarmComing, Is.False, "no egg, no swarm");
 
             comp.HasEgg = true;
             comp.EggDiesAt = server.Timing.CurTime + TimeSpan.FromMinutes(2);
             Assert.That(server.System<BeeSwarmSystem>().SwarmComing((hive, comp)));
-            Assert.That(analyzer.BuildState(hive)!.SwarmIn, Is.InRange(110f, 120f));
+            Assert.That(analyzer.BuildState(hive)!.SwarmComing);
         });
     }
 }

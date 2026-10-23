@@ -30,7 +30,7 @@ beekeeping-hive-examine-dying = [color=red]Колония без матки вы
 beekeeping-hive-examine-scout-outside = Разведчица вне улья.
 beekeeping-hive-examine-scout-lost = Улей потерял разведчицу. Новая появится через { $minutes } мин { $seconds } с.
 beekeeping-hive-examine-scout-lost-grow = Улей потерял разведчицу. Новая появится, когда колония подрастёт.
-beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, скоро часть колонии улетит роем.[/color]
+beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, примерно через { $minutes } мин часть колонии улетит роем.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Водяной пар успокаивает пчёл.[/color]
 beekeeping-hive-examine-paused = [color=orange]Пчёлы затихли: { $reason ->
     [Vacuum] здесь нечем дышать
@@ -197,7 +197,6 @@ apiary-analyzer-bees-home = Дома
 apiary-analyzer-new-bee = Потомство
 apiary-analyzer-queen = Матка
 apiary-analyzer-egg = Яйцо
-apiary-analyzer-egg-swarm = есть, роение примерно через { $minutes } мин
 apiary-analyzer-yes = есть
 apiary-analyzer-no = нет
 apiary-analyzer-frames-none = Рамок нет.
@@ -302,8 +301,8 @@ beekeeping-trait-hidden-desc = Его ещё никто не видел в де�
 beekeeping-trait-revealed = Пчёлы проявили признак: { $trait }.
 beekeeping-queen-trait-gained-hidden = В матке что-то изменилось: у неё новый признак, и пока никто не знает какой.
 beekeeping-queen-trait-replaced-hidden = В матке что-то изменилось: она потеряла признак ({ $old }) и получила новый, пока неизвестный.
-bee-trait-generous-foragers = Щедрые сборщицы
-bee-trait-generous-foragers-desc = Визит рабочей к спелому растению иногда повышает его следующий урожай, как пчела в руке.
+bee-trait-bountiful = Урожайные пчёлы
+bee-trait-bountiful-desc = Визит рабочей к спелому растению иногда повышает его следующий урожай, как пчела в руке.
 bee-trait-frost-hardy = Морозостойкость
 bee-trait-frost-hardy-desc = Пчёлы работают в воздухе на 30 K холоднее обычного.
 bee-trait-heat-hardy = Жаростойкость

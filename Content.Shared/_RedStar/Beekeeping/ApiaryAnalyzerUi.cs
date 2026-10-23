@@ -127,10 +127,9 @@ public sealed class ApiaryAnalyzerState : BoundUserInterfaceState
     public bool HasEgg;
 
     /// <summary>
-    /// A swarm is coming: seconds until the egg dies and the old queen leaves, unless the jelly is collected. Negative
-    /// when no swarm is coming.
+    /// The egg will turn into a swarm unless the jelly is collected.
     /// </summary>
-    public float SwarmIn = -1f;
+    public bool SwarmComing;
     public List<ApiaryFrameData> Frames = new();
     public List<ApiaryTrayData> Trays = new();
 

@@ -30,7 +30,7 @@ beekeeping-hive-examine-dying = [color=red]Without a queen the colony is dying o
 beekeeping-hive-examine-scout-outside = The scout is out of the hive.
 beekeeping-hive-examine-scout-lost = The hive lost its scout. A new one in { $minutes } min { $seconds } s.
 beekeeping-hive-examine-scout-lost-grow = The hive lost its scout. A new one comes once the colony grows.
-beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off soon.[/color]
+beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off in about { $minutes } min.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Water vapor keeps the bees calm.[/color]
 beekeeping-hive-examine-paused = [color=orange]The bees have gone quiet: { $reason ->
     [Vacuum] there is no air to breathe
@@ -196,7 +196,6 @@ apiary-analyzer-bees-home = Home
 apiary-analyzer-new-bee = Brood
 apiary-analyzer-queen = Queen
 apiary-analyzer-egg = Egg
-apiary-analyzer-egg-swarm = yes, a swarm in about { $minutes } min
 apiary-analyzer-yes = yes
 apiary-analyzer-no = no
 apiary-analyzer-frames-none = No frames.
@@ -301,8 +300,8 @@ beekeeping-trait-hidden-desc = Nobody has seen it at work yet. It shows itself i
 beekeeping-trait-revealed = The bees show a trait: { $trait }.
 beekeeping-queen-trait-gained-hidden = Something changed in the queen: she has a new trait, and nobody knows yet what it is.
 beekeeping-queen-trait-replaced-hidden = Something changed in the queen: she lost a trait ({ $old }) and got a new one nobody knows yet.
-bee-trait-generous-foragers = Generous foragers
-bee-trait-generous-foragers-desc = A worker's visit to a ripe plant sometimes raises its next harvest, as a bee in hand does.
+bee-trait-bountiful = Bountiful bees
+bee-trait-bountiful-desc = A worker's visit to a ripe plant sometimes raises its next harvest, as a bee in hand does.
 bee-trait-frost-hardy = Frost-hardy
 bee-trait-frost-hardy-desc = The bees keep working in air 30 K colder than usual.
 bee-trait-heat-hardy = Heat-hardy

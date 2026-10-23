@@ -560,7 +560,10 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
                 PushScoutLine(comp, ref args);
 
             if (_swarm.SwarmComing(ent))
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming"));
+            {
+                var minutes = (int) Math.Ceiling(Math.Max(0, (comp.EggDiesAt - Timing.CurTime).TotalMinutes));
+                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming", ("minutes", minutes)));
+            }
 
             if (InCalmingVapor(ent, comp))
                 args.PushMarkup(Loc.GetString("beekeeping-hive-examine-vapor"));

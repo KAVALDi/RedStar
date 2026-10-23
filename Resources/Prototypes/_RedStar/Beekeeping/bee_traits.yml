@@ -212,10 +212,10 @@
 
 # A worker's visit to a ripe plant sometimes raises its next harvest, as a bee in hand does.
 - type: beeTrait
-  id: GenerousForagers
+  id: Bountiful
   reveal: FlightPollination
-  name: bee-trait-generous-foragers
-  description: bee-trait-generous-foragers-desc
+  name: bee-trait-bountiful
+  description: bee-trait-bountiful-desc
   color: "#9CCC65"
   flightPollination: 0.3
 

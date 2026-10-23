@@ -87,7 +87,7 @@ public sealed class TraitDiscoveryTest : GameTest
 
             Assert.Multiple(() =>
             {
-                Assert.That(Of("GenerousForagers").FlightPollination, Is.GreaterThan(0f));
+                Assert.That(Of("Bountiful").FlightPollination, Is.GreaterThan(0f));
                 Assert.That(Of("FrostHardy").ColdTolerance, Is.EqualTo(30f));
                 Assert.That(Of("HeatHardy").HeatTolerance, Is.EqualTo(30f));
                 Assert.That(Of("Calm").AngryPerHit, Is.EqualTo(-1));
