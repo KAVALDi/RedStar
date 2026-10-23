@@ -551,7 +551,14 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         heading.Label.FontColorOverride = color;
         var text = new RichTextLabel();
         text.SetMessage(FormattedMessage.FromUnformatted(description));
-        var entry = new Collapsible(heading, new CollapsibleBody { Children = { text } })
+
+        // A click on the description folds it as well as one on the name.
+        var textButton = new ContainerButton
+        {
+            ToolTip = Loc.GetString("apiary-analyzer-trait-fold"),
+            Children = { text },
+        };
+        var entry = new Collapsible(heading, new CollapsibleBody { Children = { textButton } })
         {
             BodyVisible = !_foldedTraits.Contains(key),
             HorizontalExpand = true,
@@ -563,6 +570,11 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
                 _foldedTraits.Remove(key);
             else
                 _foldedTraits.Add(key);
+        };
+        textButton.OnPressed += _ =>
+        {
+            _foldedTraits.Add(key);
+            entry.BodyVisible = false;
         };
 
         return new PanelContainer

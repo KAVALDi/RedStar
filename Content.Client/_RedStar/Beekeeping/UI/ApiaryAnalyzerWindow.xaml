@@ -42,21 +42,21 @@
                                 HorizontalExpand="True"
                                 Visible="False">
                     <BoxContainer Orientation="Vertical" Margin="0 8">
-                        <!-- The info mark sits right after the heading, so it reads as part of it. -->
-                        <BoxContainer Orientation="Horizontal" SeparationOverride="4">
-                            <Label Text="{Loc apiary-analyzer-section-feeding}"
-                                   StyleClasses="LabelKeyText" />
-                            <TextureRect Name="FeedingHelp"
-                                         TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
-                                         Stretch="KeepAspectCentered"
-                                         SetSize="14 14"
-                                         VerticalAlignment="Center"
-                                         MouseFilter="Stop" />
-                        </BoxContainer>
+                        <Label Text="{Loc apiary-analyzer-section-feeding}"
+                               StyleClasses="LabelKeyText" />
                         <GridContainer Name="Feeding"
                                        Columns="2"
                                        HorizontalExpand="True" />
                     </BoxContainer>
+                    <!-- In the corner of the panel, like the info mark of the nectar bar. -->
+                    <TextureRect Name="FeedingHelp"
+                                 TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
+                                 Stretch="KeepAspectCentered"
+                                 SetSize="16 16"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Margin="0 6 6 0"
+                                 MouseFilter="Stop" />
                 </PanelContainer>
 
                 <PanelContainer StyleClasses="BackgroundPanel"
