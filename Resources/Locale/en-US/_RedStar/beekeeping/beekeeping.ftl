@@ -163,8 +163,8 @@ beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young quee
 apiary-analyzer-section-feeding = What to inject
 apiary-analyzer-feed-mutagen = Mutagen
 apiary-analyzer-feed-jelly = Royal jelly
-apiary-analyzer-feed-mutagen-gives = new trait
-apiary-analyzer-feed-jelly-gives = trait slot
+apiary-analyzer-feed-mutagen-gives = { $per } u = a trait
+apiary-analyzer-feed-jelly-gives = { $per } u = a slot
 apiary-analyzer-feed-left = { $left } u to go
 apiary-analyzer-feed-progress = { $progress } of { $per } u
 apiary-analyzer-feed-jelly-full = all slots

@@ -476,13 +476,13 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         AddFeedingRow(Loc.GetString("apiary-analyzer-feed-mutagen"),
             feeding.MutagenProgress > 0f
                 ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.MutagenPerRoll - feeding.MutagenProgress:0.#}"))
-                : Loc.GetString("apiary-analyzer-feed-mutagen-gives"));
+                : Loc.GetString("apiary-analyzer-feed-mutagen-gives", ("per", $"{feeding.MutagenPerRoll:0.#}")));
         AddFeedingRow(Loc.GetString("apiary-analyzer-feed-jelly"),
             state.Slots >= feeding.MaxSlots
                 ? Loc.GetString("apiary-analyzer-feed-jelly-full")
                 : feeding.JellyProgress > 0f
                     ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.JellyPerSlot - feeding.JellyProgress:0.#}"))
-                    : Loc.GetString("apiary-analyzer-feed-jelly-gives"));
+                    : Loc.GetString("apiary-analyzer-feed-jelly-gives", ("per", $"{feeding.JellyPerSlot:0.#}")));
         AddFeedingRow(Loc.GetString("apiary-analyzer-feed-other"), state.Totals.Sting
             ? Loc.GetString("apiary-analyzer-feed-progress",
                 ("progress", $"{state.Payload:0.#}"), ("per", $"{state.PayloadCap:0.#}"))
