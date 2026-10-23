@@ -143,7 +143,10 @@ public sealed partial class BeehiveSystem
         _queen.GiveTraits(ent, (bee, item));
         item.CountedOutside = true;
 
+        // With no free hand it lands on the floor and flies straight back in.
         _hands.PickupOrDrop(args.User, bee);
+        if (!_container.IsEntityInContainer(bee))
+            _errands.FlyHome((bee, item));
         UpdateAmbience(ent);
         _popup.PopupEntity(Loc.GetString(args.Role == BeeRole.Scout
             ? "beekeeping-take-scout-done"

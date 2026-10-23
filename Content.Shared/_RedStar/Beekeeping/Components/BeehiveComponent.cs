@@ -441,18 +441,6 @@ public sealed partial class BeehiveComponent : Component
     public int MaxForagers = 3;
 
     /// <summary>
-    /// The visible forager bee.
-    /// </summary>
-    [DataField]
-    public EntProtoId ForagerPrototype = "BeeForager";
-
-    /// <summary>
-    /// The scout flying to the trays it found and back.
-    /// </summary>
-    [DataField]
-    public EntProtoId ScoutFlyerPrototype = "BeeScoutFlyer";
-
-    /// <summary>
     /// The scout in the air right now, if it is flying.
     /// </summary>
     [ViewVariables]
@@ -463,13 +451,13 @@ public sealed partial class BeehiveComponent : Component
     #region Bees in hand
 
     /// <summary>
-    /// The item a scout becomes when taken out.
+    /// The scout, flying out to the trays it found or taken out by hand.
     /// </summary>
     [DataField]
     public EntProtoId ScoutPrototype = "BeeScout";
 
     /// <summary>
-    /// The item a pollinator becomes when taken out.
+    /// A worker, flying out to a tray or taken out by hand.
     /// </summary>
     [DataField]
     public EntProtoId PollinatorPrototype = "BeePollinator";
