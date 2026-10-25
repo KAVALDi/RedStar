@@ -23,7 +23,6 @@ using Content.Shared.Examine;
 using Content.Shared.Destructible;
 using Content.Shared.Damage.Systems;
 using Content.Shared.CombatMode.Pacification;
-using Content.Shared.Chemistry.EntitySystems;
 using Content.Shared.Chemistry.Components;
 using Content.Shared.Body.Systems;
 using Content.Server.Stack;
