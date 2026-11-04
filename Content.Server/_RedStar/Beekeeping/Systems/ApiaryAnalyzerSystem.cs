@@ -1,16 +1,16 @@
 using System.Linq;
 using Content.Server.Destructible;
-using Content.Shared.Botany.Components;
-using Content.Shared.Chemistry.Components;
-using Content.Shared.Chemistry.EntitySystems;
-using Content.Shared.Damage.Components;
-using Content.Shared.Humanoid;
-using Content.Shared.Damage.Systems;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
 using Content.Shared._RedStar.Beekeeping.Systems;
 using Content.Shared._RedStar.Beekeeping.UI;
+using Content.Shared.Botany.Components;
+using Content.Shared.Chemistry.Components;
+using Content.Shared.Chemistry.EntitySystems;
+using Content.Shared.Damage.Components;
+using Content.Shared.Damage.Systems;
+using Content.Shared.Humanoid;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Timing;
 
@@ -169,7 +169,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
                     Frame = GetNetEntity(frame),
                     Prototype = MetaData(frame).EntityPrototype?.ID,
                     Combs = frame.Comp.Combs,
-                    MaxCombs = frame.Comp.MaxCombs,
+                    MaxCombs = frame.Comp.MaxCombs
                 });
             }
         }
@@ -212,7 +212,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
                 Tray = GetNetEntity(source.Tray),
                 Plant = plant is { } p ? GetNetEntity(p) : null,
                 PlantPrototype = plant is { } named ? MetaData(named).EntityPrototype?.ID : null,
-                State = _scout.GetTrayState(hive, source),
+                State = _scout.GetTrayState(hive, source)
             });
         }
 
@@ -220,9 +220,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         {
             var max = _destructible.DestroyedAt(hive).Float();
             state.MaxHealth = max;
-#pragma warning disable CS0618
             state.Health = Math.Max(0f, max - _damageable.GetTotalDamage((hive, damageable)).Float());
-#pragma warning restore CS0618
         }
     }
 
