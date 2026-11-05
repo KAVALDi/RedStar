@@ -281,6 +281,10 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
                 continue;
             }
 
+            // A bee spawned by hand, not by its hive, starts its time on its first tick.
+            if (angry.ReturnAt == TimeSpan.Zero)
+                angry.ReturnAt = now + angry.Lifetime;
+
             if (now < angry.ReturnAt)
                 continue;
 
@@ -290,12 +294,6 @@ public sealed partial class AngryBeehiveSystem : EntitySystem
             else
                 QueueDel(uid);
         }
-    }
-
-    [SubscribeLocalEvent]
-    private void OnAngryBeeMapInit(Entity<BeehiveAngryBeeComponent> ent, ref MapInitEvent args)
-    {
-        ent.Comp.ReturnAt = _timing.CurTime + ent.Comp.Lifetime;
     }
 
     /// <summary>

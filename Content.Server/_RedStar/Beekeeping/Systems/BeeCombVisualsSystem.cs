@@ -7,20 +7,13 @@ using Robust.Shared.Prototypes;
 namespace Content.Server._RedStar.Beekeeping.Systems;
 
 /// <summary>
-/// Keeps a honeycomb's tint in step with the reagents in it: how much of it is not honey, and their mixed color.
+/// Keeps a honeycomb's tint in step with the reagents in it: how much of it is not honey, and their mixed color. A new
+/// comb keeps the honey colors of its prototype until something else is added to it.
 /// </summary>
 public sealed partial class BeeCombVisualsSystem : EntitySystem
 {
     [Dependency] private IPrototypeManager _proto = default!;
     [Dependency] private SharedAppearanceSystem _appearance = default!;
-    [Dependency] private SharedSolutionContainerSystem _solutions = default!;
-
-    [SubscribeLocalEvent]
-    private void OnMapInit(Entity<BeeCombVisualsComponent> ent, ref MapInitEvent args)
-    {
-        if (_solutions.TryGetSolution(ent.Owner, ent.Comp.Solution, out _, out var solution))
-            Update(ent, solution);
-    }
 
     [SubscribeLocalEvent]
     private void OnSolutionChanged(Entity<BeeCombVisualsComponent> ent, ref SolutionChangedEvent args)

@@ -71,12 +71,6 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
     }
 
     [SubscribeLocalEvent]
-    private void OnFrameMapInit(Entity<BeeFrameComponent> ent, ref MapInitEvent args)
-    {
-        UpdateFrameAppearance(ent);
-    }
-
-    [SubscribeLocalEvent]
     private void OnInserted(Entity<BeehiveComponent> ent, ref EntInsertedIntoContainerMessage args)
     {
         var id = args.Container.ID;
