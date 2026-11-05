@@ -222,7 +222,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             Text = value,
             FontColorOverride = color,
             HorizontalExpand = true,
-            HorizontalAlignment = Control.HAlignment.Right,
+            HorizontalAlignment = Control.HAlignment.Right
         };
         if (color == null)
             label.StyleClasses.Add(StyleClass.LabelWeak);
@@ -238,7 +238,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         // A meat colony lives on blood; the usual one does not need a line.
         if (state.Diet == BeehiveDiet.Meat)
             AddRow(BeeInfo, "apiary-analyzer-row-diet", Loc.GetString("apiary-analyzer-diet-meat"), Color.Crimson);
-        // The bees at home, with the ones out (foragers, angry bees) in brackets: those out still belong to the colony
+        // The bees at home, with the ones out (foragers, angry bees, bees in hands) in brackets: those out still belong to the colony
         // until they are lost, but a hive that just let its bees out should not look full.
         Bees.Update(Loc.GetString("apiary-analyzer-bees"),
             (state.OutBees > 0 ? $"{state.Bees} (+{state.OutBees})" : $"{state.Bees}") + $" / {state.MaxBees}",
@@ -257,8 +257,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
                 $"{state.Nectar:0.#} / {state.MaxNectar:0.#}",
                 progress: state.MaxNectar > 0f ? state.Nectar / state.MaxNectar : 0f);
             // Most of the time the stock stays low because it is spent at once: the info mark says what it goes into.
-            _nectarHelp = FormattedMessage.FromMarkupPermissive(
-                Loc.GetString($"apiary-analyzer-nectar-{state.NectarUse.ToString().ToLowerInvariant()}"));
+            _nectarHelp = FormattedMessage.FromMarkupPermissive(Loc.GetString(NectarUseText(state.NectarUse)));
         }
         Combs.Update(Loc.GetString("apiary-analyzer-combs"),
             $"{state.Combs} / {state.MaxCombs}",
@@ -293,7 +292,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             {
                 Orientation = BoxContainer.LayoutOrientation.Horizontal,
                 SeparationOverride = 8,
-                ToolTip = frame.Prototype is { } proto && _proto.TryIndex(proto, out var entity) ? entity.Name : null,
+                ToolTip = frame.Prototype is { } proto && _proto.TryIndex(proto, out var entity) ? entity.Name : null
             };
             var picture = new SpriteView { SetSize = new Vector2(32, 32), OverrideDirection = Direction.South };
             if (_entityManager.TryGetEntity(frame.Frame, out var frameUid) && _entityManager.EntityExists(frameUid))
@@ -303,7 +302,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             {
                 Text = Loc.GetString("apiary-analyzer-frame-combs", ("combs", frame.Combs), ("max", frame.MaxCombs)),
                 VerticalAlignment = VAlignment.Center,
-                StyleClasses = { StyleClass.LabelWeak },
+                StyleClasses = { StyleClass.LabelWeak }
             });
             Frames.AddChild(row);
         }
@@ -325,7 +324,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             Trays.AddChild(new PanelContainer
             {
                 StyleClasses = { stripe++ % 2 == 0 ? StyleClass.Panel : StyleClass.PanelDark },
-                Children = { TrayRow(tray, name) },
+                Children = { TrayRow(tray, name) }
             });
         }
     }
@@ -350,6 +349,25 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         return msg;
     }
 
+    /// <summary>
+    /// What the nectar goes into, as the locale string that says so. Spelled out, not built from the enum name: a
+    /// string made at run time cannot be found by searching for it or flagged when it is unused.
+    /// </summary>
+    private static string NectarUseText(ApiaryNectarUse use)
+    {
+        return use switch
+        {
+            ApiaryNectarUse.Idle => "apiary-analyzer-nectar-idle",
+            ApiaryNectarUse.Bees => "apiary-analyzer-nectar-bees",
+            ApiaryNectarUse.BeesAndCombs => "apiary-analyzer-nectar-beesandcombs",
+            ApiaryNectarUse.Combs => "apiary-analyzer-nectar-combs",
+            ApiaryNectarUse.FramesFull => "apiary-analyzer-nectar-framesfull",
+            ApiaryNectarUse.NoWorkers => "apiary-analyzer-nectar-noworkers",
+            ApiaryNectarUse.NoFrames => "apiary-analyzer-nectar-noframes",
+            _ => "apiary-analyzer-nectar-idle"
+        };
+    }
+
     private string TrayName(ApiaryTrayData tray)
     {
         if (tray.Creature)
@@ -371,7 +389,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         {
             Orientation = BoxContainer.LayoutOrientation.Horizontal,
             SeparationOverride = 8,
-            Margin = new Thickness(4, 2),
+            Margin = new Thickness(4, 2)
         };
 
         // A bar on the left: green for a ripe plant, yellow while it grows, red for nothing the workers can reach.
@@ -379,7 +397,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         {
             ApiaryTrayState.Ripe => (Color.FromHex("#98C379"), tray.Creature ? "apiary-analyzer-creature-ripe" : "apiary-analyzer-tray-ripe"),
             ApiaryTrayState.Growing => (Color.FromHex("#E5C07B"), "apiary-analyzer-tray-growing"),
-            _ => (Color.FromHex("#E06C75"), tray.Creature ? "apiary-analyzer-creature-blind" : "apiary-analyzer-tray-blind"),
+            _ => (Color.FromHex("#E06C75"), tray.Creature ? "apiary-analyzer-creature-blind" : "apiary-analyzer-tray-blind")
         };
         row.AddChild(new PanelContainer
         {
@@ -387,7 +405,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             SetWidth = 3,
             VerticalExpand = true,
             ToolTip = Loc.GetString(barTip),
-            MouseFilter = MouseFilterMode.Stop,
+            MouseFilter = MouseFilterMode.Stop
         });
 
         // The tray with its plant drawn over it, the way it looks on the floor. A creature is drawn as a plain picture of
@@ -414,7 +432,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         row.AddChild(new Label
         {
             Text = name,
-            VerticalAlignment = VAlignment.Center,
+            VerticalAlignment = VAlignment.Center
         });
 
         return row;
