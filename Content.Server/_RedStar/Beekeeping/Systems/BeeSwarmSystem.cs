@@ -190,6 +190,10 @@ public sealed partial class BeeSwarmSystem : EntitySystem
             return false;
         }
 
+        // Only a colony that swarmed shows the trait that tells when it will.
+        if (!abandon)
+            _queen.Reveal((oldQueen, oldQueenComp), BeeTraitReveal.Swarm);
+
         var leaving = abandon ? comp.Bees : Math.Max(1, (int) (comp.Bees * modifier.ColonyShare));
         comp.Bees -= leaving;
         swarmComp.Bees = leaving;

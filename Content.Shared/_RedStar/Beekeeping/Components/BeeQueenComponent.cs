@@ -174,7 +174,7 @@ public sealed partial class BeeQueenComponent : Component
     /// Most trait slots royal jelly can give.
     /// </summary>
     [DataField, GuidebookData]
-    public int MaxSlots = 3;
+    public int MaxSlots = 4;
 
     /// <summary>
     /// Royal jelly injected but not enough for a slot yet. Server only.

@@ -213,6 +213,12 @@ public sealed partial class BeeTraitPrototype : IPrototype
     public float FlightPollination;
 
     /// <summary>
+    /// Examining a hive about to swarm shows how many minutes are left, not only that it is restless.
+    /// </summary>
+    [DataField]
+    public bool SwarmTimer;
+
+    /// <summary>
     /// What shows the trait to someone watching the colony. Until then the analyzer lists it only as a hidden trait.
     /// </summary>
     [DataField]

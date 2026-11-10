@@ -35,4 +35,5 @@ public struct BeeTraitTotals()
     public int CapWax;
     public float CombYield = 1f;
     public float FlightPollination;
+    public bool SwarmTimer;
 }

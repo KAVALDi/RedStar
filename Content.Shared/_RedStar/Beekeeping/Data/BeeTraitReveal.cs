@@ -50,4 +50,9 @@ public enum BeeTraitReveal : byte
     /// The hive stops in air it would otherwise work in.
     /// </summary>
     SoftAir,
+
+    /// <summary>
+    /// The colony swarms out of the hive.
+    /// </summary>
+    Swarm,
 }

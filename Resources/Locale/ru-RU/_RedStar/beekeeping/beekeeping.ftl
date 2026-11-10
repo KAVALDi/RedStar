@@ -31,7 +31,8 @@ beekeeping-hive-examine-dying = [color=red]Колония без матки вы
 beekeeping-hive-examine-scout-outside = Разведчица вне улья.
 beekeeping-hive-examine-scout-lost = Улей потерял разведчицу. Новая появится через { $minutes } мин { $seconds } с.
 beekeeping-hive-examine-scout-lost-grow = Улей потерял разведчицу. Новая появится, когда колония подрастёт.
-beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, примерно через { $minutes } мин часть колонии улетит роем.[/color]
+beekeeping-hive-examine-swarm-coming-timed = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, примерно через { $minutes } мин часть колонии улетит роем.[/color]
+beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, часть колонии улетит роем.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Водяной пар успокаивает пчёл.[/color]
 beekeeping-hive-examine-paused = [color=orange]Пчёлы затихли: { $reason ->
     [Vacuum] здесь нечем дышать
@@ -339,3 +340,5 @@ apiary-analyzer-stat-cold = Стойкость к холоду
 apiary-analyzer-stat-heat = Стойкость к жаре
 apiary-analyzer-stat-pressure = Стойкость к давлению
 apiary-analyzer-kpa = кПа
+bee-trait-swarm-sense = Чутьё на рой
+bee-trait-swarm-sense-desc = При осмотре улья перед роением видно, через сколько минут оно начнётся.

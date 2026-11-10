@@ -287,3 +287,12 @@
   coldTolerance: -10
   heatTolerance: -10
   pressureTolerance: -15
+
+# The hive shows how many minutes are left before it swarms. Known once the colony has swarmed.
+- type: beeTrait
+  id: SwarmSense
+  reveal: Swarm
+  name: bee-trait-swarm-sense
+  description: bee-trait-swarm-sense-desc
+  color: "#E8B04A"
+  swarmTimer: true

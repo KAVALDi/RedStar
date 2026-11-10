@@ -31,7 +31,8 @@ beekeeping-hive-examine-dying = [color=red]Without a queen the colony is dying o
 beekeeping-hive-examine-scout-outside = The scout is out of the hive.
 beekeeping-hive-examine-scout-lost = The hive lost its scout. A new one in { $minutes } min { $seconds } s.
 beekeeping-hive-examine-scout-lost-grow = The hive lost its scout. A new one comes once the colony grows.
-beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off in about { $minutes } min.[/color]
+beekeeping-hive-examine-swarm-coming-timed = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off in about { $minutes } min.[/color]
+beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Water vapor keeps the bees calm.[/color]
 beekeeping-hive-examine-paused = [color=orange]The bees have gone quiet: { $reason ->
     [Vacuum] there is no air to breathe
@@ -338,3 +339,5 @@ apiary-analyzer-stat-cold = Cold tolerance
 apiary-analyzer-stat-heat = Heat tolerance
 apiary-analyzer-stat-pressure = Pressure tolerance
 apiary-analyzer-kpa = kPa
+bee-trait-swarm-sense = Swarm sense
+bee-trait-swarm-sense-desc = Examining a hive about to swarm shows how many minutes are left.

@@ -614,8 +614,15 @@ public sealed partial class BeehiveSystem : SharedBeehiveSystem
 
             if (_swarm.SwarmComing(ent))
             {
-                var minutes = (int) Math.Ceiling(Math.Max(0, (comp.EggDiesAt - Timing.CurTime).TotalMinutes));
-                args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming", ("minutes", minutes)));
+                if (GetHiveTotals(ent).SwarmTimer)
+                {
+                    var minutes = (int) Math.Ceiling(Math.Max(0, (comp.EggDiesAt - Timing.CurTime).TotalMinutes));
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming-timed", ("minutes", minutes)));
+                }
+                else
+                {
+                    args.PushMarkup(Loc.GetString("beekeeping-hive-examine-swarm-coming"));
+                }
             }
 
             if (InCalmingVapor(ent, comp))

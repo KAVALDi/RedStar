@@ -76,6 +76,7 @@ public abstract partial class SharedBeehiveSystem
             totals.CapWax += trait.CapWax;
             totals.CombYield *= trait.CombYield;
             totals.FlightPollination += trait.FlightPollination;
+            totals.SwarmTimer |= trait.SwarmTimer;
         }
 
         return totals;
