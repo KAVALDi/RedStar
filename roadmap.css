@@ -1,0 +1,96 @@
+.roadmap {
+  max-width: 72rem;
+  margin: auto;
+  padding: clamp(1.5rem, 5vw, 4rem) clamp(1rem, 4vw, 2.5rem);
+}
+
+.roadmap-kicker {
+  color: var(--dim);
+  margin: 0 0 .4rem;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.roadmap h1 {
+  margin-bottom: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.roadmap-column {
+  --phase: var(--dim);
+  background: var(--win);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--phase);
+  border-radius: .55rem;
+  min-width: 0;
+}
+
+.roadmap-column[data-phase="shipped"] { --phase: #a4ce96; }
+.roadmap-column[data-phase="active"] { --phase: var(--gold); }
+.roadmap-column[data-phase="next"] { --phase: var(--link); }
+
+.roadmap-column header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .9rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.roadmap-column h2 {
+  margin: 0;
+  color: var(--phase);
+  font-size: 1rem;
+}
+
+.roadmap-count {
+  color: var(--dim);
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.roadmap-column ul {
+  display: grid;
+  gap: .55rem;
+  margin: 0;
+  padding: .75rem;
+  list-style: none;
+}
+
+.roadmap-column li {
+  min-width: 0;
+  padding: .75rem;
+  background: var(--card);
+  border-radius: .3rem;
+  overflow-wrap: anywhere;
+}
+
+.roadmap-column h3 {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.roadmap-column p {
+  color: var(--dim);
+  margin: .35rem 0 0;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.roadmap-column .roadmap-empty {
+  margin: 0;
+  padding: 1rem;
+}
+
+@media (max-width: 49rem) {
+  .roadmap-grid { grid-template-columns: minmax(0, 1fr); }
+}
