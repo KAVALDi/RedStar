@@ -36,6 +36,29 @@
                     </BoxContainer>
                 </PanelContainer>
 
+                <!-- A queen in hand: how far along each reagent is; the info mark explains, on hover, what each does. -->
+                <PanelContainer Name="FeedingPanel"
+                                StyleClasses="BackgroundPanel"
+                                HorizontalExpand="True"
+                                Visible="False">
+                    <BoxContainer Orientation="Vertical" Margin="0 8">
+                        <Label Text="{Loc apiary-analyzer-section-feeding}"
+                               StyleClasses="LabelKeyText" />
+                        <GridContainer Name="Feeding"
+                                       Columns="2"
+                                       HorizontalExpand="True" />
+                    </BoxContainer>
+                    <!-- In the very corner of the panel: the negative margin reaches past its padding. -->
+                    <TextureRect Name="FeedingHelp"
+                                 TexturePath="/Textures/Interface/VerbIcons/information.svg.192dpi.png"
+                                 Stretch="KeepAspectCentered"
+                                 SetSize="16 16"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Top"
+                                 Margin="0 5 -7 0"
+                                 MouseFilter="Stop" />
+                </PanelContainer>
+
                 <PanelContainer StyleClasses="BackgroundPanel"
                                 HorizontalExpand="True">
                     <BoxContainer Orientation="Vertical" Margin="0 8">
@@ -150,21 +173,28 @@
         </BoxContainer>
 
         <!-- A queen or a bee: every trait with what it does. -->
-        <PanelContainer Name="BeeBox"
-                        StyleClasses="BackgroundPanelDark"
-                        HorizontalExpand="True"
-                        Visible="False">
-            <BoxContainer Orientation="Vertical" Margin="0 8">
-                <Label Text="{Loc apiary-analyzer-section-traits}"
-                       StyleClasses="LabelKeyText"
-                       Margin="0 0 0 2" />
-                <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
-                    <BoxContainer Name="TraitDetails"
-                                  Orientation="Vertical"
-                                  SeparationOverride="4"
-                                  MaxWidth="340" />
-                </ScrollContainer>
-            </BoxContainer>
-        </PanelContainer>
+        <BoxContainer Name="BeeBox"
+                      Orientation="Vertical"
+                      HorizontalExpand="True"
+                      SeparationOverride="4"
+                      Visible="False">
+            <PanelContainer StyleClasses="BackgroundPanelDark"
+                            VerticalExpand="True">
+                <BoxContainer Orientation="Vertical" Margin="0 8">
+                    <Label Text="{Loc apiary-analyzer-section-traits}"
+                           StyleClasses="LabelKeyText"
+                           Margin="0 0 0 2" />
+                    <!-- As tall as the traits need, up to a limit; past it they scroll. -->
+                    <ScrollContainer VerticalExpand="True"
+                                     HScrollEnabled="False"
+                                     ReturnMeasure="True"
+                                     MaxHeight="500">
+                        <BoxContainer Name="TraitDetails"
+                                      Orientation="Vertical"
+                                      MaxWidth="340" />
+                    </ScrollContainer>
+                </BoxContainer>
+            </PanelContainer>
+        </BoxContainer>
     </BoxContainer>
 </controls:FancyWindow>

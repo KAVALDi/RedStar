@@ -31,6 +31,7 @@ beekeeping-hive-examine-dying = [color=red]Without a queen the colony is dying o
 beekeeping-hive-examine-scout-outside = The scout is out of the hive.
 beekeeping-hive-examine-scout-lost = The hive lost its scout. A new one in { $minutes } min { $seconds } s.
 beekeeping-hive-examine-scout-lost-grow = The hive lost its scout. A new one comes once the colony grows.
+beekeeping-hive-examine-swarm-coming = [color=orange]The hive hums restlessly: if nobody collects the royal jelly, part of the colony will swarm off in about { $minutes } min.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Water vapor keeps the bees calm.[/color]
 beekeeping-hive-examine-paused = [color=orange]The bees have gone quiet: { $reason ->
     [Vacuum] there is no air to breathe
@@ -161,6 +162,23 @@ beekeeping-hive-abandon = The hive has no frames: the queen leaves it with all h
 beekeeping-hive-swarm = The old queen leaves the hive with a swarm! A young queen stays behind.
 ## Apiary analyzer
 
+apiary-analyzer-section-feeding = What to inject
+apiary-analyzer-feed-mutagen = Mutagen
+apiary-analyzer-feed-jelly = Royal jelly
+apiary-analyzer-feed-mutagen-gives = { $per } u = a trait
+apiary-analyzer-feed-jelly-gives = { $per } u = a slot
+apiary-analyzer-feed-left = { $left } u to go
+apiary-analyzer-feed-progress = { $progress } of { $per } u
+apiary-analyzer-feed-jelly-full = all slots
+apiary-analyzer-feed-other = Other reagents
+apiary-analyzer-feed-other-no-sting = no sting
+apiary-analyzer-feed-help-how = [color=#A88B5E]Take the queen out of the hive and give her a reagent:[/color]
+apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u give her a new trait or take one away, and she grows less stable.
+apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u open one more trait slot, up to { $max }.
+apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Other reagents[/bold][/color]: a queen with a sting holds up to { $cap } u.
+    Her bees carry them in their stings and add them to the combs.
+apiary-analyzer-feed-help-no-sting = [color=#9A9A9A][bold]Other reagents[/bold][/color]: only a queen with a sting takes them, up to { $cap } u.
+apiary-analyzer-stats-plain = as plain bees
 apiary-analyzer-section-traits = Traits
 apiary-analyzer-section-colony-traits = Colony traits
 apiary-analyzer-section-stats = Characteristics
@@ -209,6 +227,7 @@ apiary-analyzer-row-memory = Trays remembered
 apiary-analyzer-row-charges = Pollinations left
 beekeeping-take-queen-done = You carefully take the queen out.
 apiary-analyzer-trait-separator = {": "}
+apiary-analyzer-trait-fold = Click to fold or unfold what it does
 beekeeping-queen-examine-dying = [color=red]Away from a hive the queen weakens and will die soon.[/color]
 beekeeping-queen-died = The queen died away from a hive.
 beekeeping-frame-upgraded = You build the frame up with wax. It now holds { $max } combs.
@@ -288,3 +307,34 @@ apiary-analyzer-chemicals-none = The hive holds no chemicals yet.
 apiary-analyzer-section-targets = Recent targets ({ $count })
 apiary-analyzer-targets-none = The bees have not bitten anyone yet.
 beekeeping-bite-blocked = The sealed suit stops the bee from biting.
+
+beekeeping-trait-hidden = hidden
+beekeeping-trait-hidden-desc = Nobody has seen it at work yet. It shows itself in what the colony does, or after the queen has worked in a hive for a while.
+beekeeping-trait-revealed = The bees show a trait: { $trait }.
+beekeeping-queen-trait-gained-hidden = Something changed in the queen: she has a new trait, and nobody knows yet what it is.
+beekeeping-queen-trait-replaced-hidden = Something changed in the queen: she lost a trait ({ $old }) and got a new one nobody knows yet.
+bee-trait-bountiful = Bountiful bees
+bee-trait-bountiful-desc = A worker's visit to a ripe plant sometimes raises its next harvest, as a bee in hand does.
+bee-trait-frost-hardy = Frost-hardy
+bee-trait-frost-hardy-desc = The bees keep working in air 30 K colder than usual.
+bee-trait-heat-hardy = Heat-hardy
+bee-trait-heat-hardy-desc = The bees keep working in air 30 K hotter than usual.
+bee-trait-calm = Calm
+bee-trait-calm-desc = A hit lets one angry bee fewer out, and only a strong hit lets any out.
+bee-trait-waxy = Waxy
+bee-trait-waxy-desc = Cutting the caps off a full frame gives 2 more wax.
+bee-trait-honeyed = Honeyed
+bee-trait-honeyed-desc = A frame gives half as many combs again when cut.
+bee-trait-restless = Restless
+bee-trait-restless-desc = The queen egg comes twice as soon and comes back twice as soon: the colony swarms more often.
+bee-trait-short-lived = Short-lived
+bee-trait-short-lived-desc = A bee taken out of the hive lives half as long.
+bee-trait-skittish = Skittish
+bee-trait-skittish-desc = The bees stop working sooner in cold, heat and thin or dense air.
+apiary-analyzer-stat-flight-pollination = Pollination by foragers
+apiary-analyzer-stat-comb-yield = Combs from a cut
+apiary-analyzer-stat-cap-wax = Wax from the caps
+apiary-analyzer-stat-cold = Cold tolerance
+apiary-analyzer-stat-heat = Heat tolerance
+apiary-analyzer-stat-pressure = Pressure tolerance
+apiary-analyzer-kpa = kPa

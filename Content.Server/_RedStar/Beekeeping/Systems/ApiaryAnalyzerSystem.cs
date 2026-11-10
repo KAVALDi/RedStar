@@ -30,6 +30,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
     [Dependency] private DamageableSystem _damageable = default!;
     [Dependency] private DestructibleSystem _destructible = default!;
     [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private BeeSwarmSystem _swarm = default!;
     [Dependency] private IPrototypeManager _proto = default!;
     [Dependency] private SharedSolutionContainerSystem _solutions = default!;
 
@@ -86,8 +87,10 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         else if (TryComp<BeeItemComponent>(target, out var bee))
         {
             state.Kind = bee.Role == BeeRole.Scout ? ApiaryScanKind.Scout : ApiaryScanKind.Pollinator;
-            state.Traits.AddRange(bee.Traits);
-            state.Totals = _beehive.GetTotals(bee.Traits);
+            var known = SharedBeehiveSystem.KnownOf(bee.Traits, bee.Known);
+            state.Traits.AddRange(known);
+            state.HiddenTraits = bee.Traits.Count - known.Count;
+            state.Totals = _beehive.GetTotals(known);
             state.Charges = bee.Charges;
             state.HiveKnown = bee.SourceHive is { } home && !TerminatingOrDeleted(home);
             state.Memory = bee.MemoryCount;
@@ -104,14 +107,27 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
     private void FillQueen(Entity<BeeQueenComponent> queen, ApiaryAnalyzerState state)
     {
         state.HasQueen = true;
-        state.Traits.AddRange(queen.Comp.Traits);
-        state.Totals = _beehive.GetTotals(queen.Comp.Traits);
+        var known = SharedBeehiveSystem.KnownOf(queen.Comp.Traits, queen.Comp.Known);
+        state.Traits.AddRange(known);
+        state.HiddenTraits = queen.Comp.Traits.Count - known.Count;
+        state.Totals = _beehive.GetTotals(known);
         state.UsedSlots = _beehive.SlottedTraits(queen.Comp);
         state.Instability = queen.Comp.Instability;
         state.Slots = queen.Comp.Slots;
         state.PayloadCap = queen.Comp.PayloadCap.Float();
         if (_solutions.TryGetSolution(queen.Owner, queen.Comp.Solution, out _, out var payload))
             state.Payload = payload.Volume.Float();
+
+        state.Feeding = new ApiaryQueenFeeding
+        {
+            Mutagen = queen.Comp.Mutagen,
+            MutagenProgress = queen.Comp.MutagenProgress.Float(),
+            MutagenPerRoll = queen.Comp.MutagenPerRoll.Float(),
+            Jelly = queen.Comp.Jelly,
+            JellyProgress = queen.Comp.JellyProgress.Float(),
+            JellyPerSlot = queen.Comp.JellyPerSlot.Float(),
+            MaxSlots = queen.Comp.MaxSlots,
+        };
     }
 
     private void FillHive(Entity<BeehiveComponent> hive, ApiaryAnalyzerState state)
@@ -127,6 +143,7 @@ public sealed partial class ApiaryAnalyzerSystem : SharedApiaryAnalyzerSystem
         state.Nectar = comp.Nectar;
         state.MaxNectar = comp.MaxNectar;
         state.HasEgg = comp.HasEgg;
+        state.SwarmComing = _swarm.SwarmComing(hive);
         state.NectarUse = _beehive.GetNectarUse(hive);
         state.BroodGoing = _beehive.IsBroodGoing(hive);
         // Bees back home are gone from the world but stay in the list until the next take-off clears it.

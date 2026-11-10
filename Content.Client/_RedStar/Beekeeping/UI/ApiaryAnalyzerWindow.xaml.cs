@@ -43,9 +43,21 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             tooltip.SetMessage(_nectarHelp);
             return tooltip;
         };
+        FeedingHelp.TooltipSupplier = _ =>
+        {
+            var tooltip = new Tooltip { MaxWidth = 400 };
+            tooltip.SetMessage(_feedingHelp);
+            return tooltip;
+        };
     }
 
     private FormattedMessage _nectarHelp = new();
+    private FormattedMessage _feedingHelp = new();
+
+    /// <summary>
+    /// Traits whose description was folded: the list is rebuilt on every refresh and keeps them folded.
+    /// </summary>
+    private readonly HashSet<string> _foldedTraits = new();
 
     public void UpdateState(ApiaryAnalyzerState state)
     {
@@ -58,6 +70,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         var hive = state.Kind == ApiaryScanKind.Hive;
         HiveBox.Visible = hive;
         BeeBox.Visible = !hive;
+        UpdateFeeding(state);
 
         // A hive lists its colony's traits on the left; a queen or a bee has its own lines there and every trait
         // explained on the right.
@@ -82,16 +95,24 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
             return msg;
         }
 
-        if (state.Traits.Count == 0)
+        if (state.Traits.Count == 0 && state.HiddenTraits == 0)
         {
             msg.AddText(Loc.GetString("beekeeping-traits-none"));
             return msg;
         }
 
-        for (var i = 0; i < state.Traits.Count; i++)
+        for (var i = 0; i < state.Traits.Count + state.HiddenTraits; i++)
         {
             if (i > 0)
                 msg.AddText(", ");
+
+            if (i >= state.Traits.Count)
+            {
+                msg.PushColor(Color.Gray);
+                msg.AddText(Loc.GetString("beekeeping-trait-hidden"));
+                msg.Pop();
+                continue;
+            }
 
             if (_proto.Resolve(state.Traits[i], out var trait))
             {
@@ -108,6 +129,9 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         return msg;
     }
 
+    /// <summary>
+    /// Only what the traits change: a line the same as for plain bees says nothing.
+    /// </summary>
     private void UpdateStats(BeeTraitTotals totals)
     {
         Stats.RemoveAllChildren();
@@ -123,24 +147,67 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         AddFactor("apiary-analyzer-stat-egg-life", totals.EggLife, higherIsBetter: true);
         AddFactor("apiary-analyzer-stat-egg-cooldown", totals.EggCooldown, higherIsBetter: false);
         AddBonus("apiary-analyzer-stat-scout-finds", totals.ScoutFinds);
-        AddRow(Stats, "apiary-analyzer-stat-mutation",
-            Loc.GetString("apiary-analyzer-units", ("amount", $"{totals.PollinationMutation:0.#}")),
-            totals.PollinationMutation > 0f ? Color.Gold : Color.DimGray);
+        if (totals.PollinationMutation > 0f)
+        {
+            AddRow(Stats, "apiary-analyzer-stat-mutation",
+                Loc.GetString("apiary-analyzer-units", ("amount", $"{totals.PollinationMutation:0.#}")), Color.Gold);
+        }
+
+        if (!IsPlain(totals.FlightPollination))
+        {
+            AddRow(Stats, "apiary-analyzer-stat-flight-pollination", $"{totals.FlightPollination * 100f:0}%",
+                DeltaColor(totals.FlightPollination, true));
+        }
+
+        AddFactor("apiary-analyzer-stat-comb-yield", totals.CombYield, higherIsBetter: true);
+        AddBonus("apiary-analyzer-stat-cap-wax", totals.CapWax);
+        AddShift("apiary-analyzer-stat-cold", totals.ColdTolerance, "K");
+        AddShift("apiary-analyzer-stat-heat", totals.HeatTolerance, "K");
+        AddShift("apiary-analyzer-stat-pressure", totals.PressureTolerance, Loc.GetString("apiary-analyzer-kpa"));
+
+        if (Stats.ChildCount == 0)
+        {
+            Stats.AddChild(WeakLabel("apiary-analyzer-stats-plain"));
+            Stats.AddChild(new Control());
+        }
+    }
+
+    private static bool IsPlain(float delta)
+    {
+        return MathF.Abs(delta) < 0.001f;
     }
 
     private void AddFactor(string name, float factor, bool higherIsBetter)
     {
+        if (IsPlain(factor - 1f))
+            return;
+
         AddRow(Stats, name, $"×{factor:0.##}", DeltaColor(factor - 1f, higherIsBetter));
+    }
+
+    /// <summary>
+    /// How far the colony's traits widen (+) or narrow (−) the air it works in.
+    /// </summary>
+    private void AddShift(string name, float shift, string unit)
+    {
+        if (IsPlain(shift))
+            return;
+
+        var value = shift > 0f ? $"+{shift:0} {unit}" : $"{shift:0} {unit}";
+        AddRow(Stats, name, value, DeltaColor(shift, true));
     }
 
     private void AddBonus(string name, int bonus)
     {
+        if (bonus == 0)
+            return;
+
         AddRow(Stats, name, bonus > 0 ? $"+{bonus}" : bonus.ToString(), DeltaColor(bonus, true));
     }
 
     private static Color DeltaColor(float delta, bool higherIsBetter)
     {
-        if (MathF.Abs(delta) < 0.001f)
+        if (IsPlain(delta))
             return Color.DimGray;
 
         return delta > 0f == higherIsBetter ? Color.LimeGreen : Color.Crimson;
@@ -203,6 +270,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         NewBee.Text = Loc.GetString(state.BroodGoing ? "apiary-analyzer-brood-going" : "apiary-analyzer-brood-stopped");
         Queen.Text = Loc.GetString(state.HasQueen ? "apiary-analyzer-yes" : "apiary-analyzer-no");
         Egg.Text = Loc.GetString(state.HasEgg ? "apiary-analyzer-yes" : "apiary-analyzer-no");
+        Egg.FontColorOverride = state.SwarmComing ? Color.Orange : null;
         Foraging.Text = state.Foraging.ToString();
 
         // A wild hive builds its combs right inside, with no frames; a meat one lists what it holds instead.
@@ -373,26 +441,20 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
     private void UpdateBee(ApiaryAnalyzerState state)
     {
         TraitDetails.RemoveAllChildren();
-        if (state.Traits.Count == 0)
+        if (state.Traits.Count == 0 && state.HiddenTraits == 0)
             TraitDetails.AddChild(WeakLabel("beekeeping-traits-none"));
+        for (var i = 0; i < state.HiddenTraits; i++)
+        {
+            TraitDetails.AddChild(TraitEntry($"hidden-{i}", Loc.GetString("beekeeping-trait-hidden"), Color.Gray,
+                Loc.GetString("beekeeping-trait-hidden-desc"), TraitDetails.ChildCount));
+        }
+
         foreach (var id in state.Traits)
         {
-            var line = new FormattedMessage();
-            if (_proto.Resolve(id, out var trait))
-            {
-                line.PushColor(trait.Color);
-                line.AddText(Loc.GetString(trait.Name));
-                line.Pop();
-                line.AddText(Loc.GetString("apiary-analyzer-trait-separator") + Loc.GetString(trait.Description));
-            }
-            else
-            {
-                line.AddText(id.Id);
-            }
-
-            var label = new RichTextLabel();
-            label.SetMessage(line);
-            TraitDetails.AddChild(label);
+            TraitDetails.AddChild(_proto.Resolve(id, out var trait)
+                ? TraitEntry(id, Loc.GetString(trait.Name), trait.Color, Loc.GetString(trait.Description),
+                    TraitDetails.ChildCount)
+                : TraitEntry(id, id.Id, Color.White, string.Empty, TraitDetails.ChildCount));
         }
 
         BeeInfo.RemoveAllChildren();
@@ -400,7 +462,7 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         {
             case ApiaryScanKind.Queen:
                 InfoHeading.Text = Loc.GetString("apiary-analyzer-section-queen");
-                AddQueenRows(state);
+                AddQueenRows(state, payload: false);
                 break;
             case ApiaryScanKind.Scout:
                 InfoHeading.Text = Loc.GetString("apiary-analyzer-section-scout");
@@ -417,16 +479,152 @@ public sealed partial class ApiaryAnalyzerWindow : FancyWindow
         }
     }
 
-    private void AddQueenRows(ApiaryAnalyzerState state)
+    /// <summary>
+    /// For a scanned queen: what each reagent does when injected, with how far along she is.
+    /// </summary>
+    private void UpdateFeeding(ApiaryAnalyzerState state)
+    {
+        FeedingPanel.Visible = state.Kind == ApiaryScanKind.Queen && state.Feeding != null;
+        if (state.Feeding is not { } feeding)
+            return;
+
+        var mutagen = ReagentName(feeding.Mutagen);
+        var jelly = ReagentName(feeding.Jelly);
+
+        Feeding.RemoveAllChildren();
+        // What each reagent gives her; once some is in but not enough for it, how much is still missing.
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-mutagen"),
+            feeding.MutagenProgress > 0f
+                ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.MutagenPerRoll - feeding.MutagenProgress:0.#}"))
+                : Loc.GetString("apiary-analyzer-feed-mutagen-gives", ("per", $"{feeding.MutagenPerRoll:0.#}")));
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-jelly"),
+            state.Slots >= feeding.MaxSlots
+                ? Loc.GetString("apiary-analyzer-feed-jelly-full")
+                : feeding.JellyProgress > 0f
+                    ? Loc.GetString("apiary-analyzer-feed-left", ("left", $"{feeding.JellyPerSlot - feeding.JellyProgress:0.#}"))
+                    : Loc.GetString("apiary-analyzer-feed-jelly-gives", ("per", $"{feeding.JellyPerSlot:0.#}")));
+        AddFeedingRow(Loc.GetString("apiary-analyzer-feed-other"), state.Totals.Sting
+            ? Loc.GetString("apiary-analyzer-feed-progress",
+                ("progress", $"{state.Payload:0.#}"), ("per", $"{state.PayloadCap:0.#}"))
+            : Loc.GetString("apiary-analyzer-feed-other-no-sting"));
+
+        var help = new List<string>
+        {
+            Loc.GetString("apiary-analyzer-feed-help-how"),
+            Loc.GetString("apiary-analyzer-feed-help-mutagen", ("reagent", mutagen), ("color", ReagentColor(feeding.Mutagen)),
+                ("per", $"{feeding.MutagenPerRoll:0.#}")),
+            Loc.GetString("apiary-analyzer-feed-help-jelly", ("reagent", jelly), ("color", Color.White.ToHex()),
+                ("per", $"{feeding.JellyPerSlot:0.#}"), ("max", feeding.MaxSlots)),
+            Loc.GetString(state.Totals.Sting ? "apiary-analyzer-feed-help-sting" : "apiary-analyzer-feed-help-no-sting",
+                ("cap", $"{state.PayloadCap:0.#}")),
+        };
+        _feedingHelp = FormattedMessage.FromMarkupOrThrow(string.Join("\n", help));
+    }
+
+    private void AddFeedingRow(string name, string value)
+    {
+        Feeding.AddChild(new Label { Text = name, Margin = new Thickness(0, 0, 8, 0) });
+        Feeding.AddChild(new Label
+        {
+            Text = value,
+            HorizontalExpand = true,
+            HorizontalAlignment = Control.HAlignment.Right,
+            StyleClasses = { StyleClass.LabelWeak },
+        });
+    }
+
+    /// <summary>
+    /// The reagent's own colour, so its name in the help looks like it does in a beaker.
+    /// </summary>
+    private string ReagentColor(ProtoId<ReagentPrototype> reagent)
+    {
+        return (_proto.TryIndex(reagent, out var proto) ? proto.SubstanceColor : Color.White).ToHex();
+    }
+
+    private string ReagentName(ProtoId<ReagentPrototype> reagent)
+    {
+        return _proto.TryIndex(reagent, out var proto) ? proto.LocalizedName : reagent.Id;
+    }
+
+    /// <param name="payload">Off for a queen in hand: her reagents are listed with the syringe rows.</param>
+    private void AddQueenRows(ApiaryAnalyzerState state, bool payload = true)
     {
         // Coloured like the stats: grey when nothing special, red for wear on the queen.
         AddRow(BeeInfo, "apiary-analyzer-row-slots",
             Loc.GetString("apiary-analyzer-of", ("value", state.UsedSlots), ("max", state.Slots)), Color.DimGray);
         AddRow(BeeInfo, "apiary-analyzer-row-instability", state.Instability.ToString(),
             DeltaColor(state.Instability, false));
-        AddRow(BeeInfo, "apiary-analyzer-row-payload",
-            Loc.GetString("apiary-analyzer-of", ("value", $"{state.Payload:0.#}"), ("max", $"{state.PayloadCap:0.#}")),
-            Color.DimGray);
+        if (payload)
+        {
+            AddRow(BeeInfo, "apiary-analyzer-row-payload",
+                Loc.GetString("apiary-analyzer-of", ("value", $"{state.Payload:0.#}"), ("max", $"{state.PayloadCap:0.#}")),
+                Color.DimGray);
+        }
+    }
+
+    /// <summary>
+    /// A trait as a row like the known trays: alternating background, a bar in the trait's colour, and its name that
+    /// folds and unfolds what it does when clicked.
+    /// </summary>
+    private Control TraitEntry(string key, string name, Color color, string description, int index)
+    {
+        var heading = new CollapsibleHeading(name)
+        {
+            ChevronVisible = false,
+            ToolTip = Loc.GetString("apiary-analyzer-trait-fold"),
+        };
+        heading.Label.FontColorOverride = color;
+        var text = new RichTextLabel();
+        text.SetMessage(FormattedMessage.FromUnformatted(description));
+
+        // A click on the description folds it as well as one on the name.
+        var textButton = new ContainerButton
+        {
+            ToolTip = Loc.GetString("apiary-analyzer-trait-fold"),
+            Children = { text },
+        };
+        var entry = new Collapsible(heading, new CollapsibleBody { Children = { textButton } })
+        {
+            BodyVisible = !_foldedTraits.Contains(key),
+            HorizontalExpand = true,
+        };
+
+        heading.OnToggled += args =>
+        {
+            if (args.Pressed)
+                _foldedTraits.Remove(key);
+            else
+                _foldedTraits.Add(key);
+        };
+        textButton.OnPressed += _ =>
+        {
+            _foldedTraits.Add(key);
+            entry.BodyVisible = false;
+        };
+
+        return new PanelContainer
+        {
+            StyleClasses = { index % 2 == 0 ? StyleClass.Panel : StyleClass.PanelDark },
+            Children =
+            {
+                new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    SeparationOverride = 8,
+                    Margin = new Thickness(4, 2),
+                    Children =
+                    {
+                        new PanelContainer
+                        {
+                            PanelOverride = new StyleBoxFlat { BackgroundColor = color },
+                            SetWidth = 3,
+                            VerticalExpand = true,
+                        },
+                        entry,
+                    },
+                },
+            },
+        };
     }
 
     private static Label WeakLabel(string loc)

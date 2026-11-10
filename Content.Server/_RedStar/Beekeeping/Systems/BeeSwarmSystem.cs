@@ -5,6 +5,7 @@ using Content.Shared._RedStar.Beekeeping;
 using Content.Shared._RedStar.Beekeeping.Components;
 using Content.Shared._RedStar.Beekeeping.Data;
 using Content.Shared._RedStar.Beekeeping.Prototypes;
+using Content.Shared._RedStar.Beekeeping.Systems;
 using Robust.Shared.Timing;
 using Robust.Shared.Spawners;
 using Content.Shared.Weapons.Melee.Events;
@@ -82,6 +83,20 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     private readonly List<EntityUid> _storageCandidates = new();
 
     [Dependency] private SharedEntityStorageSystem _entityStorage = default!;
+
+    /// <summary>
+    /// A swarm is coming: an egg lies in the hive, and if nobody collects its jelly before it dies, the old queen leaves
+    /// with part of the colony. Before that the hive is restless, for anyone to see.
+    /// </summary>
+    public bool SwarmComing(Entity<BeehiveComponent> hive)
+    {
+        var comp = hive.Comp;
+        return comp.HasEgg &&
+               !comp.Wild &&
+               comp.Bees >= comp.SwarmMinBees &&
+               _hive.GetQueen(hive) != null &&
+               CountWildHives(Transform(hive).MapUid) < _cfg.GetCVar(BeekeepingCVars.WildHiveLimit);
+    }
 
     /// <summary>
     /// The egg died with nobody collecting the jelly: the old queen swarms out, if the colony is big enough, a nest
@@ -310,7 +325,8 @@ public sealed partial class BeeSwarmSystem : EntitySystem
     }
 
     /// <summary>
-    /// The young queen has her mother's traits, as many as her slots hold. Innate traits always pass on.
+    /// The young queen has her mother's traits, as many as her slots hold. Innate traits always pass on, and of them only
+    /// what was known of her mother's stays known.
     /// </summary>
     private void InheritTraits(BeeQueenComponent mother, BeeQueenComponent daughter)
     {
@@ -331,6 +347,9 @@ public sealed partial class BeeSwarmSystem : EntitySystem
 
             daughter.Traits.Add(id);
         }
+
+        // She knows of her traits only what was known of her mother's; the rest is hidden again.
+        daughter.Known = SharedBeehiveSystem.KnownOf(daughter.Traits, mother.Known);
     }
 
     /// <summary>

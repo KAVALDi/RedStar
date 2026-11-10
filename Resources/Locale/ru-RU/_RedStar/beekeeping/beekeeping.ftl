@@ -31,6 +31,7 @@ beekeeping-hive-examine-dying = [color=red]Колония без матки вы
 beekeeping-hive-examine-scout-outside = Разведчица вне улья.
 beekeeping-hive-examine-scout-lost = Улей потерял разведчицу. Новая появится через { $minutes } мин { $seconds } с.
 beekeeping-hive-examine-scout-lost-grow = Улей потерял разведчицу. Новая появится, когда колония подрастёт.
+beekeeping-hive-examine-swarm-coming = [color=orange]Улей беспокойно гудит: если никто не соберёт маточное молочко, примерно через { $minutes } мин часть колонии улетит роем.[/color]
 beekeeping-hive-examine-vapor = [color=lightblue]Водяной пар успокаивает пчёл.[/color]
 beekeeping-hive-examine-paused = [color=orange]Пчёлы затихли: { $reason ->
     [Vacuum] здесь нечем дышать
@@ -162,6 +163,23 @@ beekeeping-hive-abandon = В улье нет рамок: матка улетае
 beekeeping-hive-swarm = Старая матка улетает из улья с роем! В улье осталась молодая матка.
 ## Apiary analyzer
 
+apiary-analyzer-section-feeding = Что ввести шприцем
+apiary-analyzer-feed-mutagen = Мутаген
+apiary-analyzer-feed-jelly = Молочко
+apiary-analyzer-feed-mutagen-gives = { $per } ед. = признак
+apiary-analyzer-feed-jelly-gives = { $per } ед. = слот
+apiary-analyzer-feed-left = ещё { $left } ед.
+apiary-analyzer-feed-progress = { $progress } из { $per } ед.
+apiary-analyzer-feed-jelly-full = все слоты
+apiary-analyzer-feed-other = Другие реагенты
+apiary-analyzer-feed-other-no-sting = без жала
+apiary-analyzer-feed-help-how = [color=#A88B5E]Достаньте матку из улья и введите ей реагент:[/color]
+apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
+apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
+apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: матка с жалом вмещает до { $cap } ед.
+    Пчёлы несут их в жале и добавляют в соты.
+apiary-analyzer-feed-help-no-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: их принимает только матка с жалом, до { $cap } ед.
+apiary-analyzer-stats-plain = как у обычных пчёл
 apiary-analyzer-section-traits = Признаки
 apiary-analyzer-section-colony-traits = Признаки колонии
 apiary-analyzer-section-stats = Характеристики
@@ -210,6 +228,7 @@ apiary-analyzer-row-memory = Помнит лотков
 apiary-analyzer-row-charges = Опылений осталось
 beekeeping-take-queen-done = Вы осторожно достаёте матку.
 apiary-analyzer-trait-separator = {": "}
+apiary-analyzer-trait-fold = Нажмите, чтобы свернуть или развернуть описание
 beekeeping-queen-examine-dying = [color=red]Без улья матка слабеет и скоро погибнет.[/color]
 beekeeping-queen-died = Матка погибла без улья.
 beekeeping-frame-upgraded = Вы укрепляете рамку воском. Теперь она вмещает { $max } сот.
@@ -289,3 +308,34 @@ apiary-analyzer-chemicals-none = В улье пока нет химически�
 apiary-analyzer-section-targets = Недавние цели ({ $count })
 apiary-analyzer-targets-none = Пчёлы ещё никого не кусали.
 beekeeping-bite-blocked = Герметичный костюм не даёт пчеле укусить.
+
+beekeeping-trait-hidden = скрытый
+beekeeping-trait-hidden-desc = Его ещё никто не видел в деле. Он проявится в работе колонии или после того, как матка поработает в улье.
+beekeeping-trait-revealed = Пчёлы проявили признак: { $trait }.
+beekeeping-queen-trait-gained-hidden = В матке что-то изменилось: у неё новый признак, и пока никто не знает какой.
+beekeeping-queen-trait-replaced-hidden = В матке что-то изменилось: она потеряла признак ({ $old }) и получила новый, пока неизвестный.
+bee-trait-bountiful = Урожайные пчёлы
+bee-trait-bountiful-desc = Визит рабочей к спелому растению иногда повышает его следующий урожай, как пчела в руке.
+bee-trait-frost-hardy = Морозостойкость
+bee-trait-frost-hardy-desc = Пчёлы работают в воздухе на 30 K холоднее обычного.
+bee-trait-heat-hardy = Жаростойкость
+bee-trait-heat-hardy-desc = Пчёлы работают в воздухе на 30 K горячее обычного.
+bee-trait-calm = Спокойствие
+bee-trait-calm-desc = Удар выпускает на одну злую пчелу меньше, а слабый удар не выпускает ни одной.
+bee-trait-waxy = Восковые
+bee-trait-waxy-desc = Срезанные с полной рамки крышки дают на 2 воска больше.
+bee-trait-honeyed = Медовые
+bee-trait-honeyed-desc = Рамка при срезке даёт в полтора раза больше сот.
+bee-trait-restless = Беспокойство
+bee-trait-restless-desc = Яйцо матки появляется вдвое раньше и снова вдвое скорее: колония чаще роится.
+bee-trait-short-lived = Недолговечность
+bee-trait-short-lived-desc = Пчела, вынутая из улья, живёт вдвое меньше.
+bee-trait-skittish = Пугливость
+bee-trait-skittish-desc = Пчёлы раньше бросают работу в холоде, жаре, разреженном и слишком плотном воздухе.
+apiary-analyzer-stat-flight-pollination = Опыление сборщицами
+apiary-analyzer-stat-comb-yield = Сот со срезки
+apiary-analyzer-stat-cap-wax = Воска с крышек
+apiary-analyzer-stat-cold = Стойкость к холоду
+apiary-analyzer-stat-heat = Стойкость к жаре
+apiary-analyzer-stat-pressure = Стойкость к давлению
+apiary-analyzer-kpa = кПа
