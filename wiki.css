@@ -25,10 +25,22 @@ a:focus-visible, summary:focus-visible { outline: 2px solid var(--link); outline
 .site-name { color: var(--dim); font-size: .875rem; }
 .layout {
   max-width: 72rem; margin: auto; padding: 1.5rem clamp(1rem, 4vw, 2.5rem);
-  display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: clamp(1rem, 4vw, 3rem);
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem;
 }
-.sections { position: sticky; top: 1rem; align-self: start; display: grid; gap: .25rem; }
-.sections strong { color: var(--dim); padding: 0 .65rem; margin-bottom: .35rem; font-size: .875rem; }
+.sections { min-width: 0; align-self: start; }
+.sections summary {
+  cursor: pointer; padding: .6rem .65rem; background: var(--win);
+  border: 1px solid var(--line); border-radius: .3rem; font-weight: 650;
+}
+.section-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem; margin-top: .35rem; }
+.sections a { overflow-wrap: anywhere; }
+@media (min-width: 64rem) {
+  .layout:has(> .sections[open]) {
+    grid-template-columns: 13rem minmax(0, 1fr); gap: clamp(1rem, 4vw, 3rem);
+  }
+  .sections[open] { position: sticky; top: 1rem; }
+  .section-links { grid-template-columns: minmax(0, 1fr); }
+}
 .sections a { color: var(--text); text-decoration: none; padding: .55rem .65rem; border-radius: .3rem; }
 .sections a:hover { background: var(--win); }
 .sections a[aria-current] { background: var(--bar); color: var(--gold); }
@@ -95,10 +107,21 @@ h3 { margin: 1.2rem 0 .4rem; font-size: 1.12rem; }
 .tbl[data-cols="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .cbox { border-color: var(--line); padding: .35rem; min-width: 0; }
 .rrow { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); overflow-wrap: anywhere; }
-@media (max-width: 49rem) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
-  .sections { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .sections strong, .sections .demo-link { grid-column: 1 / -1; }
+.table-scroll { max-width: 100%; overflow-x: auto; margin: .25rem 0 .5rem; }
+.wiki-table { width: 100%; border-collapse: collapse; line-height: 1.4; }
+.wiki-table th, .wiki-table td {
+  border: 1px solid #5b5c6e; padding: .35rem .45rem;
+  vertical-align: top; overflow-wrap: anywhere;
+}
+.wiki-table th { background: #453a59; }
+.wiki-table--descriptions { table-layout: fixed; }
+.wiki-table--descriptions th:first-child { width: 28%; }
+.wiki-table .rt { margin-bottom: 0; }
+.wiki-table .ha-center { margin-inline: auto; }
+.wiki-table .ent { margin: .2rem 0; max-width: 100%; }
+.wiki-table .ent img { max-width: 100%; height: auto !important; }
+@media (max-width: 40rem) {
+  .wiki-table--descriptions th:first-child { width: 40%; }
 }
 @media (max-width: 34rem) {
   .tbl[data-cols="2"], .tbl[data-cols="3"] { grid-template-columns: minmax(0, 1fr); }
