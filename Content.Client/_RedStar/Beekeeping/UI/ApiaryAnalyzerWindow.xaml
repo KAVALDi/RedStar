@@ -156,7 +156,7 @@
                 </PanelContainer>
             </BoxContainer>
 
-            <!-- Takes whatever height is left and scrolls: it never makes the window taller. -->
+            <!-- The list sizes the window up to a limit, then scrolls. -->
             <PanelContainer StyleClasses="BackgroundPanelDark"
                             HorizontalExpand="True"
                             VerticalExpand="True">
@@ -164,7 +164,10 @@
                     <Label Name="TraysHeading"
                            StyleClasses="LabelKeyText"
                            Margin="0 0 0 6" />
-                    <ScrollContainer VerticalExpand="True" HScrollEnabled="False">
+                    <ScrollContainer VerticalExpand="True"
+                                     HScrollEnabled="False"
+                                     ReturnMeasure="True"
+                                     MaxHeight="150">
                         <BoxContainer Name="Trays"
                                       Orientation="Vertical" />
                     </ScrollContainer>
