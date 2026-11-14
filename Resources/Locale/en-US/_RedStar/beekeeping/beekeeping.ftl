@@ -174,7 +174,7 @@ apiary-analyzer-feed-jelly-full = all slots
 apiary-analyzer-feed-other = Other reagents
 apiary-analyzer-feed-other-no-sting = no sting
 apiary-analyzer-feed-help-how = [color=#A88B5E]Take the queen out of the hive and give her a reagent:[/color]
-apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u give her a new trait or take one away, and she grows less stable.
+apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u give her a new trait or take one away, and she grows less stable. If all slots are occupied, a new trait that needs a slot replaces a random old one.
 apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: every { $per } u open one more trait slot, up to { $max }.
 apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Other reagents[/bold][/color]: a queen with a sting holds up to { $cap } u.
     Her bees carry them in their stings and add them to the combs.
@@ -310,7 +310,7 @@ apiary-analyzer-targets-none = The bees have not bitten anyone yet.
 beekeeping-bite-blocked = The sealed suit stops the bee from biting.
 
 beekeeping-trait-hidden = hidden
-beekeeping-trait-hidden-desc = Nobody has seen it at work yet. It shows itself in what the colony does, or after the queen has worked in a hive for a while.
+beekeeping-trait-hidden-desc = This trait has yet to be identified. It will reveal itself under the right conditions.
 beekeeping-trait-revealed = The bees show a trait: { $trait }.
 beekeeping-queen-trait-gained-hidden = Something changed in the queen: she has a new trait, and nobody knows yet what it is.
 beekeeping-queen-trait-replaced-hidden = Something changed in the queen: she lost a trait ({ $old }) and got a new one nobody knows yet.

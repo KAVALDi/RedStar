@@ -175,7 +175,7 @@ apiary-analyzer-feed-jelly-full = все слоты
 apiary-analyzer-feed-other = Другие реагенты
 apiary-analyzer-feed-other-no-sting = без жала
 apiary-analyzer-feed-help-how = [color=#A88B5E]Достаньте матку из улья и введите ей реагент:[/color]
-apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее.
+apiary-analyzer-feed-help-mutagen = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. дают матке новый признак или убирают старый, и она становится нестабильнее. Если все слоты заняты, новый признак, которому нужен слот, вытесняет случайный старый.
 apiary-analyzer-feed-help-jelly = [color={ $color }][bold]{ CAPITALIZE($reagent) }[/bold][/color]: каждые { $per } ед. открывают ещё один слот признака, всего до { $max }.
 apiary-analyzer-feed-help-sting = [color=#9A9A9A][bold]Другие реагенты[/bold][/color]: матка с жалом вмещает до { $cap } ед.
     Пчёлы несут их в жале и добавляют в соты.
@@ -311,7 +311,7 @@ apiary-analyzer-targets-none = Пчёлы ещё никого не кусали.
 beekeeping-bite-blocked = Герметичный костюм не даёт пчеле укусить.
 
 beekeeping-trait-hidden = скрытый
-beekeeping-trait-hidden-desc = Его ещё никто не видел в деле. Он проявится в работе колонии или после того, как матка поработает в улье.
+beekeeping-trait-hidden-desc = Пока неизвестно, что это за признак. Он проявится при подходящих условиях.
 beekeeping-trait-revealed = Пчёлы проявили признак: { $trait }.
 beekeeping-queen-trait-gained-hidden = В матке что-то изменилось: у неё новый признак, и пока никто не знает какой.
 beekeeping-queen-trait-replaced-hidden = В матке что-то изменилось: она потеряла признак ({ $old }) и получила новый, пока неизвестный.
